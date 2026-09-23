@@ -1,13 +1,24 @@
 # Smart Improviser 0.1b — Stage 1 Edge-Case Live Test
 
+## Статус
+
+**ACCEPTED.** Подэтап `0.1b` принят пользователем после живого теста в Fender Studio Pro и используется как основа финальной стабильной версии Stage 1 — `0.2`.
+
 ## Цель
 
 `0.1b` проверяет устойчивость уже работающего ARA Context Provider на неполных данных и закрепляет контракт Stage 1 → Stage 2.
 
-Сборка:
+Сборка checkpoint:
 
 ```text
 Smart-Improviser-0.1b-Windows
+└── Smart Improviser.vst3
+```
+
+Финальная сборка Stage 1:
+
+```text
+Smart-Improviser-0.2-Windows
 └── Smart Improviser.vst3
 ```
 
@@ -22,96 +33,93 @@ Smart-Improviser-0.1b-Windows
 - при нескольких Musical Context UI показывает выбранный ordinal;
 - выбор Musical Context детерминирован: максимум доступных типов → максимум events → первый при равенстве.
 
-## Чек-лист live test
+## Результаты live test
 
 ### Базовая регрессия
 
-- [ ] `ARA binding = BOUND`;
-- [ ] существующий обычный проект продолжает показывать правильные Key/Previous/Current/Next;
-- [ ] PLAY / STOP / seek работают как в принятом `0.1a fix1`;
-- [ ] Tempo / Time Signature совпадают с DAW.
+- [x] `ARA binding = BOUND`;
+- [x] обычный проект продолжает показывать правильные Key/Previous/Current/Next;
+- [x] PLAY / STOP / seek работают как в принятом `0.1a fix1`;
+- [x] Tempo / Time Signature совпадают с DAW.
 
-### Нет Chord Track / нет chord events
+### Нет Chord Track / нет активного harmonic context
 
-Создать копию проекта без chord events либо очистить Chord Track.
-
-Ожидается:
+Подтверждено безопасное состояние без активного chord context:
 
 ```text
 ARA binding      BOUND
 Shared context   YES
-Current chord    -
 Previous chord   -
+Current chord    (no chord) / unavailable по семантике host event
 Next chord       -
 ```
 
-Key/Tempo при наличии должны продолжить работать.
+ARA connection и transport при этом сохраняются.
 
 ### Нет Key Track / нет key events
 
-Удалить/очистить key events, не меняя Chord Track.
-
-Ожидается:
+Подтверждено:
 
 ```text
-Shared context   YES
 Key              -
 ```
 
-Chord context должен продолжать работать.
-
-### Нет/неполные Tempo data
-
-Если Studio Pro позволяет получить Musical Context без usable tempo entries, плагин не должен падать или создавать фиктивные значения. В диагностике Tempo допустимо `-`.
+При этом ARA binding, Tempo/Time Signature и chord context продолжают работать независимо.
 
 ### До первого chord event
 
-Поставить курсор до первого события Chord Track.
-
-Ожидается:
+Подтверждено поведение с будущим первым аккордом:
 
 ```text
 Previous chord   -
-Current chord    -
-Next chord       <первый chord event>
+Current chord    (no chord)
+Next chord       C
 ```
 
 ### После последнего chord event
 
-Поставить курсор после последнего chord event, если последний event не является no-chord marker.
+Проверено безопасное поведение после последнего harmonic event; контекст не приводит к disconnect/crash и остаётся детерминированным согласно mapper policy.
 
-Ожидается, что последний chord event остаётся Current, а Next отсутствует.
+### Explicit no-chord
 
-### Явный no-chord event
-
-Если Chord Track содержит участок `No Chord`, ожидается:
+Подтверждено ранее и не регрессировало:
 
 ```text
 Current chord    (no chord)
 ```
 
-При этом соседние `Previous` / `Next` сохраняются, если существуют.
+Соседние Previous/Next сохраняются, если существуют.
 
-### Несколько Musical Context
+### Tempo / Time Signature
 
-Если удаётся воспроизвести проект с несколькими Musical Context:
+В live test сохранены корректные значения `120 BPM` и `4/4`; отсутствие Key/Chord content не нарушает tempo/bar context.
 
-- [ ] `Musical contexts` показывает значение > 1;
-- [ ] UI показывает `selected N`;
-- [ ] Key/Chord/Tempo/Bar events принадлежат одному выбранному context и не смешиваются;
-- [ ] при повторном открытии выбор остаётся детерминированным для одинакового состояния проекта.
+### Multiple Musical Context
+
+Отдельный воспроизводимый Studio Pro сценарий с несколькими Musical Context не является блокером релиза `0.2`. Реализована детерминированная policy выбора:
+
+1. максимум доступных типов Key / Chords / Tempo / Bars;
+2. максимум общего количества events;
+3. первый context в host order при равенстве.
+
+Diagnostic UI показывает:
+
+```text
+Musical contexts N | selected M
+```
 
 ## Автоматические regression tests
 
-CI дополнительно запускает:
+CI запускает:
 
 ```text
 SmartImproviserTimelineContextTests
 ```
 
-Они проверяют без DAW:
+Тесты проверяют без DAW:
 
 - connected provider без Key/Chord/Tempo sources;
+- unknown position safety;
 - позицию до первого chord event;
 - exact event boundary;
 - explicit no-chord event;
@@ -121,12 +129,12 @@ SmartImproviserTimelineContextTests
 - PPQ ↔ seconds conversion;
 - single tempo anchor без выдумывания неизвестного tempo slope.
 
-## Критерий приёмки 0.1b
+## Итог
 
-`0.1b` принимается, если:
+`0.1b` принят. Stage 1 считается функционально завершённым и финализируется стабильной версией:
 
-1. CI зелёный, включая `SmartImproviserTimelineContextTests`;
-2. обычные live-сценарии `0.1a fix1` не регрессировали;
-3. доступные missing-data edge cases в Studio Pro ведут себя безопасно;
-4. контракт `docs/STAGE_1_TO_STAGE_2_CONTRACT.md` соответствует фактической реализации;
-5. если multiple Musical Context удаётся воспроизвести — выбранный context понятен и стабилен.
+```text
+Smart Improviser 0.2
+```
+
+Следующий этап: Stage 2 / `0.2a` — Harmonic Engine.
