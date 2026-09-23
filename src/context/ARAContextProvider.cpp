@@ -43,6 +43,29 @@ bool chordIsUndefined(const SharedChordEvent& chord) noexcept
     return true;
 }
 
+ChordContext makeChordContext(const SharedChordEvent& chord, bool available) noexcept
+{
+    ChordContext result;
+    result.available = available;
+    result.defined = ! chordIsUndefined(chord);
+    result.startPpq = chord.position;
+    result.root = chord.root;
+    result.bass = chord.bass;
+    result.intervals = copyIntervals(chord.intervals);
+    return result;
+}
+
+KeyContext makeKeyContext(const SharedKeySignatureEvent& key, bool available) noexcept
+{
+    KeyContext result;
+    result.available = available;
+    result.defined = true;
+    result.startPpq = key.position;
+    result.root = key.root;
+    result.intervals = copyIntervals(key.intervals);
+    return result;
+}
+
 HarmonicContext makeContext(const SharedHarmonicContextSnapshot& shared, double ppq) noexcept
 {
     HarmonicContext result;
@@ -63,29 +86,14 @@ HarmonicContext makeContext(const SharedHarmonicContextSnapshot& shared, double 
                                                  ppq,
                                                  tolerance);
     if (chordIndex >= 0)
-    {
-        const auto& chord = shared.sheetChords[chordIndex];
-        result.chord.available = shared.sheetChordsAvailable;
-        result.chord.defined = ! chordIsUndefined(chord);
-        result.chord.startPpq = chord.position;
-        result.chord.root = chord.root;
-        result.chord.bass = chord.bass;
-        result.chord.intervals = copyIntervals(chord.intervals);
-    }
+        result.chord = makeChordContext(shared.sheetChords[chordIndex], shared.sheetChordsAvailable);
 
     const auto keyIndex = findActiveEventIndex(shared.keySignatures,
                                                shared.keySignatureStoredCount,
                                                ppq,
                                                tolerance);
     if (keyIndex >= 0)
-    {
-        const auto& key = shared.keySignatures[keyIndex];
-        result.key.available = shared.keySignaturesAvailable;
-        result.key.defined = true;
-        result.key.startPpq = key.position;
-        result.key.root = key.root;
-        result.key.intervals = copyIntervals(key.intervals);
-    }
+        result.key = makeKeyContext(shared.keySignatures[keyIndex], shared.keySignaturesAvailable);
 
     const auto barIndex = findActiveEventIndex(shared.barSignatures,
                                                shared.barSignatureStoredCount,
@@ -99,6 +107,49 @@ HarmonicContext makeContext(const SharedHarmonicContextSnapshot& shared, double 
         result.timeSignature.numerator = bar.numerator;
         result.timeSignature.denominator = bar.denominator;
     }
+
+    return result;
+}
+
+TimelineHarmonicSnapshot makeTimelineSnapshot(const SharedHarmonicContextSnapshot& shared,
+                                              double ppq) noexcept
+{
+    TimelineHarmonicSnapshot result;
+    result.positionAvailable = ppq >= 0.0;
+    result.ppq = ppq;
+
+    if (! result.positionAvailable)
+        return result;
+
+    const auto tolerance = shared.transportPlaying ? kTimelineEpsilon : kStoppedCursorTolerancePpq;
+
+    const auto chordIndex = findActiveEventIndex(shared.sheetChords,
+                                                 shared.sheetChordStoredCount,
+                                                 ppq,
+                                                 tolerance);
+    if (chordIndex >= 0)
+    {
+        result.currentChord = makeChordContext(shared.sheetChords[chordIndex], shared.sheetChordsAvailable);
+
+        if (chordIndex > 0)
+        {
+            result.previousChordAvailable = true;
+            result.previousChord = makeChordContext(shared.sheetChords[chordIndex - 1], shared.sheetChordsAvailable);
+        }
+
+        if (chordIndex + 1 < shared.sheetChordStoredCount)
+        {
+            result.nextChordAvailable = true;
+            result.nextChord = makeChordContext(shared.sheetChords[chordIndex + 1], shared.sheetChordsAvailable);
+        }
+    }
+
+    const auto keyIndex = findActiveEventIndex(shared.keySignatures,
+                                               shared.keySignatureStoredCount,
+                                               ppq,
+                                               tolerance);
+    if (keyIndex >= 0)
+        result.globalKey = makeKeyContext(shared.keySignatures[keyIndex], shared.keySignaturesAvailable);
 
     return result;
 }
@@ -174,6 +225,18 @@ HarmonicContext ARAContextProvider::currentContext() noexcept
 HarmonicContext ARAContextProvider::contextAt(double ppq) noexcept
 {
     return makeContext(SharedHarmonicContextBridge::instance().read(), ppq);
+}
+
+TimelineHarmonicSnapshot ARAContextProvider::currentTimelineSnapshot() noexcept
+{
+    const auto shared = SharedHarmonicContextBridge::instance().read();
+    const auto ppq = shared.transportAvailable ? shared.transportPpq : -1.0;
+    return makeTimelineSnapshot(shared, ppq);
+}
+
+TimelineHarmonicSnapshot ARAContextProvider::timelineSnapshotAt(double ppq) noexcept
+{
+    return makeTimelineSnapshot(SharedHarmonicContextBridge::instance().read(), ppq);
 }
 
 double ARAContextProvider::nextChordStartAfter(double ppq) noexcept
