@@ -138,16 +138,35 @@ Stage 0 полностью завершён
 
 ## Живые тесты
 
-Если версия предназначена для проверки в Fender Studio Pro или другой реальной среде, имя сборки должно сохранять буквенную/fix-версию.
+Если версия предназначена для проверки в Fender Studio Pro или другой реальной среде, буквенная/fix-версия фиксируется во внутреннем build version и в имени GitHub Actions artifact.
 
-Примеры:
+Примеры artifact:
 
 ```text
-Smart Improviser 0.0a
-Smart Improviser 0.0b
-Smart Improviser 0.0b fix1
-Smart Improviser 0.1
+Smart-Improviser-0.1a-Windows
+Smart-Improviser-0.1a-fix1-Windows
+Smart-Improviser-0.1b-Windows
 ```
+
+### Постоянное имя устанавливаемого VST3 package
+
+Начиная с Stage 1 все готовые Windows-сборки выдаются как одна и та же устанавливаемая папка:
+
+```text
+Smart Improviser.vst3
+```
+
+Имя `Smart Improviser.vst3` **не содержит номер версии** и не меняется между `0.1a`, `fixN`, `0.1b` и последующими версиями.
+
+Это сделано специально, чтобы ручной тест выполнялся простой заменой предыдущей папки в системной директории VST3:
+
+```text
+старый Smart Improviser.vst3
+        ↓ заменить
+новый Smart Improviser.vst3
+```
+
+Версия конкретной сборки определяется по имени скачанного GitHub Actions artifact и внутреннему build version, а не по имени установленной VST3-папки.
 
 Это позволяет однозначно связать:
 
@@ -155,28 +174,23 @@ Smart Improviser 0.1
 - результаты ручного тестирования;
 - GitHub Issue/PR;
 - исправления;
-- итог Stage.
+- итог Stage;
+- при этом сохранить постоянный drop-in package для установки.
 
 ## Текущий проект
 
-На текущем этапе ведётся **Stage 0**.
-
-Рабочая линия начинается с:
-
-```text
-0.0a
-```
-
-Итогом полного закрытия Stage 0 станет:
+Stage 0 завершён стабильной версией:
 
 ```text
 0.1
 ```
 
-После этого Stage 1 начнётся с:
+Сейчас ведётся **Stage 1 — ARA Context Monitor**.
+
+Рабочая линия:
 
 ```text
-0.1a
+0.1a → 0.1b → ... → 0.2
 ```
 
 ## Правило для GitHub Issues
@@ -186,9 +200,9 @@ Smart Improviser 0.1
 Например:
 
 ```text
-Stage 0
-Working: 0.0a → 0.0x
-Final: 0.1
+Stage 1
+Working: 0.1a → 0.1x
+Final: 0.2
 ```
 
 При переходе к новому подэтапу в Issue отмечается соответствующий checklist и текущая буквенная версия.
