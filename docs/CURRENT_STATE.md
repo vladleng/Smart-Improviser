@@ -7,12 +7,12 @@
 ## Текущее состояние
 
 - **Текущий Stage:** Stage 0 — Спецификация Smart Improviser Core
-- **Текущая рабочая версия:** `0.0a`
+- **Текущая рабочая версия:** `0.0b`
 - **Итоговая версия Stage 0:** `0.1`
+- **Последний завершённый подэтап:** `0.0a` — перенос чистого Harmony Core и ARA/context foundation
 - **Последняя стабильная версия:** пока нет — проект находится до первого стабильного milestone `0.1`
 - **Активный Issue:** #1 — Stage 0 — Спецификация Smart Improviser Core
-- **Активный PR:** #12 — `0.0a — Stage 0: перенос чистого Harmony Core и ARA context layer`
-- **Активная ветка:** `stage-0-core-migration`
+- **Активный фокус:** собственная data model Smart Improviser Core
 
 ## Что уже сделано в 0.0a
 
@@ -34,16 +34,7 @@
 - Shared context bridge не зависит от JUCE.
 
 ### Архитектурная чистота
-Сознательно **не перенесены**:
-- `CloseVoicingHarmonizer`;
-- `LiveReharmonizer`;
-- 4-voice router / voice ownership;
-- Distribution Mode;
-- Voicing strategies;
-- Voice Leading;
-- sustain/retrigger infrastructure;
-- старый Instrument Plugin Processor / Editor;
-- старый Voicing UI.
+Сознательно **не перенесены** Voicing/4-voice router/LiveReharmonizer/Voice Leading и старый Instrument UI.
 
 ## Что проверено
 
@@ -51,7 +42,6 @@
 - Windows Build — **OK**.
 - Host-neutral Core tests — **OK**.
 - Сборка headless ARA helper — **OK**.
-- Поиск остаточных Smart Voicing / Voicing dependencies в перенесённой архитектуре — выполнен.
 
 ## Что ещё НЕ проверено
 
@@ -63,45 +53,26 @@
 
 Это относится главным образом к Stage 1 и не блокирует завершение спецификации Core Stage 0.
 
-## Что осталось в Stage 0
+## Текущий подэтап — 0.0b
 
-Главная незавершённая часть — собственная data model Smart Improviser Core v0.1.
+Цель `0.0b` — создать собственный контракт data model Smart Improviser поверх готового фундамента `0.0a`.
 
-Нужно формально определить и/или реализовать:
+Фокус:
 
-- `KeyCenter` — global / local / temporary / modal center;
-- `HarmonicPattern`;
-- `HarmonicSituation` — центральную сущность проекта;
-- `ResolutionTarget`;
-- `TensionLevel`;
-- `ImprovisationStrategy`;
-- `Phrase`;
-- API `Timeline Context → HarmonicSituation`;
-- confidence / ambiguous interpretation contract;
-- regression tests для новой data model.
+1. `HarmonicSituation` — центральная сущность;
+2. `HarmonicPattern` + `PatternPosition`;
+3. `ResolutionTarget` и tendency/resolution moves;
+4. `KeyCenter` для global/local/temporary/modal context;
+5. единый confidence/evidence contract;
+6. базовые contracts для `TensionLevel`, `ImprovisationStrategy` и `Phrase`;
+7. API `Timeline Context → HarmonicSituation`;
+8. regression tests новой модели.
 
-Полный чек-лист находится в Issue #1.
+## Что останется после 0.0b
 
-## Следующий подэтап
-
-После принятия `0.0a` следующий буквенный подэтап Stage 0:
-
-**`0.0b` — собственная data model Smart Improviser Core**
-
-Ожидаемый фокус:
-
-1. `HarmonicSituation`;
-2. `HarmonicPattern`;
-3. `ResolutionTarget`;
-4. `KeyCenter`;
-5. contracts для `TensionLevel`, `ImprovisationStrategy`, `Phrase`;
-6. tests новой модели.
-
-После завершения всех буквенных подэтапов Stage 0 получается стабильная версия **`0.1`**.
+После принятия data model нужно будет закрыть оставшиеся пункты Issue #1 и подготовить Stage 0 к стабильной версии `0.1`.
 
 ## Правило версий
-
-Внутри Stage используется буквенная рабочая линия:
 
 ```text
 0.0a → 0.0b → 0.0c → ... → 0.1
@@ -117,30 +88,15 @@
 
 ## Что читать в новом чате
 
-Рекомендуемый порядок:
-
-1. `docs/CURRENT_STATE.md` — где проект находится сейчас;
-2. текущий Stage Issue — фактический чек-лист прогресса;
-3. активный PR — что именно реализуется сейчас;
-4. `docs/PROJECT_CONTEXT.md` — архитектура и продуктовая логика;
-5. `docs/ARCHITECTURAL_DECISIONS.md` — принятые архитектурные решения;
-6. `docs/ROADMAP.md` — следующие Stage;
-7. `docs/VERSIONING.md` — правила именования версий;
-8. `docs/MIGRATION_FROM_SMART_VOICING.md` — происхождение перенесённого фундамента, если это имеет отношение к задаче.
-
-## Шаблон старта нового чата
-
-> Продолжаем разработку Smart Improviser. Репозиторий: `https://github.com/vladleng/Smart-Improviser`. Сначала прочитай `docs/CURRENT_STATE.md`, текущий Stage Issue, активный PR и архитектурную документацию. Проверь актуальное состояние GitHub, после чего продолжай работу с текущего незавершённого пункта чек-листа.
+1. `docs/CURRENT_STATE.md`;
+2. текущий Stage Issue;
+3. активный PR;
+4. `docs/PROJECT_CONTEXT.md`;
+5. `docs/ARCHITECTURAL_DECISIONS.md`;
+6. `docs/ROADMAP.md`;
+7. `docs/VERSIONING.md`;
+8. `docs/MIGRATION_FROM_SMART_VOICING.md` при необходимости.
 
 ## Правило обновления этого файла
 
-`CURRENT_STATE.md` должен обновляться:
-
-- при переходе на следующую буквенную версию;
-- после `fixN`, если исправление меняет фактическое состояние проекта;
-- после важного live test;
-- при смене активного PR/ветки;
-- при завершении Stage;
-- перед переходом разработки в новый чат.
-
-Файл должен оставаться коротким оперативным summary и **не дублировать полностью** Project Context, Roadmap или Issues.
+`CURRENT_STATE.md` обновляется при переходе на следующую буквенную версию, после существенного `fixN`, важного live-test, смены активного PR/ветки, завершения Stage и перед переходом разработки в новый чат.
