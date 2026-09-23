@@ -6,12 +6,13 @@
 
 ## Статус
 
-Проект находится на **Stage 0 — Foundation / Specification**.
+**Stage 0 — Foundation / Specification завершён.**
 
-**Текущая рабочая версия:** `0.0a`  
-**Итог Stage 0:** `0.1`
+**Текущая стабильная версия:** `0.1`  
+**Следующий Stage:** Stage 1 — ARA Context Monitor  
+**Следующая рабочая версия:** `0.1a`
 
-На текущем этапе уже перенесён чистый Harmony Core и ARA/context foundation из Smart Voicing без voicing-specific кода. Следующая задача — завершить собственную data model Smart Improviser Core.
+В `0.1` зафиксированы host-neutral Harmony Core, ARA/context foundation и собственная data model Smart Improviser: `HarmonicSituation`, `KeyCenter`, `HarmonicPattern`, `ResolutionTarget`, confidence/evidence contracts, Tension/Strategy/Phrase contracts и regression tests.
 
 Первая целевая среда:
 
@@ -67,7 +68,7 @@ Harmony
 
 ## Smart Improviser Core
 
-Музыкальное ядро должно быть отделено от DAW, ARA, VST3 и UI.
+Музыкальное ядро отделено от DAW, ARA, VST3 и UI.
 
 ```text
 Fender Studio Pro
@@ -76,7 +77,11 @@ ARA 2 Adapter
         ↓
 Timeline Context
         ↓
-Smart Improviser Core
+TimelineHarmonicSnapshot
+        ↓
+HarmonicSituation
+        ↓
+Smart Improviser Core analyzers
         ├── Harmonic Analyzer
         ├── Harmonic Pattern Recognizer
         ├── Resolution Analyzer
@@ -114,24 +119,31 @@ UI / Fretboard / Notation / TAB
 
 ## Версионирование
 
-Рабочая версия меняет букву после завершения отдельного подэтапа внутри Stage:
+Рабочая версия меняет букву после завершения отдельного подэтапа внутри Stage. Stage 0 прошёл линию:
 
 ```text
-0.0a → 0.0b → 0.0c → ... → 0.1
+0.0a → 0.0b → 0.1
+```
+
+Stage 1 начинается с:
+
+```text
+0.1a → 0.1b → ... → 0.2
 ```
 
 Если после живого теста конкретной буквенной версии требуется исправление:
 
 ```text
-0.0b fix1
-0.0b fix2
+0.1a fix1
+0.1a fix2
 ```
 
 Подробно: [`docs/VERSIONING.md`](docs/VERSIONING.md).
 
 ## Документация
 
-- [`docs/CURRENT_STATE.md`](docs/CURRENT_STATE.md) — короткая точка входа: текущая версия, активный Stage, PR, ветка, что уже сделано и что делать следующим.
+- [`docs/CURRENT_STATE.md`](docs/CURRENT_STATE.md) — короткая точка входа: текущая версия, завершённый/следующий Stage и что делать дальше.
+- [`docs/CORE_DATA_MODEL_0.0b.md`](docs/CORE_DATA_MODEL_0.0b.md) — спецификация data model, завершившей Stage 0.
 - [`docs/PROJECT_CONTEXT.md`](docs/PROJECT_CONTEXT.md) — основной living document проекта и архитектурный контекст.
 - [`docs/ROADMAP.md`](docs/ROADMAP.md) — этапы разработки от спецификации ядра до Improvisation Planner.
 - [`docs/VERSIONING.md`](docs/VERSIONING.md) — официальная схема версий, буквенных подэтапов и fix-сборок.
@@ -140,6 +152,4 @@ UI / Fretboard / Notation / TAB
 
 ## Ближайший технический этап
 
-Текущая задача Stage 0 — закончить формальное описание `Chord`, `KeyCenter`, `HarmonicFunction`, `HarmonicPattern`, `HarmonicSituation`, `ResolutionTarget`, `TensionLevel`, `ImprovisationStrategy` и `Phrase`.
-
-После полного закрытия Stage 0 проект получает стабильную версию `0.1`, а Stage 1 начинается с `0.1a`.
+Следующий этап — **Stage 1: ARA Context Monitor**, начиная с версии `0.1a` и живой проверки ARA/context foundation в Fender Studio Pro.
