@@ -78,7 +78,9 @@ Pattern recognition и local-key inference **не выполняются data-mo
 - `ARAContextProvider.cpp` теперь реально входит в Windows build target, поэтому Stage 1 provider проверяется компилятором в CI;
 - ARA helper линкуется с `SmartImproviserCore`;
 - build version для checkpoint зафиксирована как `0.1a`;
-- Windows workflow публикует VST3 artifact `Smart-Improviser-0.1a-Windows`;
+- Windows workflow публикует artifact `Smart-Improviser-0.1a-Windows`;
+- внутри artifact находится готовая устанавливаемая папка `Smart Improviser.vst3`;
+- имя установленной папки `Smart Improviser.vst3` остаётся постоянным между рабочими версиями и `fixN`, чтобы новую сборку можно было просто положить в системную VST3-папку с заменой предыдущей;
 - добавлен `docs/STAGE_1_0.1a_LIVE_TEST.md` с чек-листом первого теста в Fender Studio Pro.
 
 ## Что проверено ранее
@@ -113,7 +115,7 @@ Bm7b5 → E7 → Am
 
 Первый live test относится к реальной DAW и должен проверить:
 
-- загрузку `Smart Improviser ARA.vst3` в Fender Studio Pro;
+- загрузку `Smart Improviser.vst3` в Fender Studio Pro;
 - ARA binding;
 - получение Key Track / Chord Track;
 - Tempo / Time Signature;
@@ -136,11 +138,12 @@ Bm7b5 → E7 → Am
 
 ## Ближайший следующий шаг
 
-1. дождаться успешного Windows CI для ветки/PR 0.1a;
+1. получить успешный Windows CI для ветки/PR 0.1a;
 2. скачать artifact `Smart-Improviser-0.1a-Windows`;
-3. выполнить live test по `docs/STAGE_1_0.1a_LIVE_TEST.md`;
-4. результаты занести в Issue #2;
-5. при ошибках выпустить `0.1a fixN`, при успешном принятии перейти к следующему подэтапу `0.1b`.
+3. извлечь готовую папку `Smart Improviser.vst3` и заменить ею предыдущую в системной папке VST3;
+4. выполнить live test по `docs/STAGE_1_0.1a_LIVE_TEST.md`;
+5. результаты занести в Issue #2;
+6. при ошибках выпустить `0.1a fixN`, при успешном принятии перейти к следующему подэтапу `0.1b`.
 
 ## Что читать в новом чате Stage 1
 
