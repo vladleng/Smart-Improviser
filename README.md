@@ -11,13 +11,12 @@
 **Активный Stage:** Stage 2 — Harmonic Engine.
 
 **Текущая стабильная версия:** `0.2`  
-**Последний принятый checkpoint:** `0.2c — Tritone Substitution`  
-**Текущая рабочая версия:** `0.2d — Local Key Center`  
-**Активная ветка:** `stage-2-local-key-center`  
+**Последний принятый checkpoint:** `0.2d — Local Key Center`  
+**Следующий checkpoint:** `0.2e — Ambiguity / Confidence`  
 **Stage 2 Issue:** #3  
-**Stage 2 PR:** #18
+**Последний принятый PR:** #18
 
-`0.2c` принят после CI и live-test в Fender Studio Pro и слит в `main` через PR #17.
+`0.2d` принят после успешного CI и полного live-test в Fender Studio Pro; все заявленные проверки пройдены без обнаруженных проблем.
 
 Первая целевая среда:
 
@@ -105,7 +104,7 @@ modulationCandidate
 
 ## Что уже умеет Harmonic Engine
 
-К принятому `0.2c`:
+К принятому `0.2d`:
 
 - basic harmonic functions;
 - major `ii–V–I` на `ii / V / I`;
@@ -118,26 +117,23 @@ modulationCandidate
 - applied SubV;
 - guide-tone resolution;
 - evidence-aware confidence;
-- Stage 2 diagnostic UI.
-
-Рабочий `0.2d` добавляет:
-
 - candidate local center по unresolved `ii–V` / `iiø–V`;
 - temporary tonicization по `V→target` и `SubV→target`;
 - established local center по полному local cadence;
 - remote local centers вне global-key scale degrees;
-- `localHarmonic` — функцию аккорда относительно local center;
+- `localHarmonic` — функция аккорда относительно local center;
 - `localPattern` — pattern относительно local center;
-- cautious `modulationCandidate` без изменения project key.
+- cautious `modulationCandidate` без изменения project key;
+- Stage 2 diagnostic UI с раздельным global/local анализом.
 
-Основной кейс:
+Основной принятый кейс:
 
 ```text
 Global key: F major
 Em7b5 → A7 → Dm
 Current: A7
 
-Local center: D minor
+Local center: D minor | local | established
 Local function: V / Dominant
 Local pattern: Minor iiø–V–i
 ```
@@ -159,8 +155,8 @@ Stage 2:
 0.2a fix1 — Harmonic Engine diagnostics    [ACCEPTED]
 0.2b — Pattern Recognizer                  [ACCEPTED]
 0.2c — Tritone Substitution                [ACCEPTED]
-0.2d — Local Key Center                    [ACTIVE]
-0.2e — Ambiguity / Confidence
+0.2d — Local Key Center                    [ACCEPTED]
+0.2e — Ambiguity / Confidence              [NEXT]
 0.2f — Integration / musical validation
 0.3  — Stage 2 complete
 ```
@@ -207,4 +203,4 @@ Smart Improviser должен объединить:
 
 ## Ближайший технический шаг
 
-Дождаться зелёного CI PR #18, установить `Smart-Improviser-0.2d-Windows` и провести live-test Local Key Center перед переходом к `0.2e — Ambiguity / Confidence`.
+Начать `0.2e — Ambiguity / Confidence`: поддержать несколько допустимых трактовок, alternative candidates и evidence/confidence для конфликтов global/local interpretation.
