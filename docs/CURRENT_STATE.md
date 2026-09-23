@@ -6,101 +6,134 @@
 
 ## Текущее состояние
 
-- **Текущий Stage:** Stage 0 — Спецификация Smart Improviser Core
-- **Текущая рабочая версия:** `0.0b`
-- **Итоговая версия Stage 0:** `0.1`
-- **Последний завершённый подэтап:** `0.0a` — перенос чистого Harmony Core и ARA/context foundation
-- **Последняя стабильная версия:** пока нет — проект находится до первого стабильного milestone `0.1`
-- **Активный Issue:** #1 — Stage 0 — Спецификация Smart Improviser Core
-- **Активный PR:** #13 — `0.0b — Stage 0: Core data model`
-- **Активная ветка:** `stage-0-0.0b-core-data-model`
-- **Активный фокус:** собственная data model Smart Improviser Core
+- **Завершённый Stage:** Stage 0 — Спецификация Smart Improviser Core
+- **Текущая стабильная версия:** `0.1`
+- **Последний рабочий подэтап:** `0.0b` — Core data model
+- **Следующий Stage:** Stage 1 — ARA Context Monitor
+- **Следующая рабочая версия:** `0.1a`
+- **Следующий Issue:** #2 — Stage 1 — ARA Context Monitor
 
-## Что уже сделано в 0.0a
+Stage 0 завершён. Новый чат проекта должен начинаться уже со Stage 1.
 
-### Host-neutral Core
-- `HarmonicContext` очищен от Voicing/Voice сущностей.
-- Перенесён `ChordModel`.
-- Перенесён `KeyModel`.
-- Перенесён базовый `HarmonicFunction`.
-- Сохранён анализ реального next-chord resolution для доминант.
-- Сохранены базовые regression tests.
+## Что вошло в 0.1
 
-### ARA / Context infrastructure
-- Перенесён headless ARA helper.
-- Получаются Chord / Key / Tempo / Bar данные из ARA Musical Context.
-- Получается transport position и playing state.
-- Перенесён `ARAContextProvider`.
-- Перенесён shared-memory bridge.
-- Smart Improviser использует собственный изолированный IPC ABI, не совместный со Smart Voicing.
-- Shared context bridge не зависит от JUCE.
+### Фундамент из 0.0a
+- host-neutral `HarmonicContext` без Voicing/Voice сущностей;
+- `ChordModel`;
+- `KeyModel`;
+- базовый `HarmonicFunction`;
+- real next-chord resolution evidence;
+- headless ARA helper;
+- ARA Chord/Key/Tempo/Bar/Transport context;
+- `ARAContextProvider`;
+- изолированный Smart Improviser shared-memory ABI;
+- Windows CI и базовые Core regression tests.
 
-### Архитектурная чистота
-Сознательно **не перенесены** Voicing/4-voice router/LiveReharmonizer/Voice Leading и старый Instrument UI.
-
-## Что реализуется в 0.0b
-
-- единый `AnalysisEvidence` / `ConfidenceLevel` contract;
-- `KeyCenter` с scope `global/local/temporary/modal`;
+### Core data model из 0.0b
+- `AnalysisEvidence` / `ConfidenceLevel`;
+- `InterpretationStatus` (`unknown / unique / ambiguous`) + alternative count;
+- `KeyCenter` со scope `global / local / temporary / modal`;
 - `HarmonicPattern` + роль/позиция внутри паттерна;
-- `ResolutionTarget` + структурные tendency/resolution moves;
+- `ResolutionTarget` + structural tendency/resolution moves;
 - `TensionLevel` 1/2/3;
 - базовый `ImprovisationStrategy` contract;
 - минимальный семантический `Phrase` contract;
 - центральный `HarmonicSituation`;
 - host-neutral `TimelineHarmonicSnapshot → HarmonicSituation` builder;
-- regression tests новой data model.
+- major ii–V–I и minor iiø–V–i reference cases;
+- отдельные Core data-model regression tests.
 
-Pattern recognition и local-key inference намеренно **не выполняются внутри data-model layer**. Модель только хранит их будущий результат; сами analyzers относятся к Stage 2.
+## Архитектурная граница после Stage 0
+
+```text
+DAW / ARA
+    ↓
+Timeline Context
+    ↓
+TimelineHarmonicSnapshot
+    ↓
+HarmonicSituation
+    ↓
+будущие Harmonic / Tension / Improvisation analyzers
+```
+
+Core не зависит от Fender Studio Pro, ARA, JUCE, VST3, UI или старого Voicing engine.
+
+Pattern recognition и local-key inference **не выполняются data-model layer**. Модель хранит их результат, а вычисление относится к Stage 2.
 
 ## Что проверено
 
-Для завершённого `0.0a`:
+Версия `0.1` прошла:
+
 - Windows CMake Configure — **OK**;
 - Windows Build — **OK**;
-- Host-neutral Core tests — **OK**;
+- `SmartImproviserCoreTests` — **OK**;
+- `SmartImproviserDataModelTests` — **OK**;
 - сборка headless ARA helper — **OK**.
 
-Для `0.0b` CI выполняется в PR #13. До зелёного Build/Test подэтап считается **в работе**.
+Эталонный major case:
+
+```text
+C major
+Dm7 → G7 → Cmaj7
+```
+
+Для `G7` builder формирует confirmed resolution на `Cmaj7` и структурные движения `B→C`, `F→E`.
+
+Эталонный minor case:
+
+```text
+A minor
+Bm7b5 → E7 → Am
+```
+
+Для `E7` builder подтверждает resolution на `Am` и сохраняет major/minor quality target.
 
 ## Что ещё НЕ проверено
 
-- Живой тест `Smart Improviser ARA.vst3` в Fender Studio Pro.
-- ARA binding в реальном проекте Studio Pro.
-- Получение Key Track / Chord Track в живом проекте.
-- Transport STOP / PLAY / seek в живом проекте.
-- Обновление контекста после редактирования Chord/Key Track.
+Живые DAW-тесты относятся к Stage 1:
 
-Это относится главным образом к Stage 1 и не блокирует завершение спецификации Core Stage 0.
+- загрузка `Smart Improviser ARA.vst3` в Fender Studio Pro;
+- ARA binding;
+- получение Key Track / Chord Track;
+- Tempo / Time Signature;
+- STOP / PLAY / seek;
+- точные chord boundaries;
+- обновление context после редактирования Chord/Key Track;
+- повторное открытие проекта.
 
-## Что останется после 0.0b
+## Следующий Stage — Stage 1
 
-После принятия data model нужно закрыть оставшиеся пункты Issue #1 и подготовить Stage 0 к стабильной версии `0.1`. Если потребуется ещё один самостоятельный подэтап спецификации, он получит версию `0.0c`.
-
-## Правило версий
-
-```text
-0.0a → 0.0b → 0.0c → ... → 0.1
-```
-
-Если живой тест выявил ошибку текущей буквенной версии:
+Рабочая линия:
 
 ```text
-0.0b → 0.0b fix1 → 0.0b fix2 → 0.0c
+0.1a → 0.1b → ... → 0.2
 ```
 
-Подробнее: `docs/VERSIONING.md`.
+Первый фокус `0.1a`:
 
-## Что читать в новом чате
+1. подготовить тестовый VST3 package;
+2. выполнить первый live test в Fender Studio Pro;
+3. подтвердить ARA binding и Chord/Key context;
+4. проверить transport и event boundaries;
+5. зафиксировать найденные host-specific проблемы.
+
+Если живой тест `0.1a` выявит ошибку, применяется `0.1a fix1`, `fix2` и т.д.
+
+## Что читать в новом чате Stage 1
 
 1. `docs/CURRENT_STATE.md`;
-2. текущий Stage Issue;
-3. активный PR;
+2. Issue #2 — Stage 1 — ARA Context Monitor;
+3. `docs/CORE_DATA_MODEL_0.0b.md`;
 4. `docs/PROJECT_CONTEXT.md`;
 5. `docs/ARCHITECTURAL_DECISIONS.md`;
 6. `docs/ROADMAP.md`;
 7. `docs/VERSIONING.md`;
 8. `docs/MIGRATION_FROM_SMART_VOICING.md` при необходимости.
+
+## Шаблон старта следующего чата
+
+> Продолжаем разработку Smart Improviser. Stage 0 завершён версией `0.1`. Репозиторий: `https://github.com/vladleng/Smart-Improviser`. Прочитай `docs/CURRENT_STATE.md`, Issue #2 и архитектурную документацию. Начинаем Stage 1 с версии `0.1a`.
 
 ## Правило обновления этого файла
 
