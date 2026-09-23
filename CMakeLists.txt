@@ -118,7 +118,7 @@ target_compile_definitions(SmartImproviserARA
         JUCE_WEB_BROWSER=0
         JUCE_USE_CURL=0
         JUCE_VST3_CAN_REPLACE_VST2=0
-        SMART_IMPROVISER_BUILD_VERSION="0.1a"
+        SMART_IMPROVISER_BUILD_VERSION="0.1a fix1"
 )
 
 target_link_libraries(SmartImproviserARA
