@@ -54,6 +54,7 @@ ChordContext makeChord(std::int32_t rootFifths,
 
 int main()
 {
+    // Reference major ii-V-I context: Dm7 -> G7 -> Cmaj7 in C major.
     TimelineHarmonicSnapshot snapshot;
     snapshot.positionAvailable = true;
     snapshot.ppq = 8.0;
@@ -77,6 +78,18 @@ int main()
     expect(situation.harmonic.rootScaleDegree == 5, "G7 is degree V in C major");
     expect(situation.harmonic.effectiveFunction == HarmonicFunction::dominant, "G7 effective function is dominant");
     expect(situation.pattern.type == HarmonicPatternType::none, "pattern recognition is deferred to analyzer");
+    expect(! situation.pattern.recognized(), "none pattern is not recognized");
+
+    HarmonicPattern explicitPattern;
+    explicitPattern.type = HarmonicPatternType::majorIiVI;
+    explicitPattern.role = PatternMemberRole::dominant;
+    explicitPattern.positionIndex = 1;
+    explicitPattern.length = 3;
+    explicitPattern.evidence.confidence = ConfidenceLevel::high;
+    explicitPattern.evidence.add(EvidenceFlag::patternMatch);
+    expect(explicitPattern.recognized(), "major ii-V-I pattern contract reports recognized");
+    expect(explicitPattern.positionIndex == 1 && explicitPattern.length == 3,
+           "HarmonicPattern preserves position inside pattern");
 
     expect(situation.resolution.available, "dominant resolution target is available");
     expect(situation.resolution.confirmed, "dominant resolution target is confirmed");
@@ -98,6 +111,33 @@ int main()
     expect(situation.evidence.has(EvidenceFlag::nextChord), "next chord evidence is preserved");
     expect(situation.evidence.has(EvidenceFlag::confirmedResolution), "resolution evidence is preserved");
     expect(situation.evidence.confidence == ConfidenceLevel::confirmed, "confirmed resolution raises confidence");
+
+    // Reference minor iiø-V-i context: Bm7b5 -> E7 -> Am in A minor.
+    TimelineHarmonicSnapshot minorSnapshot;
+    minorSnapshot.positionAvailable = true;
+    minorSnapshot.ppq = 16.0;
+    minorSnapshot.globalKey = makeKey(3, true); // A minor
+    minorSnapshot.previousChordAvailable = true;
+    minorSnapshot.previousChord = makeChord(5, { 0, 3, 6, 10 }); // Bm7b5
+    minorSnapshot.currentChord = makeChord(4, { 0, 4, 7, 10 }); // E7
+    minorSnapshot.nextChordAvailable = true;
+    minorSnapshot.nextChord = makeChord(3, { 0, 3, 7 }); // Am
+
+    const auto minorSituation = buildHarmonicSituation(minorSnapshot);
+    expect(minorSituation.valid, "minor HarmonicSituation is valid");
+    expect(minorSituation.harmonic.rootScaleDegree == 5, "E7 is V in A minor");
+    expect(minorSituation.resolution.confirmed, "E7 to Am resolution confirmed");
+    expect(minorSituation.resolution.targetPitchClass == 9, "E7 resolves to A pitch class");
+    expect(minorSituation.resolution.targetQuality == ChordQuality::minor, "minor target quality is preserved");
+    expect(minorSituation.resolution.moveCount == 2, "minor dominant has two structural resolution moves");
+    expect(minorSituation.resolution.moves[0].fromPitchClass == 8
+           && minorSituation.resolution.moves[0].toPitchClass == 9
+           && minorSituation.resolution.moves[0].semitoneDelta == 1,
+           "E7 third resolves G# to A");
+    expect(minorSituation.resolution.moves[1].fromPitchClass == 2
+           && minorSituation.resolution.moves[1].toPitchClass == 0
+           && minorSituation.resolution.moves[1].semitoneDelta == -2,
+           "E7 seventh resolves D to C");
 
     TimelineHarmonicSnapshot noKey;
     noKey.currentChord = snapshot.currentChord;
