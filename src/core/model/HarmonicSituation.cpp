@@ -49,6 +49,7 @@ ResolutionTarget buildResolutionTarget(const NormalizedChord& currentChord,
     target.targetPitchClass = nextChord.rootPitchClass;
     target.targetQuality = nextChord.quality;
     target.evidence.confidence = ConfidenceLevel::confirmed;
+    target.evidence.markUnique();
     target.evidence.add(EvidenceFlag::nextChord);
     target.evidence.add(EvidenceFlag::confirmedResolution);
 
