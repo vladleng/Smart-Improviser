@@ -6,40 +6,39 @@
 
 ## Текущее состояние
 
-- **Завершённый Stage:** Stage 0 — Спецификация Smart Improviser Core
-- **Текущая стабильная версия:** `0.1`
-- **Активный Stage:** Stage 1 — ARA Context Monitor
-- **Принятый checkpoint Stage 1:** `0.1a fix1`
-- **Текущая рабочая версия:** `0.1b`
-- **Активный Issue:** #2 — Stage 1 — ARA Context Monitor
-- **Активная ветка:** `stage-1-ara-context-monitor`
-- **Активный PR:** #14
+- **Завершённый Stage:** Stage 1 — ARA Context Monitor
+- **Текущая стабильная версия:** `0.2`
+- **Следующий Stage:** Stage 2 — Harmonic Engine
+- **Следующая рабочая версия:** `0.2a`
+- **Stage 1 Issue:** #2 — Stage 1 — ARA Context Monitor
+- **Stage 1 ветка:** `stage-1-ara-context-monitor`
+- **Stage 1 PR:** #14
 
-`0.1a fix1` принят после живых тестов в Fender Studio Pro. Основной ARA/timeline path подтверждён на реальном проекте, включая PLAY, seek, chord boundaries, edit refresh и reopen.
+Stage 1 принят после живых тестов `0.1a fix1` и `0.1b` в Fender Studio Pro. Финальная сборка этапа имеет версию `0.2`.
 
-`0.1b` начат как подэтап устойчивости и формального контракта Stage 1 → Stage 2.
-
-## Архитектурная граница
+## Завершённая архитектурная цепочка Stage 1
 
 ```text
-DAW / ARA
-    ↓
+Fender Studio Pro / ARA 2
+        ↓
+Musical Context
+        ↓
 SharedHarmonicContextSnapshot
-    ↓
+        ↓
 TimelineContextMapper
-    ↓
+        ↓
 ARAContextProvider
-    ↓
+        ↓
 HarmonicContext / TimelineHarmonicSnapshot
-    ↓
+        ↓
 HarmonicSituation
-    ↓
+        ↓
 Stage 2 Harmonic Engine
 ```
 
-Core не зависит от Fender Studio Pro, ARA, JUCE, VST3, UI или старого Voicing engine.
+Core не зависит от Fender Studio Pro, ARA, JUCE, VST3, UI или старого Smart Voicing engine.
 
-## Что подтверждено в 0.1a / 0.1a fix1
+## Что подтверждено в живых тестах Stage 1
 
 На реальном проекте Fender Studio Pro подтверждено:
 
@@ -48,204 +47,149 @@ Core не зависит от Fender Studio Pro, ARA, JUCE, VST3, UI или ст
 - Host Content Access — **YES**;
 - Musical Context — доступен;
 - Shared Context — **YES**;
-- STOP position — корректна;
-- PLAY — PPQ/context обновляются во время воспроизведения;
-- seek — контекст обновляется немедленно;
+- STOP / PLAY / seek — корректны;
+- PPQ и seconds — корректно обновляются;
 - Key Track — читается и нормализуется;
 - Chord Track — читается и нормализуется;
-- previous/current/next — совпадают с реальным Chord Track;
-- точное переключение на chord boundary — подтверждено;
-- Tempo / Time Signature — совпадают с DAW;
-- изменение Chord Track / Key Track обновляет context snapshot;
-- после повторного открытия проекта ARA binding/context восстанавливаются;
-- короткий Audio Event не ограничивает Musical Context и служит только точкой ARA binding;
-- явный no-chord участок обрабатывается безопасно.
+- previous/current/next совпадают с Chord Track;
+- exact chord boundary корректно переключает current chord;
+- Tempo / Time Signature совпадают с DAW;
+- изменения Chord Track / Key Track обновляют snapshot;
+- после повторного открытия проекта binding/context восстанавливаются;
+- длина Audio Event не ограничивает Musical Context: Event является только ARA anchor;
+- explicit no-chord event обрабатывается как `available=true`, `defined=false`;
+- отсутствие Key events не ломает Chord context;
+- отсутствие активного chord event не ломает ARA connection;
+- до первого chord event корректно сохраняется future/next context;
+- после последнего event обработка остаётся безопасной и детерминированной.
 
-Примеры:
+Подтверждённые примеры:
 
 ```text
-PPQ 172.000
 Previous chord  C
 Current chord   (no chord)
 Next chord      Cmaj7
 ```
 
 ```text
-PPQ 180.000
 Previous chord  Cmaj7
 Current chord   Am7
 Next chord      Dm7
 ```
 
 ```text
-Previous chord  Am7
-Current chord   Dm7
-Next chord      G13
-Key             C major
-Tempo           110 BPM
+Key             -
+Previous chord  -
+Current chord   (no chord)
+Next chord      C
+Tempo           120 BPM
 Time signature  4/4
 ```
 
-`G13` — нормализованное представление `G7add13` из Chord Track.
+Multiple Musical Context не является блокером `0.2`, если отдельный воспроизводимый сценарий Studio Pro недоступен. В `0.1b` реализована детерминированная policy выбора: максимум доступных content types → максимум events → первый context при равенстве; UI показывает `Musical contexts N | selected M`.
 
-## Что реализовано в 0.1b
+## Что входит в стабильную 0.2
 
-### 1. Testable Stage 1 context layer
+### ARA / host integration
 
-Добавлены:
+- ARA 2 Event FX для Fender Studio Pro;
+- Key Signature, Sheet Chords, Tempo Entries, Bar Signatures;
+- transport position / playing state;
+- изолированный Smart Improviser shared-memory ABI.
 
-- `src/context/SharedHarmonicContextData.h` — JUCE-free структуры shared snapshot;
-- `src/context/TimelineContextMapper.h/.cpp` — единая логика преобразования shared/ARA context в host-neutral Core context;
-- `SmartImproviserContext` — отдельная статическая библиотека без JUCE/ARA зависимости.
+### Host-neutral context layer
 
-`ARAContextProvider` и диагностический UI теперь используют один и тот же `TimelineContextMapper`, чтобы live diagnostics и фактический Core-ready snapshot не расходились.
+- `SharedHarmonicContextData.h`;
+- `TimelineContextMapper.h/.cpp`;
+- `SmartImproviserContext` без JUCE/ARA зависимости;
+- `ARAContextProvider`;
+- `HarmonicContext`;
+- `TimelineHarmonicSnapshot`.
 
-### 2. Missing-data semantics
+### Edge-case semantics
 
-ARA connection больше не считается потерянным только из-за отсутствия конкретных Key/Chord/Tempo/Bar данных.
+- missing Key / Chord / Tempo sources;
+- undefined key/chord event;
+- explicit no-chord;
+- before-first chord;
+- after-last chord;
+- exact event boundary;
+- safe PPQ ↔ seconds conversion;
+- single tempo anchor без выдумывания неизвестного tempo slope.
 
-```text
-providerConnected = usable ARA Musical Context
-source.available   = наличие конкретного типа данных
-source.defined     = конкретное event содержит музыкальное определение
-```
+### Regression tests
 
-Это позволяет отличать:
-
-```text
-Provider disconnected
-```
-
-от:
-
-```text
-Provider connected, но Chord Track / Key Track / Tempo content отсутствует
-```
-
-### 3. Timeline edge cases
-
-Зафиксировано поведение:
-
-- до первого chord event:
-  - current отсутствует;
-  - previous отсутствует;
-  - next = первый будущий chord event;
-- exact event boundary активирует новый current chord;
-- explicit no-chord event имеет `available=true`, `defined=false`;
-- после последнего chord event последний event остаётся current до следующего event/no-chord marker;
-- empty/undefined key event не превращается в фиктивную тональность;
-- отсутствие Tempo data возвращает unavailable conversion вместо фиктивных значений;
-- один tempo anchor не используется для выдумывания неизвестного tempo slope.
-
-### 4. Multiple Musical Context policy
-
-Если host предоставляет несколько Musical Context, Stage 1 выбирает один детерминированно:
-
-1. максимум доступных типов `Key / Chords / Tempo / Bars`;
-2. затем максимум общего количества events;
-3. при равенстве — первый context в host order.
-
-Diagnostic UI теперь показывает:
+CI запускает:
 
 ```text
-Musical contexts  N  |  selected M
-```
-
-### 5. Regression tests
-
-Добавлен новый CI test target:
-
-```text
+SmartImproviserCoreTests
+SmartImproviserDataModelTests
 SmartImproviserTimelineContextTests
 ```
 
-Он проверяет без DAW:
+### Stage 1 → Stage 2 contract
 
-- connected provider при полном отсутствии harmonic content sources;
-- before-first-chord;
-- exact boundary;
-- explicit no-chord;
-- after-last-chord;
-- undefined key event;
-- missing tempo;
-- PPQ ↔ seconds conversion;
-- single tempo anchor.
-
-### 6. Формальный Stage 1 → Stage 2 contract
-
-Добавлен:
+Формальный контракт зафиксирован в:
 
 ```text
 docs/STAGE_1_TO_STAGE_2_CONTRACT.md
 ```
 
-Stage 2 не должен зависеть от ARA SDK, JUCE, shared memory или Fender Studio Pro behavior. Его вход — `HarmonicContext` / `TimelineHarmonicSnapshot`.
+Stage 2 получает host-neutral `TimelineHarmonicSnapshot` / `HarmonicContext` и не должен знать деталей ARA SDK, JUCE, shared memory или Fender Studio Pro.
 
-## Сборка 0.1b
+## Финальная сборка Stage 1
 
 Build label:
 
 ```text
-Smart Improviser 0.1b
+Smart Improviser 0.2
+```
+
+CMake project version:
+
+```text
+0.2.0
 ```
 
 GitHub Actions artifact:
 
 ```text
-Smart-Improviser-0.1b-Windows
+Smart-Improviser-0.2-Windows
 └── Smart Improviser.vst3
 ```
 
-Устанавливаемая папка по-прежнему всегда называется `Smart Improviser.vst3` и заменяет предыдущую версию целиком.
+Устанавливаемая папка всегда называется `Smart Improviser.vst3` и целиком заменяет предыдущую версию.
 
-## Что нужно проверить для принятия 0.1b
+## Следующий этап — Stage 2 / 0.2a
 
-Подробный сценарий:
+Stage 2 — **Harmonic Engine**.
 
-```text
-docs/STAGE_1_0.1b_LIVE_TEST.md
-```
+Первый подэтап `0.2a` должен начать музыкальный анализ уже готового `TimelineHarmonicSnapshot`:
 
-Основные live checks:
+1. global key и подготовка local key center;
+2. basic harmonic functions;
+3. previous/current/next analysis;
+4. базовый pattern recognition;
+5. первые целевые паттерны: major ii–V–I, minor iiø–V–i, V–I, I–VI–ii–V, secondary dominant, tritone substitution.
 
-1. убедиться, что обычный проект 0.1a fix1 не регрессировал;
-2. очистить Chord Track и проверить, что connection сохраняется, а chord context становится unavailable;
-3. очистить Key Track и проверить, что chords продолжают работать;
-4. проверить позицию до первого chord event — `Next` должен показывать первый будущий chord;
-5. проверить позицию после последнего chord event;
-6. проверить explicit no-chord;
-7. если удаётся создать несколько Musical Context — проверить `selected N` и отсутствие смешивания событий.
-
-## Рабочая линия Stage 1
+## Рабочая линия
 
 ```text
-0.1a
-→ 0.1a fix1  [ACCEPTED]
-→ 0.1b       [IN DEVELOPMENT]
-→ при необходимости следующие 0.1x
-→ 0.2
+Stage 0 → 0.1  [COMPLETED]
+Stage 1 → 0.2  [COMPLETED]
+Stage 2 → 0.2a ... → 0.3
 ```
 
-## Ближайший следующий шаг
-
-1. получить зелёный Windows CI для `0.1b`;
-2. скачать `Smart-Improviser-0.1b-Windows`;
-3. заменить `Smart Improviser.vst3`;
-4. выполнить edge-case live test по `docs/STAGE_1_0.1b_LIVE_TEST.md`;
-5. при успешной приёмке определить, нужен ли ещё один Stage 1 checkpoint или можно финализировать Stage 1 как `0.2`.
-
-## Что читать в новом чате Stage 1
+## Что читать в новом чате Stage 2
 
 1. `docs/CURRENT_STATE.md`;
-2. Issue #2 — Stage 1 — ARA Context Monitor;
-3. `docs/STAGE_1_0.1b_LIVE_TEST.md`;
-4. `docs/STAGE_1_TO_STAGE_2_CONTRACT.md`;
-5. `docs/CORE_DATA_MODEL_0.0b.md`;
-6. `docs/PROJECT_CONTEXT.md`;
-7. `docs/ARCHITECTURAL_DECISIONS.md`;
-8. `docs/ROADMAP.md`;
-9. `docs/VERSIONING.md`;
-10. `docs/MIGRATION_FROM_SMART_VOICING.md` при необходимости.
+2. `docs/STAGE_1_TO_STAGE_2_CONTRACT.md`;
+3. `docs/CORE_DATA_MODEL_0.0b.md`;
+4. `docs/PROJECT_CONTEXT.md`;
+5. `docs/ARCHITECTURAL_DECISIONS.md`;
+6. `docs/ROADMAP.md`;
+7. `docs/VERSIONING.md`;
+8. Issue следующего Stage 2 после его создания.
 
 ## Правило обновления этого файла
 
