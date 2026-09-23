@@ -67,9 +67,10 @@ endif()
 
 juce_set_ara_sdk_path("${ara_sdk_SOURCE_DIR}")
 
-# Headless ARA/Event-FX helper. It reads Studio Pro musical context and publishes
-# it to the isolated Smart Improviser shared-memory bridge. No voicing, MIDI
-# routing, harmonizer or UI code is included here.
+# ARA/Event-FX helper. It reads Studio Pro musical context and publishes it to
+# the isolated Smart Improviser shared-memory bridge. During Stage 1 it also
+# exposes a small diagnostics editor so live ARA/context tests are observable.
+# No voicing, MIDI routing or harmonizer code is included here.
 #
 # User-facing package name is deliberately stable across all checkpoints:
 #     Smart Improviser.vst3
@@ -101,6 +102,8 @@ target_sources(SmartImproviserARA
         src/ara/ARAContextDebugState.h
         src/ara/ARAContextDocumentController.cpp
         src/ara/ARAContextDocumentController.h
+        src/ara/ARAPluginEditor.cpp
+        src/ara/ARAPluginEditor.h
         src/ara/ARAPluginProcessor.cpp
         src/ara/ARAPluginProcessor.h
 )
