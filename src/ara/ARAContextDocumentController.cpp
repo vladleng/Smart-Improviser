@@ -124,6 +124,7 @@ void SmartImproviserARADocumentController::refreshSnapshot()
 
     const juce::ARAMusicalContext* selectedContext = nullptr;
     int selectedScore = -1;
+    int contextIndex = 0;
 
     for (const auto* context : contexts)
     {
@@ -142,11 +143,19 @@ void SmartImproviserARADocumentController::refreshSnapshot()
                               + barReader.getEventCount();
         const auto score = availableTypes * 100000 + eventCount;
 
+        // Deterministic policy for Stage 1: prefer the Musical Context exposing
+        // the most relevant content types, then the largest event set. Ties keep
+        // the first context in host order.
         if (score > selectedScore)
         {
             selectedContext = context;
             selectedScore = score;
+            snapshot.selectedMusicalContextIndex = contextIndex;
+            snapshot.selectedContextContentTypeCount = availableTypes;
+            snapshot.selectedContextEventCount = eventCount;
         }
+
+        ++contextIndex;
     }
 
     if (selectedContext != nullptr)
@@ -213,12 +222,12 @@ void SmartImproviserARADocumentController::refreshSnapshot()
         }
     }
 
+    // Connection state describes the ARA/Musical Context binding itself, not
+    // whether a particular project happens to contain Key/Chord/Tempo data.
+    // Individual source availability is represented by the dedicated flags.
     shared.connected = shared.hostContentAccessAvailable
                     && shared.musicalContextCount > 0
-                    && (shared.keySignaturesAvailable
-                        || shared.sheetChordsAvailable
-                        || shared.tempoEntriesAvailable
-                        || shared.barSignaturesAvailable);
+                    && selectedContext != nullptr;
 
     snapshot.harmonicContext = shared;
     ARAContextDebugState::instance().publishSnapshot(this, snapshot);
