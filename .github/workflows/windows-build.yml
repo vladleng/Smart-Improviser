@@ -7,6 +7,7 @@ on:
       - stage-1-ara-context-monitor
       - stage-2-harmonic-engine
       - stage-2-pattern-recognizer
+      - stage-2-tritone-substitution
   pull_request:
   workflow_dispatch:
 
@@ -45,9 +46,9 @@ jobs:
           New-Item -ItemType Directory -Path $packageRoot | Out-Null
           Copy-Item $source $destination -Recurse
 
-      - name: Upload Smart Improviser 0.2b VST3
+      - name: Upload Smart Improviser 0.2c VST3
         uses: actions/upload-artifact@v4
         with:
-          name: Smart-Improviser-0.2b-Windows
+          name: Smart-Improviser-0.2c-Windows
           path: package
           if-no-files-found: error
