@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.22)
 
 project(SmartImproviser
-    VERSION 0.2.3
+    VERSION 0.2.4
     DESCRIPTION "Smart Improviser - context-aware jazz improvisation assistant"
     LANGUAGES C CXX)
 
@@ -142,7 +142,7 @@ target_compile_definitions(SmartImproviserARA
         JUCE_WEB_BROWSER=0
         JUCE_USE_CURL=0
         JUCE_VST3_CAN_REPLACE_VST2=0
-        SMART_IMPROVISER_BUILD_VERSION="0.2b"
+        SMART_IMPROVISER_BUILD_VERSION="0.2c"
 )
 
 target_link_libraries(SmartImproviserARA
