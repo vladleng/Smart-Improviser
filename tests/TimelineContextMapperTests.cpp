@@ -159,6 +159,24 @@ int main()
     expect(secondsAtPpq(oneTempo, 6.0) == 3.0, "single tempo anchor maps its exact PPQ");
     expect(secondsAtPpq(oneTempo, 7.0) < 0.0, "single tempo anchor does not invent a tempo slope");
 
+    // Even structurally valid chord/key data must not produce a valid musical
+    // situation when the timeline coordinate itself is unavailable.
+    TimelineHarmonicSnapshot unknownPosition;
+    unknownPosition.currentChord.available = true;
+    unknownPosition.currentChord.defined = true;
+    unknownPosition.currentChord.root = 0;
+    unknownPosition.currentChord.bass = 0;
+    unknownPosition.currentChord.intervals.values[0] = 0xFFu;
+    unknownPosition.currentChord.intervals.values[4] = 0xFFu;
+    unknownPosition.currentChord.intervals.values[7] = 0xFFu;
+    unknownPosition.globalKey.available = true;
+    unknownPosition.globalKey.defined = true;
+    unknownPosition.globalKey.root = 0;
+    for (const auto semitone : { 0, 2, 4, 5, 7, 9, 11 })
+        unknownPosition.globalKey.intervals.values[semitone] = 0xFFu;
+    expect(! buildHarmonicSituation(unknownPosition).valid,
+           "unknown timeline position cannot produce a valid HarmonicSituation");
+
     std::cout << "SmartImproviser TimelineContextMapperTests: OK\n";
     return 0;
 }
