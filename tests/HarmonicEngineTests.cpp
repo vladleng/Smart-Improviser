@@ -65,17 +65,48 @@ TimelineHarmonicSnapshot makeSnapshot(const KeyContext& key,
     snapshot.nextChord = next;
     return snapshot;
 }
+
+TimelineHarmonicSnapshot makeCurrentNextSnapshot(const KeyContext& key,
+                                                 const ChordContext& current,
+                                                 const ChordContext& next)
+{
+    TimelineHarmonicSnapshot snapshot;
+    snapshot.positionAvailable = true;
+    snapshot.ppq = 8.0;
+    snapshot.globalKey = key;
+    snapshot.currentChord = current;
+    snapshot.nextChordAvailable = true;
+    snapshot.nextChord = next;
+    return snapshot;
+}
+
+TimelineHarmonicSnapshot makePreviousCurrentSnapshot(const KeyContext& key,
+                                                     const ChordContext& previous,
+                                                     const ChordContext& current)
+{
+    TimelineHarmonicSnapshot snapshot;
+    snapshot.positionAvailable = true;
+    snapshot.ppq = 8.0;
+    snapshot.globalKey = key;
+    snapshot.previousChordAvailable = true;
+    snapshot.previousChord = previous;
+    snapshot.currentChord = current;
+    return snapshot;
+}
 }
 
 int main()
 {
     const auto cMajor = makeKey(0, false);
-    const auto majorIiVI = makeSnapshot(
-        cMajor,
-        makeChord(2, { 0, 3, 7, 10 }),  // Dm7
-        makeChord(1, { 0, 4, 7, 10 }),  // G7
-        makeChord(0, { 0, 4, 7, 11 })); // Cmaj7
+    const auto cMaj7 = makeChord(0, { 0, 4, 7, 11 });
+    const auto aMin7 = makeChord(3, { 0, 3, 7, 10 });
+    const auto a7 = makeChord(3, { 0, 4, 7, 10 });
+    const auto dMin7 = makeChord(2, { 0, 3, 7, 10 });
+    const auto d7 = makeChord(2, { 0, 4, 7, 10 });
+    const auto g7 = makeChord(1, { 0, 4, 7, 10 });
 
+    // Major ii-V-I: full V position remains confirmed.
+    const auto majorIiVI = makeSnapshot(cMajor, dMin7, g7, cMaj7);
     const auto majorSituation = analyzeHarmonicSituation(majorIiVI);
     expect(majorSituation.valid, "major ii-V-I situation is valid");
     expect(majorSituation.pattern.type == HarmonicPatternType::majorIiVI,
@@ -83,66 +114,161 @@ int main()
     expect(majorSituation.pattern.role == PatternMemberRole::dominant,
            "current G7 is dominant member of major ii-V-I");
     expect(majorSituation.pattern.positionIndex == 1 && majorSituation.pattern.length == 3,
-           "major ii-V-I pattern position is preserved");
+           "major ii-V-I V position is preserved");
     expect(majorSituation.pattern.evidence.confidence == ConfidenceLevel::confirmed,
-           "major ii-V-I is confirmed by real next-chord resolution");
-    expect(majorSituation.evidence.has(EvidenceFlag::patternMatch),
-           "situation carries pattern evidence");
-    expect(! majorSituation.localKey.valid,
-           "primary dominant does not invent a temporary local key");
+           "major ii-V-I V position is confirmed by real resolution");
+    expect(majorSituation.pattern.evidence.has(EvidenceFlag::previousChord)
+           && majorSituation.pattern.evidence.has(EvidenceFlag::nextChord)
+           && majorSituation.pattern.evidence.has(EvidenceFlag::confirmedResolution),
+           "full major ii-V-I records complete pattern evidence");
 
+    // Major ii-V-I: Stage 1 boundary window allows ii and I positions without
+    // inventing an unseen third member. These are high-confidence candidates,
+    // not confirmed full cadences.
+    const auto majorIiPosition = analyzeHarmonicSituation(
+        makeCurrentNextSnapshot(cMajor, dMin7, g7));
+    expect(majorIiPosition.pattern.type == HarmonicPatternType::majorIiVI,
+           "major ii-V-I is recognized from ii position");
+    expect(majorIiPosition.pattern.role == PatternMemberRole::predominant,
+           "ii position is predominant");
+    expect(majorIiPosition.pattern.positionIndex == 0,
+           "ii position index is 1/3");
+    expect(majorIiPosition.pattern.evidence.confidence == ConfidenceLevel::high,
+           "ii boundary candidate is high, not confirmed");
+    expect(majorIiPosition.pattern.evidence.has(EvidenceFlag::nextChord),
+           "ii boundary candidate records next-chord evidence");
+
+    const auto majorIPosition = analyzeHarmonicSituation(
+        makePreviousCurrentSnapshot(cMajor, g7, cMaj7));
+    expect(majorIPosition.pattern.type == HarmonicPatternType::majorIiVI,
+           "major ii-V-I is recognized from I resolution position");
+    expect(majorIPosition.pattern.role == PatternMemberRole::resolution,
+           "I position is resolution");
+    expect(majorIPosition.pattern.positionIndex == 2,
+           "I position index is 3/3");
+    expect(majorIPosition.pattern.evidence.confidence == ConfidenceLevel::high,
+           "I boundary candidate is high, not confirmed");
+    expect(majorIPosition.pattern.evidence.has(EvidenceFlag::previousChord),
+           "I boundary candidate records previous-chord evidence");
+
+    // Minor iiø-V-i: all three positions.
     const auto aMinor = makeKey(3, true);
-    const auto minorIiVI = makeSnapshot(
-        aMinor,
-        makeChord(5, { 0, 3, 6, 10 }), // Bm7b5
-        makeChord(4, { 0, 4, 7, 10 }), // E7
-        makeChord(3, { 0, 3, 7 }));    // Am
+    const auto bHalfDim7 = makeChord(5, { 0, 3, 6, 10 });
+    const auto e7 = makeChord(4, { 0, 4, 7, 10 });
+    const auto aMinorChord = makeChord(3, { 0, 3, 7 });
 
-    const auto minorSituation = analyzeHarmonicSituation(minorIiVI);
-    expect(minorSituation.pattern.type == HarmonicPatternType::minorIiHalfDimVi,
-           "minor ii-half-diminished-V-i is recognized");
-    expect(minorSituation.pattern.evidence.confidence == ConfidenceLevel::confirmed,
-           "minor ii-V-i is confirmed");
+    const auto minorVPosition = analyzeHarmonicSituation(
+        makeSnapshot(aMinor, bHalfDim7, e7, aMinorChord));
+    expect(minorVPosition.pattern.type == HarmonicPatternType::minorIiHalfDimVi,
+           "minor ii-half-diminished-V-i is recognized at V");
+    expect(minorVPosition.pattern.role == PatternMemberRole::dominant,
+           "minor V position is dominant");
+    expect(minorVPosition.pattern.evidence.confidence == ConfidenceLevel::confirmed,
+           "minor V position is confirmed");
 
-    TimelineHarmonicSnapshot applied;
-    applied.positionAvailable = true;
-    applied.ppq = 12.0;
-    applied.globalKey = cMajor;
-    applied.currentChord = makeChord(2, { 0, 4, 7, 10 }); // D7
-    applied.nextChordAvailable = true;
-    applied.nextChord = makeChord(1, { 0, 4, 7 }); // G
+    const auto minorIiPosition = analyzeHarmonicSituation(
+        makeCurrentNextSnapshot(aMinor, bHalfDim7, e7));
+    expect(minorIiPosition.pattern.type == HarmonicPatternType::minorIiHalfDimVi,
+           "minor ii-V-i is recognized from ii-half-diminished position");
+    expect(minorIiPosition.pattern.role == PatternMemberRole::predominant
+           && minorIiPosition.pattern.positionIndex == 0,
+           "minor ii position is 1/3 predominant");
+    expect(minorIiPosition.pattern.evidence.confidence == ConfidenceLevel::high,
+           "minor ii boundary candidate is high");
 
-    const auto appliedSituation = analyzeHarmonicSituation(applied);
+    const auto minorIPosition = analyzeHarmonicSituation(
+        makePreviousCurrentSnapshot(aMinor, e7, aMinorChord));
+    expect(minorIPosition.pattern.type == HarmonicPatternType::minorIiHalfDimVi,
+           "minor ii-V-i is recognized from tonic resolution position");
+    expect(minorIPosition.pattern.role == PatternMemberRole::resolution
+           && minorIPosition.pattern.positionIndex == 2,
+           "minor i position is 3/3 resolution");
+
+    // I-VI-ii-V turnaround. The middle positions see three of four members and
+    // therefore carry high confidence. Boundary pairs remain medium candidates.
+    const auto turnaroundVI = analyzeHarmonicSituation(
+        makeSnapshot(cMajor, cMaj7, a7, dMin7));
+    expect(turnaroundVI.pattern.type == HarmonicPatternType::turnaroundIVIiiV,
+           "I-VI-ii-V is recognized at VI");
+    expect(turnaroundVI.pattern.role == PatternMemberRole::preparation
+           && turnaroundVI.pattern.positionIndex == 1
+           && turnaroundVI.pattern.length == 4,
+           "turnaround VI position is 2/4 preparation");
+    expect(turnaroundVI.pattern.evidence.confidence == ConfidenceLevel::high,
+           "three-member turnaround window is high confidence");
+
+    const auto turnaroundIi = analyzeHarmonicSituation(
+        makeSnapshot(cMajor, a7, dMin7, g7));
+    expect(turnaroundIi.pattern.type == HarmonicPatternType::turnaroundIVIiiV,
+           "I-VI-ii-V is recognized at ii");
+    expect(turnaroundIi.pattern.role == PatternMemberRole::predominant
+           && turnaroundIi.pattern.positionIndex == 2,
+           "turnaround ii position is 3/4 predominant");
+
+    const auto turnaroundI = analyzeHarmonicSituation(
+        makeCurrentNextSnapshot(cMajor, cMaj7, aMin7));
+    expect(turnaroundI.pattern.type == HarmonicPatternType::turnaroundIVIiiV,
+           "turnaround start is recognized from I-VI pair");
+    expect(turnaroundI.pattern.role == PatternMemberRole::tonic
+           && turnaroundI.pattern.positionIndex == 0,
+           "turnaround start position is 1/4 tonic");
+    expect(turnaroundI.pattern.evidence.confidence == ConfidenceLevel::medium,
+           "two-member turnaround boundary is medium confidence");
+
+    const auto turnaroundV = analyzeHarmonicSituation(
+        makePreviousCurrentSnapshot(cMajor, dMin7, g7));
+    expect(turnaroundV.pattern.type == HarmonicPatternType::turnaroundIVIiiV,
+           "turnaround end is recognized from ii-V pair without tonic target");
+    expect(turnaroundV.pattern.role == PatternMemberRole::dominant
+           && turnaroundV.pattern.positionIndex == 3,
+           "turnaround end position is 4/4 dominant");
+    expect(turnaroundV.pattern.evidence.confidence == ConfidenceLevel::medium,
+           "turnaround end boundary is medium confidence");
+
+    // A7-D7-G7 is a specific dominant chain and must beat the simpler single
+    // secondary-dominant interpretation for the current D7.
+    const auto dominantChain = analyzeHarmonicSituation(
+        makeSnapshot(cMajor, a7, d7, g7));
+    expect(dominantChain.pattern.type == HarmonicPatternType::dominantChain,
+           "three linked dominants are recognized as a dominant chain");
+    expect(dominantChain.pattern.role == PatternMemberRole::dominant
+           && dominantChain.pattern.positionIndex == 1
+           && dominantChain.pattern.length == 3,
+           "dominant chain current member is 2/3 dominant");
+    expect(dominantChain.pattern.evidence.confidence == ConfidenceLevel::confirmed,
+           "dominant chain is confirmed by real adjacent dominant relations");
+
+    // Single applied dominant behavior from 0.2a remains intact.
+    const auto appliedSituation = analyzeHarmonicSituation(
+        makeCurrentNextSnapshot(cMajor, d7, makeChord(1, { 0, 4, 7 })));
     expect(appliedSituation.harmonic.appliedDominantConfirmed,
            "D7 to G confirms applied dominant in C");
     expect(appliedSituation.pattern.type == HarmonicPatternType::secondaryDominant,
-           "secondary dominant wins over generic dominant-to-target pattern");
-    expect(appliedSituation.localKey.valid,
-           "confirmed applied dominant creates temporary local center");
-    expect(appliedSituation.localKey.scope == KeyCenterScope::temporary,
-           "local center is explicitly temporary, not a modulation");
+           "single applied dominant remains secondary dominant");
+    expect(appliedSituation.localKey.valid
+           && appliedSituation.localKey.scope == KeyCenterScope::temporary,
+           "confirmed applied dominant keeps temporary local center");
     expect(appliedSituation.localKey.key.rootPitchClass == 7,
            "D7 to G temporary center is G");
-    expect(appliedSituation.localKey.key.mode == KeyMode::major,
-           "major target produces temporary major center");
-    expect(appliedSituation.evidence.has(EvidenceFlag::inferredLocalCenter),
-           "temporary center is evidence-backed");
 
-    TimelineHarmonicSnapshot dominantOnly;
-    dominantOnly.positionAvailable = true;
-    dominantOnly.ppq = 16.0;
-    dominantOnly.globalKey = cMajor;
-    dominantOnly.currentChord = makeChord(1, { 0, 4, 7, 10 }); // G7
-    dominantOnly.nextChordAvailable = true;
-    dominantOnly.nextChord = makeChord(0, { 0, 4, 7, 11 }); // Cmaj7
-
-    const auto dominantSituation = analyzeHarmonicSituation(dominantOnly);
+    // Generic V-I fallback is retained when no ii preparation is visible.
+    const auto dominantSituation = analyzeHarmonicSituation(
+        makeCurrentNextSnapshot(cMajor, g7, cMaj7));
     expect(dominantSituation.pattern.type == HarmonicPatternType::dominantToTonic,
            "V-I is recognized when no larger ii-V-I context is available");
 
+    // Boundary false-positive guard: ii followed by a non-dominant V root must
+    // not be promoted to ii-V-I.
+    const auto falseMajorCandidate = analyzeHarmonicSituation(
+        makeCurrentNextSnapshot(cMajor,
+                                dMin7,
+                                makeChord(1, { 0, 3, 7, 10 }))); // Gm7
+    expect(falseMajorCandidate.pattern.type != HarmonicPatternType::majorIiVI,
+           "non-dominant V-quality chord does not create major ii-V-I");
+
     TimelineHarmonicSnapshot missingKey;
     missingKey.positionAvailable = true;
-    missingKey.currentChord = makeChord(1, { 0, 4, 7, 10 });
+    missingKey.currentChord = g7;
     const auto invalid = analyzeHarmonicSituation(missingKey);
     expect(! invalid.valid, "missing global key remains a safe non-analysis state");
     expect(! invalid.pattern.recognized(), "invalid input does not invent a pattern");
