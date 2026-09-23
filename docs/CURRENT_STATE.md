@@ -8,93 +8,115 @@
 - **Текущая стабильная версия:** `0.2`
 - **Активный Stage:** Stage 2 — Harmonic Engine
 - **Последний принятый checkpoint:** `0.2a / 0.2a fix1`
-- **Следующая рабочая версия:** `0.2b — Pattern Recognizer`
+- **Текущая рабочая версия:** `0.2b — Pattern Recognizer`
 - **Stage 2 Issue:** #3 — Stage 2 — Harmonic Engine
-- **Рабочая ветка:** `stage-2-harmonic-engine`
-- **PR checkpoint 0.2a:** #15 — `0.2a fix1 — Stage 2 Harmonic Engine diagnostics`
+- **Активная ветка:** `stage-2-pattern-recognizer`
+- **Активный PR:** #16 — `0.2b — Pattern Recognizer`
 
-## Принятие checkpoint 0.2a
+PR #15 (`0.2a fix1`) принят по live-test и слит в `main`. `0.2b` начат отдельной веткой от принятого checkpoint.
 
-`0.2a` и `0.2a fix1` **приняты по результатам CI и live-test в Fender Studio Pro**.
+## Архитектурная граница
 
-Подтверждено:
-
-- Windows Build #148 — success;
-- artifact `Smart-Improviser-0.2a-fix1-Windows` установлен;
-- Stage 1 ARA/context regression не обнаружен;
-- Harmonic Engine diagnostics работают в реальном plugin UI;
-- `Cmaj7` в C major → `I | Tonic`, Diatonic;
-- `Am7` → `VI | Tonic`, Diatonic;
-- `Dm7` → `II | Predominant`, Diatonic;
-- `Dm7 → G7 → Cmaj7` на G7 → `V | Dominant`, `Major ii-V-I`, `Dominant | 2 / 3`, resolution `Cmaj7 | CONFIRMED`;
-- `D7 → G7` в C major на D7 → Chromatic, `Secondary dominant`, local center `G major | temporary`, resolution `G7 | CONFIRMED`;
-- confidence/evidence обновляются ожидаемо (`high/confirmed | unique`).
-
-## Архитектурная цепочка
+Stage 1 остаётся закрытым и не изменяется ради Pattern Recognizer.
 
 ```text
 Fender Studio Pro / ARA 2
         ↓
 TimelineHarmonicSnapshot
+(previous / current / next)
         ↓
 buildHarmonicSituation()
         ↓
-analyzeHarmonicSituation() / Harmonic Engine
+analyzeHarmonicSituation()
         ↓
-HarmonicSituation
-        ↓
-Diagnostic UI / future product UI
+Pattern Recognizer / HarmonicSituation
 ```
 
-Core и Harmonic Engine остаются host-neutral. UI только отображает уже рассчитанный `HarmonicSituation`.
+`0.2b` использует только host-neutral `previous / current / next` и не знает ничего об ARA, JUCE, shared memory или Fender Studio Pro.
 
-## Что закрыто в 0.2a
+Важное правило confidence: движок не выдумывает отсутствующие события. Полный трёхаккордовый pattern может быть `confirmed`; boundary-position, где доступна только структурно сильная пара, получает `high` или `medium` в зависимости от объёма evidence.
 
-- отдельный `HarmonicEngine`;
-- global key + previous/current/next analysis;
-- basic harmonic function;
-- major `ii–V–I` для current V;
-- minor `iiø–V–i` для current V;
-- fallback `V–I`;
-- secondary dominant;
-- evidence-backed temporary local center;
-- safe non-analysis states;
-- regression tests;
-- Stage 2 diagnostic UI.
+## Принятый checkpoint 0.2a / 0.2a fix1
 
-## Следующий подэтап — 0.2b Pattern Recognizer
+Подтверждено live-test в Fender Studio Pro:
 
-Цель: расширить pattern recognition с текущего минимального варианта до полноценного анализа позиции внутри оборота.
+- Stage 1 ARA/context regression не обнаружен;
+- basic functions работают;
+- `Dm7 → G7 → Cmaj7` на G7 → `Major ii-V-I`, `Dominant | 2 / 3`, confirmed resolution;
+- `D7 → G7` в C major → `Secondary dominant`, local center `G major | temporary`;
+- диагностический UI показывает Stage 2 analysis.
 
-План:
+## Рабочая 0.2b — Pattern Recognizer
 
-- распознавать major `ii–V–I` для позиций `ii / V / I`;
-- распознавать minor `iiø–V–i` для позиций `iiø / V / i`;
-- добавить `I–VI–ii–V`;
-- добавить secondary-dominant chains;
-- добавить pattern positions: начало / середина / resolution;
-- добавить pattern evidence/confidence;
-- boundary regression tests.
+Уже реализовано в активной ветке:
 
-## Дальнейшая линия Stage 2
+- major `ii–V–I` для позиций `ii / V / I`;
+- minor `iiø–V–i` для позиций `iiø / V / i`;
+- сохранён `confirmed` для полного `ii–V–I` на позиции V;
+- boundary positions используют реальный pair evidence и не получают ложный `confirmed`;
+- `I–VI–ii–V` для внутренних и boundary positions;
+- VI допускается как `vi7` или `VI7`;
+- dominant chain, например `A7 → D7 → G7`;
+- dominant chain имеет приоритет над одиночной трактовкой secondary dominant;
+- pattern evidence flags: `previousChord`, `nextChord`, `confirmedResolution`;
+- pattern confidence переносится в общий `HarmonicSituation` только если она сильнее уже имеющейся confidence;
+- false-positive guard для неправильного качества V chord;
+- расширенные `SmartImproviserHarmonicEngineTests`.
+
+### Confidence policy 0.2b
+
+```text
+Dm7 → G7 → Cmaj7, current G7
+= Major ii-V-I | Dominant 2/3 | confirmed
+
+Dm7 → G7, current Dm7
+= Major ii-V-I | Predominant 1/3 | high
+
+G7 → Cmaj7, current Cmaj7
+= Major ii-V-I | Resolution 3/3 | high
+
+Cmaj7 → A7 → Dm7, current A7
+= I-VI-ii-V | Preparation 2/4 | high
+
+Cmaj7 → Am7, current Cmaj7
+= I-VI-ii-V | Tonic 1/4 | medium
+
+A7 → D7 → G7, current D7
+= Dominant chain | Dominant 2/3 | confirmed
+```
+
+## Версия 0.2b
+
+```text
+Build label: Smart Improviser 0.2b
+CMake:      0.2.3
+Artifact:   Smart-Improviser-0.2b-Windows
+Package:    Smart Improviser.vst3
+```
+
+## Что ещё нужно закрыть перед принятием 0.2b
+
+1. Windows CI должен пройти все regression tests;
+2. установить artifact `Smart-Improviser-0.2b-Windows`;
+3. live-test major `ii–V–I` на позициях ii/V/I;
+4. live-test minor `iiø–V–i` на позициях iiø/V/i;
+5. live-test `I–VI–ii–V`;
+6. live-test dominant chain;
+7. подтвердить отсутствие Stage 1 regression;
+8. после принятия перейти к `0.2c — Tritone Substitution`.
+
+## Линия Stage 2
 
 ```text
 0.2a — Harmonic Engine foundation          [ACCEPTED]
 0.2a fix1 — Harmonic Engine diagnostics    [ACCEPTED]
-0.2b — Pattern Recognizer                  [NEXT]
+0.2b — Pattern Recognizer                  [ACTIVE]
 0.2c — Tritone Substitution
 0.2d — Local Key Center
 0.2e — Ambiguity / Confidence
 0.2f — Integration / musical validation
 0.3  — Stage 2 complete
 ```
-
-## Что делать следующим
-
-1. начать реализацию `0.2b — Pattern Recognizer`;
-2. не расширять `0.2a fix1` новой функциональностью;
-3. сохранить host-neutral границу Harmonic Engine;
-4. после завершения `0.2b` провести отдельный regression/live-test checkpoint перед переходом к `0.2c`.
 
 ## Что читать в новом чате Stage 2
 
@@ -105,4 +127,5 @@ Core и Harmonic Engine остаются host-neutral. UI только отоб�
 5. `docs/ARCHITECTURAL_DECISIONS.md`;
 6. `docs/ROADMAP.md`;
 7. `docs/VERSIONING.md`;
-8. Issue #3 — Stage 2 — Harmonic Engine.
+8. Issue #3 — Stage 2 — Harmonic Engine;
+9. PR #16 — `0.2b — Pattern Recognizer`.
