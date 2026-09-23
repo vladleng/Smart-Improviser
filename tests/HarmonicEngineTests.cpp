@@ -104,6 +104,7 @@ int main()
     const auto dMin7 = makeChord(2, { 0, 3, 7, 10 });
     const auto d7 = makeChord(2, { 0, 4, 7, 10 });
     const auto g7 = makeChord(1, { 0, 4, 7, 10 });
+    const auto db7 = makeChord(-5, { 0, 4, 7, 10 });
 
     // Major ii-V-I: full V position remains confirmed.
     const auto majorIiVI = makeSnapshot(cMajor, dMin7, g7, cMaj7);
@@ -122,9 +123,7 @@ int main()
            && majorSituation.pattern.evidence.has(EvidenceFlag::confirmedResolution),
            "full major ii-V-I records complete pattern evidence");
 
-    // Major ii-V-I: Stage 1 boundary window allows ii and I positions without
-    // inventing an unseen third member. These are high-confidence candidates,
-    // not confirmed full cadences.
+    // Major ii-V-I boundary positions.
     const auto majorIiPosition = analyzeHarmonicSituation(
         makeCurrentNextSnapshot(cMajor, dMin7, g7));
     expect(majorIiPosition.pattern.type == HarmonicPatternType::majorIiVI,
@@ -156,6 +155,7 @@ int main()
     const auto bHalfDim7 = makeChord(5, { 0, 3, 6, 10 });
     const auto e7 = makeChord(4, { 0, 4, 7, 10 });
     const auto aMinorChord = makeChord(3, { 0, 3, 7 });
+    const auto bb7 = makeChord(-2, { 0, 4, 7, 10 });
 
     const auto minorVPosition = analyzeHarmonicSituation(
         makeSnapshot(aMinor, bHalfDim7, e7, aMinorChord));
@@ -184,8 +184,7 @@ int main()
            && minorIPosition.pattern.positionIndex == 2,
            "minor i position is 3/3 resolution");
 
-    // I-VI-ii-V turnaround. The middle positions see three of four members and
-    // therefore carry high confidence. Boundary pairs remain medium candidates.
+    // I-VI-ii-V turnaround.
     const auto turnaroundVI = analyzeHarmonicSituation(
         makeSnapshot(cMajor, cMaj7, a7, dMin7));
     expect(turnaroundVI.pattern.type == HarmonicPatternType::turnaroundIVIiiV,
@@ -225,8 +224,7 @@ int main()
     expect(turnaroundV.pattern.evidence.confidence == ConfidenceLevel::medium,
            "turnaround end boundary is medium confidence");
 
-    // A7-D7-G7 is a specific dominant chain and must beat the simpler single
-    // secondary-dominant interpretation for the current D7.
+    // A7-D7-G7 dominant chain.
     const auto dominantChain = analyzeHarmonicSituation(
         makeSnapshot(cMajor, a7, d7, g7));
     expect(dominantChain.pattern.type == HarmonicPatternType::dominantChain,
@@ -238,11 +236,90 @@ int main()
     expect(dominantChain.pattern.evidence.confidence == ConfidenceLevel::confirmed,
            "dominant chain is confirmed by real adjacent dominant relations");
 
+    // 0.2c: major ii-SubV-I full cadence.
+    const auto majorTritone = analyzeHarmonicSituation(
+        makeSnapshot(cMajor, dMin7, db7, cMaj7));
+    expect(majorTritone.harmonic.substituteDominantConfirmed,
+           "Db7->C confirms tritone-substitute dominant");
+    expect(majorTritone.harmonic.effectiveFunction == HarmonicFunction::substituteDominant,
+           "Db7 effective function is substitute dominant");
+    expect(majorTritone.pattern.type == HarmonicPatternType::tritoneSubstitution,
+           "Dm7-Db7-Cmaj7 is recognized as tritone substitution pattern");
+    expect(majorTritone.pattern.role == PatternMemberRole::substituteDominant
+           && majorTritone.pattern.positionIndex == 1
+           && majorTritone.pattern.length == 3,
+           "Db7 is substitute-dominant position 2/3");
+    expect(majorTritone.pattern.evidence.confidence == ConfidenceLevel::confirmed,
+           "full ii-SubV-I is confirmed");
+    expect(majorTritone.resolution.available && majorTritone.resolution.confirmed,
+           "SubV-I creates confirmed resolution target");
+    expect(majorTritone.resolution.targetChord.rootPitchClass == 0,
+           "Db7 resolution target is C");
+    expect(majorTritone.resolution.moveCount == 2,
+           "SubV resolution exposes two structural guide-tone moves");
+    expect(majorTritone.resolution.moves[0].semitoneDelta == -1
+           && majorTritone.resolution.moves[1].semitoneDelta == 1,
+           "Db7 guide tones resolve by semitone to Cmaj7");
+    expect(! majorTritone.localKey.valid,
+           "0.2c does not invent local-key inference for SubV");
+
+    // Major ii-SubV-I boundary positions are high rather than confirmed.
+    const auto majorSubIi = analyzeHarmonicSituation(
+        makeCurrentNextSnapshot(cMajor, dMin7, db7));
+    expect(majorSubIi.pattern.type == HarmonicPatternType::tritoneSubstitution,
+           "major ii-SubV is recognized at ii boundary");
+    expect(majorSubIi.pattern.role == PatternMemberRole::predominant
+           && majorSubIi.pattern.positionIndex == 0,
+           "ii-SubV boundary current ii is 1/3 predominant");
+    expect(majorSubIi.pattern.evidence.confidence == ConfidenceLevel::high,
+           "ii-SubV boundary remains high confidence");
+
+    const auto majorSubI = analyzeHarmonicSituation(
+        makePreviousCurrentSnapshot(cMajor, db7, cMaj7));
+    expect(majorSubI.pattern.type == HarmonicPatternType::tritoneSubstitution,
+           "SubV-I is recognized at tonic resolution boundary");
+    expect(majorSubI.pattern.role == PatternMemberRole::resolution
+           && majorSubI.pattern.positionIndex == 2,
+           "SubV-I tonic is 3/3 resolution");
+    expect(majorSubI.pattern.evidence.confidence == ConfidenceLevel::high,
+           "SubV-I resolution boundary remains high confidence");
+
+    // Minor iiø-SubV-i full cadence.
+    const auto minorTritone = analyzeHarmonicSituation(
+        makeSnapshot(aMinor, bHalfDim7, bb7, aMinorChord));
+    expect(minorTritone.harmonic.substituteDominantConfirmed,
+           "Bb7->Am confirms minor-key tritone substitute");
+    expect(minorTritone.pattern.type == HarmonicPatternType::tritoneSubstitution,
+           "Bm7b5-Bb7-Am is recognized as tritone substitution pattern");
+    expect(minorTritone.pattern.role == PatternMemberRole::substituteDominant
+           && minorTritone.pattern.positionIndex == 1,
+           "minor-key SubV is position 2/3");
+    expect(minorTritone.pattern.evidence.confidence == ConfidenceLevel::confirmed,
+           "minor ii-SubV-i is confirmed");
+
+    // Applied SubV to a non-tonic scale degree: Ab7 -> G in C major.
+    const auto ab7 = makeChord(-4, { 0, 4, 7, 10 });
+    const auto gMajor = makeChord(1, { 0, 4, 7 });
+    const auto appliedSubV = analyzeHarmonicSituation(
+        makeCurrentNextSnapshot(cMajor, ab7, gMajor));
+    expect(appliedSubV.harmonic.substituteDominantConfirmed,
+           "Ab7->G confirms substitute dominant of V");
+    expect(! appliedSubV.harmonic.appliedDominantConfirmed,
+           "Ab7->G is not ordinary secondary dominant motion");
+    expect(appliedSubV.pattern.type == HarmonicPatternType::tritoneSubstitution,
+           "applied SubV is not mislabeled secondary dominant");
+    expect(appliedSubV.pattern.role == PatternMemberRole::substituteDominant,
+           "applied SubV keeps substitute-dominant role");
+    expect(! appliedSubV.localKey.valid,
+           "applied SubV local-center inference is deferred to 0.2d");
+
     // Single applied dominant behavior from 0.2a remains intact.
     const auto appliedSituation = analyzeHarmonicSituation(
-        makeCurrentNextSnapshot(cMajor, d7, makeChord(1, { 0, 4, 7 })));
+        makeCurrentNextSnapshot(cMajor, d7, gMajor));
     expect(appliedSituation.harmonic.appliedDominantConfirmed,
            "D7 to G confirms applied dominant in C");
+    expect(! appliedSituation.harmonic.substituteDominantConfirmed,
+           "D7 to G is not SubV");
     expect(appliedSituation.pattern.type == HarmonicPatternType::secondaryDominant,
            "single applied dominant remains secondary dominant");
     expect(appliedSituation.localKey.valid
@@ -256,15 +333,23 @@ int main()
         makeCurrentNextSnapshot(cMajor, g7, cMaj7));
     expect(dominantSituation.pattern.type == HarmonicPatternType::dominantToTonic,
            "V-I is recognized when no larger ii-V-I context is available");
+    expect(dominantSituation.harmonic.effectiveFunction == HarmonicFunction::dominant,
+           "ordinary V-I keeps dominant function");
 
-    // Boundary false-positive guard: ii followed by a non-dominant V root must
-    // not be promoted to ii-V-I.
+    // Boundary false-positive guards.
     const auto falseMajorCandidate = analyzeHarmonicSituation(
         makeCurrentNextSnapshot(cMajor,
                                 dMin7,
                                 makeChord(1, { 0, 3, 7, 10 }))); // Gm7
     expect(falseMajorCandidate.pattern.type != HarmonicPatternType::majorIiVI,
            "non-dominant V-quality chord does not create major ii-V-I");
+
+    const auto falseSubCandidate = analyzeHarmonicSituation(
+        makeCurrentNextSnapshot(cMajor,
+                                dMin7,
+                                makeChord(-5, { 0, 3, 7, 10 }))); // Dbm7
+    expect(falseSubCandidate.pattern.type != HarmonicPatternType::tritoneSubstitution,
+           "non-dominant Db quality does not create ii-SubV candidate");
 
     TimelineHarmonicSnapshot missingKey;
     missingKey.positionAvailable = true;
