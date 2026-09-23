@@ -70,13 +70,17 @@ juce_set_ara_sdk_path("${ara_sdk_SOURCE_DIR}")
 # Headless ARA/Event-FX helper. It reads Studio Pro musical context and publishes
 # it to the isolated Smart Improviser shared-memory bridge. No voicing, MIDI
 # routing, harmonizer or UI code is included here.
+#
+# User-facing package name is deliberately stable across all checkpoints:
+#     Smart Improviser.vst3
+# This allows each test build to replace the previous VST3 package directly.
 juce_add_plugin(SmartImproviserARA
     COMPANY_NAME "Moon River Studio"
     BUNDLE_ID "com.moonriverstudio.smartimproviserara"
     PLUGIN_MANUFACTURER_CODE MNRV
     PLUGIN_CODE SmIA
     FORMATS VST3
-    PRODUCT_NAME "Smart Improviser ARA"
+    PRODUCT_NAME "Smart Improviser"
     IS_SYNTH FALSE
     VST3_CATEGORIES Fx
     NEEDS_MIDI_INPUT FALSE
