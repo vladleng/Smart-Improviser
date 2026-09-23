@@ -106,6 +106,32 @@ UI / Fretboard / Notation / TAB
 
 Центральная сущность ядра — **`HarmonicSituation`**, которая описывает не просто аккорд, а его функцию и положение в музыкальном контексте.
 
+## Правило разработки Stage
+
+Каждый Stage делится на отдельные **логически завершённые подэтапы**, и каждому подэтапу соответствует собственная буквенная build-версия.
+
+```text
+новая буква = новая функциональная часть Stage
+fixN        = исправление текущего подэтапа
+версия без буквы = весь Stage завершён
+```
+
+Буквенная версия — это отдельный build checkpoint с собственной целью, checklist и тестами. Stage не должен разрабатываться одной большой буквенной версией.
+
+Например Stage 2 запланирован так:
+
+```text
+0.2a — Harmonic Engine foundation
+0.2b — Pattern Recognizer
+0.2c — Tritone Substitution
+0.2d — Local Key Center
+0.2e — Ambiguity / Confidence
+0.2f — Integration / musical validation
+0.3  — Stage 2 complete
+```
+
+Подробные правила: [`docs/VERSIONING.md`](docs/VERSIONING.md). Актуальная декомпозиция этапов: [`docs/ROADMAP.md`](docs/ROADMAP.md).
+
 ## Stage 2 / 0.2a
 
 Первый подэтап Harmonic Engine включает:
@@ -120,13 +146,13 @@ UI / Fretboard / Notation / TAB
 - temporary local center только при подтверждённом applied dominant;
 - regression tests для Harmonic Engine.
 
-Следующие подэтапы Stage 2 должны добавить:
+Следующие подэтапы Stage 2:
 
-- pattern positions для всех членов оборота;
-- `I–VI–ii–V`;
-- tritone substitution / `ii–SubV–I`;
-- более длинные local-center/tonicization rules;
-- ambiguity и alternative interpretations.
+- `0.2b` — полный Pattern Recognizer и pattern positions;
+- `0.2c` — tritone substitution / `ii–SubV–I`;
+- `0.2d` — Local Key Center / tonicization chains;
+- `0.2e` — ambiguity / alternative interpretations / confidence;
+- `0.2f` — integration, regression и musical validation.
 
 ## Долгосрочное направление
 
@@ -154,7 +180,7 @@ UI / Fretboard / Notation / TAB
 ```text
 Stage 0: 0.0a → ... → 0.1
 Stage 1: 0.1a → ... → 0.2
-Stage 2: 0.2a → ... → 0.3
+Stage 2: 0.2a → 0.2b → 0.2c → ... → 0.3
 ```
 
 Если после живого теста конкретной буквенной версии требуется исправление:
@@ -164,6 +190,8 @@ Stage 2: 0.2a → ... → 0.3
 0.2a fix2
 ```
 
+`fixN` исправляет существующий подэтап и не используется вместо новой буквенной версии для новой функциональности.
+
 Подробно: [`docs/VERSIONING.md`](docs/VERSIONING.md).
 
 ## Документация
@@ -172,11 +200,11 @@ Stage 2: 0.2a → ... → 0.3
 - [`docs/STAGE_1_TO_STAGE_2_CONTRACT.md`](docs/STAGE_1_TO_STAGE_2_CONTRACT.md) — формальная граница ARA/context layer → Harmonic Engine.
 - [`docs/CORE_DATA_MODEL_0.0b.md`](docs/CORE_DATA_MODEL_0.0b.md) — спецификация host-neutral data model.
 - [`docs/PROJECT_CONTEXT.md`](docs/PROJECT_CONTEXT.md) — основной living document проекта и архитектурный контекст.
-- [`docs/ROADMAP.md`](docs/ROADMAP.md) — этапы разработки от спецификации ядра до Improvisation Planner.
-- [`docs/VERSIONING.md`](docs/VERSIONING.md) — официальная схема версий, буквенных подэтапов и fix-сборок.
+- [`docs/ROADMAP.md`](docs/ROADMAP.md) — этапы разработки и логические build checkpoints.
+- [`docs/VERSIONING.md`](docs/VERSIONING.md) — официальная схема версий, подэтапов и fix-сборок.
 - [`docs/ARCHITECTURAL_DECISIONS.md`](docs/ARCHITECTURAL_DECISIONS.md) — журнал ключевых архитектурных решений.
 - [`docs/MIGRATION_FROM_SMART_VOICING.md`](docs/MIGRATION_FROM_SMART_VOICING.md) — границы переноса компонентов из Smart Voicing.
 
 ## Ближайший технический шаг
 
-Завершить CI/проверку `0.2a`, затем продолжить Stage 2 расширением pattern-position analysis, turnaround/tritone-substitution и ambiguity/local-center logic.
+Принять `0.2a` как отдельный build checkpoint, после чего перейти к **`0.2b — Pattern Recognizer`**.
