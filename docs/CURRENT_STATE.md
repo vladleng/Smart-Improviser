@@ -9,12 +9,13 @@
 - **Завершённый Stage:** Stage 0 — Спецификация Smart Improviser Core
 - **Текущая стабильная версия:** `0.1`
 - **Активный Stage:** Stage 1 — ARA Context Monitor
-- **Текущая рабочая версия:** `0.1a fix1`
+- **Принятый checkpoint Stage 1:** `0.1a fix1`
+- **Следующий подэтап:** `0.1b`
 - **Активный Issue:** #2 — Stage 1 — ARA Context Monitor
 - **Активная ветка:** `stage-1-ara-context-monitor`
 - **Активный PR:** #14
 
-`0.1a fix1` успешно прошёл второй живой тест в Fender Studio Pro. ARA binding, Musical Context, STOP position, PPQ, Key, previous/current/next chord, Tempo и Time Signature отображаются корректно на реальном проекте.
+`0.1a fix1` принят после живых тестов в Fender Studio Pro. Основной ARA/timeline path подтверждён на реальном проекте, включая PLAY, seek, chord boundaries, edit refresh и reopen.
 
 ## Архитектурная граница
 
@@ -34,84 +35,72 @@ HarmonicSituation
 
 Core не зависит от Fender Studio Pro, ARA, JUCE, VST3, UI или старого Voicing engine.
 
-## Что вошло в 0.1a
-
-- `ARAContextProvider` получил Core-ready API:
-  - `currentTimelineSnapshot()`;
-  - `timelineSnapshotAt(ppq)`;
-- snapshot формирует previous/current/next chord, global key и PPQ;
-- `ARAContextProvider.cpp` реально входит в Windows build target;
-- ARA helper линкуется с `SmartImproviserCore`;
-- добавлен временный Stage 1 UI `ARA Context Monitor`;
-- Windows CI формирует готовый drop-in package:
-
-```text
-Smart Improviser.vst3
-```
-
-Имя установленной VST3-папки остаётся постоянным между версиями и `fixN`.
-
-## Результат первого live-теста 0.1a
+## Что подтверждено в 0.1a / 0.1a fix1
 
 На реальном проекте Fender Studio Pro подтверждено:
 
 - ARA binding — **BOUND**;
 - Document Controller — **YES**;
 - Host Content Access — **YES**;
-- Musical Contexts — **1**;
+- Musical Context — доступен;
 - Shared Context — **YES**;
-- STOP position — **OK**;
-- PPQ — **OK**, начало такта 30 = `116.000`;
-- Time Signature — **4/4**, совпадает с DAW;
-- Tempo — **110.00 BPM**, совпадает с DAW;
-- ARA events получены: `Key 2 | Chords 13 | Tempo 16 | Bars 1`;
-- короткий Audio Event не ограничивает доступный Musical Context и работает только как точка ARA binding.
+- STOP position — корректна;
+- PLAY — PPQ/context обновляются во время воспроизведения;
+- seek — контекст обновляется немедленно;
+- Key Track — читается и нормализуется;
+- Chord Track — читается и нормализуется;
+- previous/current/next — совпадают с реальным Chord Track;
+- точное переключение на chord boundary — подтверждено;
+- Tempo / Time Signature — совпадают с DAW;
+- изменение Chord Track / Key Track обновляет context snapshot;
+- после повторного открытия проекта ARA binding/context восстанавливаются;
+- короткий Audio Event не ограничивает Musical Context и служит только точкой ARA binding;
+- участок без активного chord event обрабатывается безопасно.
 
-Первый тест также показал, что Studio Pro передаёт Key/Chord структурно (`root`, `bass`, `intervals`), но не обязан заполнять ARA `event.name`.
-
-## Что исправлено в 0.1a fix1
-
-- Chord symbols строятся из структурных ARA-данных через `ChordModel` / `normalizedChordSymbol()`;
-- Key display строится через `KeyModel` из `root + intervals`;
-- ARA `name` остаётся только fallback;
-- высота диагностического окна увеличена;
-- footer больше не перекрывает `Revisions`;
-- устранена проблема кодировки диагностического заголовка;
-- build label — `0.1a fix1`;
-- CI artifact — `Smart-Improviser-0.1a-fix1-Windows`;
-- внутри artifact — готовая папка `Smart Improviser.vst3`.
-
-## Результат live-теста 0.1a fix1
-
-На позиции внутри реальной последовательности:
+Подтверждённые edge cases:
 
 ```text
-Am7 → Dm7 → G7add13
+PPQ 172.000
+Previous chord  C
+Current chord   (no chord)
+Next chord      Cmaj7
 ```
 
-Smart Improviser показывает:
+```text
+PPQ 180.000
+Previous chord  Cmaj7
+Current chord   Am7
+Next chord      Dm7
+```
+
+Также подтверждён рабочий кейс:
 
 ```text
-ARA binding          BOUND
-Document controller  YES
-Host content access  YES
-Musical contexts     1
-Shared context       YES
-Transport            STOP
-PPQ                  186.000
-Seconds              120.007
-Key                  C major
-Previous chord       Am7
-Current chord        Dm7
-Next chord           G13
-Time signature       4/4
-Tempo                110.00 BPM
-ARA events           Key 2 | Chords 22 | Tempo 16 | Bars 1
+Previous chord  Am7
+Current chord   Dm7
+Next chord      G13
+Key             C major
+Tempo           110 BPM
+Time signature  4/4
 ```
 
 `G13` — нормализованное представление `G7add13` из Chord Track.
 
-Это подтверждает реальную цепочку:
+## Что сделал fix1
+
+- Chord symbols строятся из структурных ARA-данных через `ChordModel` / `normalizedChordSymbol()`;
+- Key display строится через `KeyModel` из `root + intervals`;
+- ARA `name` используется только как fallback;
+- исправлены размеры диагностического UI;
+- `Revisions` и footer больше не перекрываются;
+- устранён mojibake в заголовке;
+- build label — `0.1a fix1`;
+- CI artifact — `Smart-Improviser-0.1a-fix1-Windows`;
+- внутри artifact — готовая папка `Smart Improviser.vst3`.
+
+## Статус checkpoint 0.1a
+
+`0.1a fix1` **принят**. Основной путь Stage 1 работает:
 
 ```text
 Studio Pro
@@ -119,35 +108,39 @@ Studio Pro
 → Musical Context
 → SharedHarmonicContext
 → ARAContextProvider
+→ TimelineHarmonicSnapshot
 → previous/current/next + key + timeline
 ```
 
-## Что ещё нужно проверить перед принятием 0.1a
+Новых исправлений `0.1a fixN` сейчас не требуется.
 
-1. PLAY: PPQ/context обновляются во время воспроизведения.
-2. Seek: прыжки курсора назад/вперёд немедленно обновляют context.
-3. Chord boundaries: переключение current chord происходит точно на границе события.
-4. Edit refresh: изменение Chord Track и Key Track обновляет snapshot без перезагрузки плагина.
-5. Reopen: после повторного открытия проекта ARA binding/context восстанавливаются.
-6. Missing data: безопасное поведение без Key/Chord/Tempo данных.
-7. Multiple Musical Context: проверить реальный проект с более чем одним Musical Context, если Studio Pro создаёт такой сценарий.
+## Следующий подэтап — 0.1b
+
+`0.1b` должен закрыть устойчивость и формальный выход Stage 1 к Stage 2:
+
+1. безопасное поведение при полном отсутствии Key Track;
+2. безопасное поведение при полном отсутствии Chord Track;
+3. безопасное поведение при отсутствующих/неполных Tempo данных;
+4. начало timeline до первого chord event и конец timeline после последнего;
+5. несколько Musical Context, если Studio Pro позволяет воспроизвести такой сценарий;
+6. формально зафиксировать минимальный контракт данных Stage 1 → Stage 2;
+7. добавить regression tests для edge cases, которые можно проверить без DAW.
+
+После успешной приёмки оставшихся задач Stage 1 рабочая линия должна завершиться стабильной версией `0.2`.
 
 ## Рабочая линия Stage 1
 
 ```text
 0.1a
-→ 0.1a fix1
-→ при необходимости 0.1a fix2...
+→ 0.1a fix1  [ACCEPTED]
 → 0.1b
-→ ...
+→ при необходимости следующие 0.1x
 → 0.2
 ```
 
-Новая буква означает новый подэтап. Исправления текущего live-test checkpoint используют `fixN`.
-
 ## Ближайший следующий шаг
 
-Продолжить live-тест `0.1a fix1` по оставшимся сценариям: PLAY, seek, chord boundaries, edit refresh и reopen. Если новых ошибок нет, принять `0.1a` и определить состав следующего подэтапа `0.1b`. Если найдётся ошибка текущего checkpoint — выпустить `0.1a fix2`.
+Начать `0.1b`: сначала формализовать expected behavior для missing-data и timeline edge cases, затем реализовать/проверить их и закрепить контракт Stage 1 → Stage 2.
 
 ## Что читать в новом чате Stage 1
 
