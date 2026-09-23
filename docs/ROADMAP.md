@@ -2,6 +2,25 @@
 
 > Roadmap фиксирует последовательность разработки. Подробная схема версионирования описана в [`VERSIONING.md`](VERSIONING.md).
 
+## Общее правило разработки Stage
+
+Каждый Stage делится на **логические подэтапы**, и каждому такому подэтапу соответствует отдельная буквенная build-версия.
+
+Принцип:
+
+```text
+Stage N
+→ N.xa — подэтап A
+→ N.xb — подэтап B
+→ N.xc — подэтап C
+→ ...
+→ следующая стабильная числовая версия — Stage complete
+```
+
+Буквенная версия является самостоятельным build checkpoint: у неё должна быть понятная цель, проверяемый результат, checklist и набор тестов. Новая буква означает новую функциональную часть Stage. Исправления уже существующего подэтапа получают `fixN`.
+
+Количество подэтапов может уточняться по мере разработки, но Stage не должен сворачиваться в одну большую рабочую версию.
+
 ## Схема версий по Stage
 
 | Stage | Рабочие версии | Итог Stage |
@@ -18,7 +37,7 @@
 | Stage 9 | `0.9a`, `0.9b`, ... | `1.0` |
 | Stage 10 | `1.0a`, `1.0b`, ... | `1.1` |
 
-Если при живом тестировании рабочей версии обнаруживается ошибка, используется формат `fixN`, например `0.0b fix1`, `0.0b fix2`. Новая буква означает новый подэтап, а `fixN` — исправление текущего подэтапа.
+Если при живом тестировании рабочей версии обнаруживается ошибка, используется формат `fixN`, например `0.2b fix1`, `0.2b fix2`. Новая буква означает новый подэтап, а `fixN` — исправление текущего подэтапа.
 
 ---
 
@@ -65,6 +84,8 @@
 
 Первая целевая DAW — Fender Studio Pro.
 
+Stage завершён версией `0.2`.
+
 ---
 
 ## Stage 2 — Harmonic Engine
@@ -90,6 +111,77 @@
 - secondary dominant;
 - tritone substitution.
 
+### Логические подэтапы Stage 2
+
+Текущий план:
+
+```text
+0.2a — Harmonic Engine foundation
+0.2b — Pattern Recognizer
+0.2c — Tritone Substitution
+0.2d — Local Key Center
+0.2e — Ambiguity / Confidence
+0.2f — Stage 2 integration / musical validation
+0.3  — Stage 2 complete
+```
+
+#### 0.2a — Harmonic Engine foundation
+
+- отдельный host-neutral `HarmonicEngine`;
+- реальный `TimelineHarmonicSnapshot` → `HarmonicSituation`;
+- global key;
+- previous/current/next context;
+- basic harmonic function;
+- resolution;
+- первые major `ii–V–I`, minor `iiø–V–i`, `V–I`;
+- confirmed secondary dominant;
+- минимальный temporary local center;
+- regression tests.
+
+#### 0.2b — Pattern Recognizer
+
+- pattern positions для `ii / V / I`;
+- анализ current chord в разных позициях оборота;
+- `I–VI–ii–V`;
+- secondary-dominant chains;
+- pattern evidence/confidence;
+- boundary cases.
+
+#### 0.2c — Tritone Substitution
+
+- `SubV`;
+- `ii–SubV–I`;
+- отличие `V7` от `SubV7`;
+- resolution logic для substitute dominant;
+- regression tests.
+
+#### 0.2d — Local Key Center
+
+- temporary tonicization;
+- короткие local centers;
+- отличие tonicization от modulation;
+- возврат к global key;
+- secondary dominants внутри local context;
+- тесты tonicization chains.
+
+#### 0.2e — Ambiguity / Confidence
+
+- `unique / ambiguous` interpretations;
+- confidence levels;
+- alternative interpretation candidates;
+- borrowed/modal ambiguity;
+- controlled evidence rules.
+
+#### 0.2f — Integration / musical validation
+
+- комплексные harmonic sequences;
+- regression всего Stage 2;
+- diagnostics/UI для наблюдения анализа;
+- live validation в Fender Studio Pro;
+- подготовка стабильной `0.3`.
+
+План `0.2b–0.2f` может уточняться по мере разработки. Если появляется новая самостоятельная музыкальная или техническая задача, она получает отдельную следующую буквенную версию, а не добавляется скрыто внутрь уже принятого подэтапа.
+
 ---
 
 ## Stage 3 — Improvisation Engine
@@ -109,6 +201,8 @@
 
 Пока без большой библиотеки готовых фраз.
 
+Перед началом Stage 3 его задачи должны быть разложены на логические подэтапы `0.3a`, `0.3b`, `0.3c`, ... с отдельными build checkpoints.
+
 ---
 
 ## Stage 4 — Tension Engine
@@ -123,6 +217,8 @@
 - Tension 3 — Outside / Maximum.
 
 Для одного контекста должны существовать разные стратегии в зависимости от выбранного уровня.
+
+Перед началом Stage 4 определяется отдельный план буквенных подэтапов.
 
 ---
 
@@ -143,6 +239,8 @@
 - concepts;
 - relative representation.
 
+Перед началом Stage 5 определяется отдельный план буквенных подэтапов.
+
 ---
 
 ## Stage 6 — Phrase Transposition
@@ -157,6 +255,8 @@
 Затем:
 
 - functional transpose.
+
+Эти и дополнительные задачи Stage 6 должны быть распределены по отдельным буквенным build checkpoints.
 
 ---
 
@@ -176,6 +276,8 @@
 
 На этом этапе нужен viewer, а не полноценный редактор.
 
+Перед началом Stage 7 определяется отдельный план буквенных подэтапов.
+
 ---
 
 ## Stage 8 — Phrase Editor
@@ -193,6 +295,8 @@
 - tagging;
 - context assignment;
 - tension assignment.
+
+Перед началом Stage 8 определяется отдельный план буквенных подэтапов.
 
 ---
 
@@ -212,6 +316,8 @@
 - change tension;
 - preserve phrase role and melodic contour where possible.
 
+Перед началом Stage 9 определяется отдельный план буквенных подэтапов.
+
 ---
 
 ## Stage 10 — Improvisation Planner
@@ -230,6 +336,8 @@
 - release;
 - рекомендации, где использовать более сильные концепции;
 - вариативность между повторными chorus.
+
+Перед началом Stage 10 определяется отдельный план буквенных подэтапов.
 
 ---
 

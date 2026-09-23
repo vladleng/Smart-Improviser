@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.22)
 
 project(SmartImproviser
-    VERSION 0.2.0
+    VERSION 0.2.2
     DESCRIPTION "Smart Improviser - context-aware jazz improvisation assistant"
     LANGUAGES C CXX)
 
@@ -28,6 +28,8 @@ add_library(SmartImproviserCore STATIC
     src/core/model/KeyModel.h
     src/core/model/Phrase.h
     src/core/model/ResolutionTarget.h
+    src/core/analysis/HarmonicEngine.cpp
+    src/core/analysis/HarmonicEngine.h
     src/core/analysis/HarmonicFunction.cpp
     src/core/analysis/HarmonicFunction.h
 )
@@ -140,7 +142,7 @@ target_compile_definitions(SmartImproviserARA
         JUCE_WEB_BROWSER=0
         JUCE_USE_CURL=0
         JUCE_VST3_CAN_REPLACE_VST2=0
-        SMART_IMPROVISER_BUILD_VERSION="0.2"
+        SMART_IMPROVISER_BUILD_VERSION="0.2a fix1"
 )
 
 target_link_libraries(SmartImproviserARA
@@ -173,6 +175,13 @@ add_executable(SmartImproviserDataModelTests
 target_link_libraries(SmartImproviserDataModelTests PRIVATE SmartImproviserCore)
 target_compile_features(SmartImproviserDataModelTests PRIVATE cxx_std_20)
 
+add_executable(SmartImproviserHarmonicEngineTests
+    tests/HarmonicEngineTests.cpp
+)
+
+target_link_libraries(SmartImproviserHarmonicEngineTests PRIVATE SmartImproviserCore)
+target_compile_features(SmartImproviserHarmonicEngineTests PRIVATE cxx_std_20)
+
 add_executable(SmartImproviserTimelineContextTests
     tests/TimelineContextMapperTests.cpp
 )
@@ -183,9 +192,11 @@ target_compile_features(SmartImproviserTimelineContextTests PRIVATE cxx_std_20)
 if(MSVC)
     target_compile_options(SmartImproviserCoreTests PRIVATE /utf-8)
     target_compile_options(SmartImproviserDataModelTests PRIVATE /utf-8)
+    target_compile_options(SmartImproviserHarmonicEngineTests PRIVATE /utf-8)
     target_compile_options(SmartImproviserTimelineContextTests PRIVATE /utf-8)
 endif()
 
 add_test(NAME SmartImproviserCoreTests COMMAND SmartImproviserCoreTests)
 add_test(NAME SmartImproviserDataModelTests COMMAND SmartImproviserDataModelTests)
+add_test(NAME SmartImproviserHarmonicEngineTests COMMAND SmartImproviserHarmonicEngineTests)
 add_test(NAME SmartImproviserTimelineContextTests COMMAND SmartImproviserTimelineContextTests)

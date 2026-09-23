@@ -3,6 +3,7 @@
 #include "ara/ARAContextDebugState.h"
 #include "context/SharedHarmonicContext.h"
 #include "context/TimelineContextMapper.h"
+#include "core/analysis/HarmonicEngine.h"
 #include "core/model/ChordModel.h"
 #include "core/model/KeyModel.h"
 
@@ -57,6 +58,17 @@ std::string fifthsName(std::int32_t fifths)
     return pitchClassNames[smartimproviser::harmony::circleOfFifthsToPitchClass(fifths)];
 }
 
+const char* pitchClassName(int pitchClass) noexcept
+{
+    static constexpr const char* names[smartimproviser::harmony::kPitchClassCount] =
+        { "C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B" };
+
+    pitchClass %= smartimproviser::harmony::kPitchClassCount;
+    if (pitchClass < 0)
+        pitchClass += smartimproviser::harmony::kPitchClassCount;
+    return names[pitchClass];
+}
+
 juce::String chordDisplayName(const smartimproviser::harmony::ChordContext& context)
 {
     if (! context.available)
@@ -80,6 +92,120 @@ juce::String keyDisplayName(const smartimproviser::harmony::KeyContext& context)
     return utf8String(fifthsName(key.rootFifths))
          + " "
          + smartimproviser::harmony::keyModeName(key.mode);
+}
+
+const char* patternName(smartimproviser::harmony::HarmonicPatternType type) noexcept
+{
+    using smartimproviser::harmony::HarmonicPatternType;
+    switch (type)
+    {
+        case HarmonicPatternType::none: return "None";
+        case HarmonicPatternType::majorIiVI: return "Major ii-V-I";
+        case HarmonicPatternType::minorIiHalfDimVi: return "Minor iio-V-i";
+        case HarmonicPatternType::dominantToTonic: return "V-I";
+        case HarmonicPatternType::turnaroundIVIiiV: return "I-VI-ii-V";
+        case HarmonicPatternType::secondaryDominant: return "Secondary dominant";
+        case HarmonicPatternType::tritoneSubstitution: return "Tritone substitution";
+        case HarmonicPatternType::backdoorDominant: return "Backdoor dominant";
+        case HarmonicPatternType::minorIvToI: return "Minor iv-I";
+        case HarmonicPatternType::passingDiminished: return "Passing diminished";
+        case HarmonicPatternType::commonToneDiminished: return "Common-tone diminished";
+        case HarmonicPatternType::dominantChain: return "Dominant chain";
+        case HarmonicPatternType::modalVamp: return "Modal vamp";
+        case HarmonicPatternType::undefined:
+        default: return "-";
+    }
+}
+
+const char* patternRoleName(smartimproviser::harmony::PatternMemberRole role) noexcept
+{
+    using smartimproviser::harmony::PatternMemberRole;
+    switch (role)
+    {
+        case PatternMemberRole::preparation: return "Preparation";
+        case PatternMemberRole::predominant: return "Predominant";
+        case PatternMemberRole::dominant: return "Dominant";
+        case PatternMemberRole::substituteDominant: return "Substitute dominant";
+        case PatternMemberRole::tonic: return "Tonic";
+        case PatternMemberRole::resolution: return "Resolution";
+        case PatternMemberRole::passing: return "Passing";
+        case PatternMemberRole::undefined:
+        default: return "-";
+    }
+}
+
+const char* confidenceName(smartimproviser::harmony::ConfidenceLevel level) noexcept
+{
+    using smartimproviser::harmony::ConfidenceLevel;
+    switch (level)
+    {
+        case ConfidenceLevel::low: return "low";
+        case ConfidenceLevel::medium: return "medium";
+        case ConfidenceLevel::high: return "high";
+        case ConfidenceLevel::confirmed: return "confirmed";
+        case ConfidenceLevel::unknown:
+        default: return "unknown";
+    }
+}
+
+const char* interpretationName(smartimproviser::harmony::InterpretationStatus status) noexcept
+{
+    using smartimproviser::harmony::InterpretationStatus;
+    switch (status)
+    {
+        case InterpretationStatus::unique: return "unique";
+        case InterpretationStatus::ambiguous: return "ambiguous";
+        case InterpretationStatus::unknown:
+        default: return "unknown";
+    }
+}
+
+const char* keyCenterScopeName(smartimproviser::harmony::KeyCenterScope scope) noexcept
+{
+    using smartimproviser::harmony::KeyCenterScope;
+    switch (scope)
+    {
+        case KeyCenterScope::global: return "global";
+        case KeyCenterScope::local: return "local";
+        case KeyCenterScope::temporary: return "temporary";
+        case KeyCenterScope::modal: return "modal";
+        case KeyCenterScope::undefined:
+        default: return "undefined";
+    }
+}
+
+juce::String localCenterDisplayName(const smartimproviser::harmony::KeyCenter& center)
+{
+    if (! center.valid || ! center.key.valid)
+        return "-";
+
+    return juce::String(pitchClassName(center.key.rootPitchClass))
+         + " "
+         + smartimproviser::harmony::keyModeName(center.key.mode)
+         + "  |  "
+         + keyCenterScopeName(center.scope);
+}
+
+juce::String patternPositionDisplay(const smartimproviser::harmony::HarmonicPattern& pattern)
+{
+    if (! pattern.recognized())
+        return "-";
+
+    juce::String value(patternRoleName(pattern.role));
+    if (pattern.positionIndex >= 0 && pattern.length > 0)
+        value += "  |  " + juce::String(pattern.positionIndex + 1)
+              + " / " + juce::String(pattern.length);
+    return value;
+}
+
+juce::String resolutionDisplay(const smartimproviser::harmony::HarmonicSituation& situation)
+{
+    if (! situation.resolution.available || ! situation.resolution.targetChord.valid)
+        return "-";
+
+    auto value = utf8String(smartimproviser::harmony::normalizedChordSymbol(situation.resolution.targetChord));
+    value += situation.resolution.confirmed ? "  |  CONFIRMED" : "  |  expected";
+    return value;
 }
 
 double localBpm(const SharedHarmonicContextSnapshot& shared, double ppq) noexcept
@@ -123,7 +249,7 @@ void drawRow(juce::Graphics& g,
 SmartImproviserARAEditor::SmartImproviserARAEditor(SmartImproviserARAProcessor& p)
     : juce::AudioProcessorEditor(p), processor(p)
 {
-    setSize(640, 570);
+    setSize(640, 790);
     startTimerHz(10);
 }
 
@@ -143,7 +269,7 @@ void SmartImproviserARAEditor::paint(juce::Graphics& g)
 
     g.setColour(juce::Colour::fromRGB(150, 156, 168));
     g.setFont(14.0f);
-    g.drawText("Stage 1 - ARA Context Monitor",
+    g.drawText("Stage 1 Context + Stage 2 Harmonic Engine diagnostics",
                24, 48, 590, 22, juce::Justification::centredLeft);
 
     const auto debug = ARAContextDebugState::instance().getSnapshot();
@@ -151,6 +277,7 @@ void SmartImproviserARAEditor::paint(juce::Graphics& g)
     const auto ppq = shared.transportAvailable ? shared.transportPpq : -1.0;
     const auto timeline = smartimproviser::harmony::mapTimelineHarmonicSnapshot(shared, ppq);
     const auto context = smartimproviser::harmony::mapHarmonicContext(shared, ppq);
+    const auto situation = smartimproviser::harmony::analyzeHarmonicSituation(timeline);
 
     int y = 84;
     drawRow(g, y, "ARA binding", processor.isAraBound() ? "BOUND" : "NOT BOUND", true); y += 25;
@@ -196,11 +323,48 @@ void SmartImproviserARAEditor::paint(juce::Graphics& g)
     drawRow(g, y, "ARA events", counts); y += 25;
     drawRow(g, y, "Revisions",
             "harmonic " + juce::String(static_cast<juce::int64>(shared.revision))
-            + "  |  transport " + juce::String(static_cast<juce::int64>(shared.transportRevision)));
+            + "  |  transport " + juce::String(static_cast<juce::int64>(shared.transportRevision))); y += 36;
+
+    g.setColour(juce::Colour::fromRGB(77, 81, 89));
+    g.drawHorizontalLine(y, 24.0f, static_cast<float>(getWidth() - 24)); y += 12;
+
+    g.setColour(juce::Colour::fromRGB(190, 195, 205));
+    g.setFont(juce::FontOptions(15.0f, juce::Font::bold));
+    g.drawText("STAGE 2 - HARMONIC ENGINE", 24, y, 590, 22, juce::Justification::centredLeft); y += 28;
+
+    drawRow(g, y, "Situation", situation.valid ? "VALID" : "NO ANALYSIS", true); y += 24;
+
+    juce::String functionText = "-";
+    if (situation.valid && situation.harmonic.valid)
+    {
+        functionText = smartimproviser::harmony::scaleDegreeName(situation.harmonic.rootScaleDegree);
+        functionText += "  |  ";
+        functionText += smartimproviser::harmony::harmonicFunctionName(situation.harmonic.effectiveFunction);
+    }
+    drawRow(g, y, "Function", functionText, true); y += 24;
+
+    drawRow(g, y, "Relation",
+            situation.valid && situation.harmonic.valid
+                ? juce::String(smartimproviser::harmony::harmonicRelationName(situation.harmonic.relation))
+                : juce::String("-")); y += 24;
+
+    drawRow(g, y, "Local center", localCenterDisplayName(situation.localKey)); y += 24;
+    drawRow(g, y, "Pattern", situation.valid ? juce::String(patternName(situation.pattern.type)) : "-"); y += 24;
+    drawRow(g, y, "Pattern position", patternPositionDisplay(situation.pattern)); y += 24;
+    drawRow(g, y, "Resolution", resolutionDisplay(situation)); y += 24;
+
+    juce::String confidence = "-";
+    if (situation.valid)
+    {
+        confidence = confidenceName(situation.evidence.confidence);
+        confidence += "  |  ";
+        confidence += interpretationName(situation.evidence.interpretation);
+    }
+    drawRow(g, y, "Confidence", confidence, true);
 
     g.setColour(juce::Colour::fromRGB(105, 110, 120));
     g.setFont(12.5f);
-    g.drawText("Diagnostic UI for Stage 1. Product interface will be developed later.",
-               24, getHeight() - 30, getWidth() - 48, 20,
+    g.drawText("Diagnostic UI for Stage 1/2 validation. Product interface will be developed later.",
+               24, getHeight() - 28, getWidth() - 48, 20,
                juce::Justification::centredLeft);
 }

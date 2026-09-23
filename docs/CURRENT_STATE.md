@@ -1,184 +1,100 @@
 # Smart Improviser — Current State
 
-> **Назначение:** короткая точка входа для нового чата или новой рабочей сессии.  
-> Этот файл должен отвечать на вопрос: **где проект находится сейчас и что делать следующим?**  
-> Подробная архитектура хранится в `PROJECT_CONTEXT.md`, этапы — в `ROADMAP.md`, правила версий — в `VERSIONING.md`, фактический прогресс — в GitHub Issues.
+> Короткая точка входа для нового чата или рабочей сессии. Подробная архитектура — в `PROJECT_CONTEXT.md`, этапы — в `ROADMAP.md`, правила версий — в `VERSIONING.md`, фактический прогресс — в GitHub Issues.
 
 ## Текущее состояние
 
 - **Завершённый Stage:** Stage 1 — ARA Context Monitor
 - **Текущая стабильная версия:** `0.2`
-- **Следующий Stage:** Stage 2 — Harmonic Engine
-- **Следующая рабочая версия:** `0.2a`
-- **Stage 1 Issue:** #2 — Stage 1 — ARA Context Monitor
-- **Stage 1 ветка:** `stage-1-ara-context-monitor`
-- **Stage 1 PR:** #14
+- **Активный Stage:** Stage 2 — Harmonic Engine
+- **Последний принятый checkpoint:** `0.2a / 0.2a fix1`
+- **Следующая рабочая версия:** `0.2b — Pattern Recognizer`
+- **Stage 2 Issue:** #3 — Stage 2 — Harmonic Engine
+- **Рабочая ветка:** `stage-2-harmonic-engine`
+- **PR checkpoint 0.2a:** #15 — `0.2a fix1 — Stage 2 Harmonic Engine diagnostics`
 
-Stage 1 принят после живых тестов `0.1a fix1` и `0.1b` в Fender Studio Pro. Финальная сборка этапа имеет версию `0.2`.
+## Принятие checkpoint 0.2a
 
-## Завершённая архитектурная цепочка Stage 1
+`0.2a` и `0.2a fix1` **приняты по результатам CI и live-test в Fender Studio Pro**.
+
+Подтверждено:
+
+- Windows Build #148 — success;
+- artifact `Smart-Improviser-0.2a-fix1-Windows` установлен;
+- Stage 1 ARA/context regression не обнаружен;
+- Harmonic Engine diagnostics работают в реальном plugin UI;
+- `Cmaj7` в C major → `I | Tonic`, Diatonic;
+- `Am7` → `VI | Tonic`, Diatonic;
+- `Dm7` → `II | Predominant`, Diatonic;
+- `Dm7 → G7 → Cmaj7` на G7 → `V | Dominant`, `Major ii-V-I`, `Dominant | 2 / 3`, resolution `Cmaj7 | CONFIRMED`;
+- `D7 → G7` в C major на D7 → Chromatic, `Secondary dominant`, local center `G major | temporary`, resolution `G7 | CONFIRMED`;
+- confidence/evidence обновляются ожидаемо (`high/confirmed | unique`).
+
+## Архитектурная цепочка
 
 ```text
 Fender Studio Pro / ARA 2
         ↓
-Musical Context
+TimelineHarmonicSnapshot
         ↓
-SharedHarmonicContextSnapshot
+buildHarmonicSituation()
         ↓
-TimelineContextMapper
-        ↓
-ARAContextProvider
-        ↓
-HarmonicContext / TimelineHarmonicSnapshot
+analyzeHarmonicSituation() / Harmonic Engine
         ↓
 HarmonicSituation
         ↓
-Stage 2 Harmonic Engine
+Diagnostic UI / future product UI
 ```
 
-Core не зависит от Fender Studio Pro, ARA, JUCE, VST3, UI или старого Smart Voicing engine.
+Core и Harmonic Engine остаются host-neutral. UI только отображает уже рассчитанный `HarmonicSituation`.
 
-## Что подтверждено в живых тестах Stage 1
+## Что закрыто в 0.2a
 
-На реальном проекте Fender Studio Pro подтверждено:
+- отдельный `HarmonicEngine`;
+- global key + previous/current/next analysis;
+- basic harmonic function;
+- major `ii–V–I` для current V;
+- minor `iiø–V–i` для current V;
+- fallback `V–I`;
+- secondary dominant;
+- evidence-backed temporary local center;
+- safe non-analysis states;
+- regression tests;
+- Stage 2 diagnostic UI.
 
-- ARA binding — **BOUND**;
-- Document Controller — **YES**;
-- Host Content Access — **YES**;
-- Musical Context — доступен;
-- Shared Context — **YES**;
-- STOP / PLAY / seek — корректны;
-- PPQ и seconds — корректно обновляются;
-- Key Track — читается и нормализуется;
-- Chord Track — читается и нормализуется;
-- previous/current/next совпадают с Chord Track;
-- exact chord boundary корректно переключает current chord;
-- Tempo / Time Signature совпадают с DAW;
-- изменения Chord Track / Key Track обновляют snapshot;
-- после повторного открытия проекта binding/context восстанавливаются;
-- длина Audio Event не ограничивает Musical Context: Event является только ARA anchor;
-- explicit no-chord event обрабатывается как `available=true`, `defined=false`;
-- отсутствие Key events не ломает Chord context;
-- отсутствие активного chord event не ломает ARA connection;
-- до первого chord event корректно сохраняется future/next context;
-- после последнего event обработка остаётся безопасной и детерминированной.
+## Следующий подэтап — 0.2b Pattern Recognizer
 
-Подтверждённые примеры:
+Цель: расширить pattern recognition с текущего минимального варианта до полноценного анализа позиции внутри оборота.
+
+План:
+
+- распознавать major `ii–V–I` для позиций `ii / V / I`;
+- распознавать minor `iiø–V–i` для позиций `iiø / V / i`;
+- добавить `I–VI–ii–V`;
+- добавить secondary-dominant chains;
+- добавить pattern positions: начало / середина / resolution;
+- добавить pattern evidence/confidence;
+- boundary regression tests.
+
+## Дальнейшая линия Stage 2
 
 ```text
-Previous chord  C
-Current chord   (no chord)
-Next chord      Cmaj7
+0.2a — Harmonic Engine foundation          [ACCEPTED]
+0.2a fix1 — Harmonic Engine diagnostics    [ACCEPTED]
+0.2b — Pattern Recognizer                  [NEXT]
+0.2c — Tritone Substitution
+0.2d — Local Key Center
+0.2e — Ambiguity / Confidence
+0.2f — Integration / musical validation
+0.3  — Stage 2 complete
 ```
 
-```text
-Previous chord  Cmaj7
-Current chord   Am7
-Next chord      Dm7
-```
+## Что делать следующим
 
-```text
-Key             -
-Previous chord  -
-Current chord   (no chord)
-Next chord      C
-Tempo           120 BPM
-Time signature  4/4
-```
-
-Multiple Musical Context не является блокером `0.2`, если отдельный воспроизводимый сценарий Studio Pro недоступен. В `0.1b` реализована детерминированная policy выбора: максимум доступных content types → максимум events → первый context при равенстве; UI показывает `Musical contexts N | selected M`.
-
-## Что входит в стабильную 0.2
-
-### ARA / host integration
-
-- ARA 2 Event FX для Fender Studio Pro;
-- Key Signature, Sheet Chords, Tempo Entries, Bar Signatures;
-- transport position / playing state;
-- изолированный Smart Improviser shared-memory ABI.
-
-### Host-neutral context layer
-
-- `SharedHarmonicContextData.h`;
-- `TimelineContextMapper.h/.cpp`;
-- `SmartImproviserContext` без JUCE/ARA зависимости;
-- `ARAContextProvider`;
-- `HarmonicContext`;
-- `TimelineHarmonicSnapshot`.
-
-### Edge-case semantics
-
-- missing Key / Chord / Tempo sources;
-- undefined key/chord event;
-- explicit no-chord;
-- before-first chord;
-- after-last chord;
-- exact event boundary;
-- safe PPQ ↔ seconds conversion;
-- single tempo anchor без выдумывания неизвестного tempo slope.
-
-### Regression tests
-
-CI запускает:
-
-```text
-SmartImproviserCoreTests
-SmartImproviserDataModelTests
-SmartImproviserTimelineContextTests
-```
-
-### Stage 1 → Stage 2 contract
-
-Формальный контракт зафиксирован в:
-
-```text
-docs/STAGE_1_TO_STAGE_2_CONTRACT.md
-```
-
-Stage 2 получает host-neutral `TimelineHarmonicSnapshot` / `HarmonicContext` и не должен знать деталей ARA SDK, JUCE, shared memory или Fender Studio Pro.
-
-## Финальная сборка Stage 1
-
-Build label:
-
-```text
-Smart Improviser 0.2
-```
-
-CMake project version:
-
-```text
-0.2.0
-```
-
-GitHub Actions artifact:
-
-```text
-Smart-Improviser-0.2-Windows
-└── Smart Improviser.vst3
-```
-
-Устанавливаемая папка всегда называется `Smart Improviser.vst3` и целиком заменяет предыдущую версию.
-
-## Следующий этап — Stage 2 / 0.2a
-
-Stage 2 — **Harmonic Engine**.
-
-Первый подэтап `0.2a` должен начать музыкальный анализ уже готового `TimelineHarmonicSnapshot`:
-
-1. global key и подготовка local key center;
-2. basic harmonic functions;
-3. previous/current/next analysis;
-4. базовый pattern recognition;
-5. первые целевые паттерны: major ii–V–I, minor iiø–V–i, V–I, I–VI–ii–V, secondary dominant, tritone substitution.
-
-## Рабочая линия
-
-```text
-Stage 0 → 0.1  [COMPLETED]
-Stage 1 → 0.2  [COMPLETED]
-Stage 2 → 0.2a ... → 0.3
-```
+1. начать реализацию `0.2b — Pattern Recognizer`;
+2. не расширять `0.2a fix1` новой функциональностью;
+3. сохранить host-neutral границу Harmonic Engine;
+4. после завершения `0.2b` провести отдельный regression/live-test checkpoint перед переходом к `0.2c`.
 
 ## Что читать в новом чате Stage 2
 
@@ -189,8 +105,4 @@ Stage 2 → 0.2a ... → 0.3
 5. `docs/ARCHITECTURAL_DECISIONS.md`;
 6. `docs/ROADMAP.md`;
 7. `docs/VERSIONING.md`;
-8. Issue следующего Stage 2 после его создания.
-
-## Правило обновления этого файла
-
-`CURRENT_STATE.md` обновляется при переходе на следующую буквенную версию, после существенного `fixN`, важного live-test, смены активного PR/ветки, завершения Stage и перед переходом разработки в новый чат.
+8. Issue #3 — Stage 2 — Harmonic Engine.
