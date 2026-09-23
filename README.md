@@ -11,14 +11,16 @@
 **Активный Stage:** Stage 2 — Harmonic Engine.
 
 **Текущая стабильная версия:** `0.2`  
-**Текущая рабочая версия:** `0.2a`  
+**Текущая рабочая версия:** `0.2a fix1`  
 **Активная ветка:** `stage-2-harmonic-engine`  
 **Stage 2 Issue:** #3  
 **Stage 2 PR:** #15
 
 В `0.2` завершён ARA/context pipeline: Fender Studio Pro передаёт host-neutral `TimelineHarmonicSnapshot` с current/previous/next chord, global key, tempo/time-signature и transport context.
 
-В `0.2a` начинается Harmonic Engine: отдельный host-neutral analyzer поверх `HarmonicSituation`, первый pattern recognition и evidence-backed temporary local center.
+В `0.2a` начат Harmonic Engine: отдельный host-neutral analyzer поверх `HarmonicSituation`, первый pattern recognition и evidence-backed temporary local center.
+
+`0.2a fix1` добавляет диагностическое отображение результата Harmonic Engine непосредственно в окне плагина, чтобы Stage 2 можно было проверить живым тестом в Fender Studio Pro.
 
 Первая целевая среда:
 
@@ -61,16 +63,6 @@ Harmony
 - допустимые tensions;
 - степень музыкального напряжения;
 - подходящие стратегии импровизации.
-
-## Tension Engine
-
-Одна из главных идей проекта — три уровня напряжения:
-
-- **Tension 1 — Stable:** chord tones, guide tones, устойчивые extensions и ясное проведение гармонии.
-- **Tension 2 — Color:** хроматические подходы, enclosures, melodic minor applications, upper structures и контролируемые alterations.
-- **Tension 3 — Outside / Maximum:** altered, diminished language, substitutions, side slipping, superimposed harmony и delayed resolution.
-
-В дальнейшем tension должен работать не только на уровне отдельного аккорда, но и как **Tension Curve** для нескольких тактов или целого chorus.
 
 ## Smart Improviser Core
 
@@ -118,7 +110,7 @@ fixN        = исправление текущего подэтапа
 
 Буквенная версия — это отдельный build checkpoint с собственной целью, checklist и тестами. Stage не должен разрабатываться одной большой буквенной версией.
 
-Например Stage 2 запланирован так:
+Stage 2 запланирован так:
 
 ```text
 0.2a — Harmonic Engine foundation
@@ -132,9 +124,9 @@ fixN        = исправление текущего подэтапа
 
 Подробные правила: [`docs/VERSIONING.md`](docs/VERSIONING.md). Актуальная декомпозиция этапов: [`docs/ROADMAP.md`](docs/ROADMAP.md).
 
-## Stage 2 / 0.2a
+## Stage 2 / 0.2a fix1
 
-Первый подэтап Harmonic Engine включает:
+Foundation `0.2a` включает:
 
 - отдельный host-neutral `HarmonicEngine`;
 - анализ current chord относительно global key;
@@ -146,6 +138,17 @@ fixN        = исправление текущего подэтапа
 - temporary local center только при подтверждённом applied dominant;
 - regression tests для Harmonic Engine.
 
+`0.2a fix1` дополнительно показывает в diagnostic UI:
+
+- `Situation`;
+- scale degree + `Function`;
+- diatonic/chromatic `Relation`;
+- `Local center` и его scope;
+- `Pattern`;
+- role / position внутри pattern;
+- target `Resolution`;
+- `Confidence` и interpretation status.
+
 Следующие подэтапы Stage 2:
 
 - `0.2b` — полный Pattern Recognizer и pattern positions;
@@ -153,6 +156,16 @@ fixN        = исправление текущего подэтапа
 - `0.2d` — Local Key Center / tonicization chains;
 - `0.2e` — ambiguity / alternative interpretations / confidence;
 - `0.2f` — integration, regression и musical validation.
+
+## Tension Engine
+
+Одна из главных идей проекта — три уровня напряжения:
+
+- **Tension 1 — Stable:** chord tones, guide tones, устойчивые extensions и ясное проведение гармонии.
+- **Tension 2 — Color:** хроматические подходы, enclosures, melodic minor applications, upper structures и контролируемые alterations.
+- **Tension 3 — Outside / Maximum:** altered, diminished language, substitutions, side slipping, superimposed harmony и delayed resolution.
+
+В дальнейшем tension должен работать не только на уровне отдельного аккорда, но и как **Tension Curve** для нескольких тактов или целого chorus.
 
 ## Долгосрочное направление
 
@@ -180,14 +193,7 @@ fixN        = исправление текущего подэтапа
 ```text
 Stage 0: 0.0a → ... → 0.1
 Stage 1: 0.1a → ... → 0.2
-Stage 2: 0.2a → 0.2b → 0.2c → ... → 0.3
-```
-
-Если после живого теста конкретной буквенной версии требуется исправление:
-
-```text
-0.2a fix1
-0.2a fix2
+Stage 2: 0.2a → 0.2a fix1 → 0.2b → 0.2c → ... → 0.3
 ```
 
 `fixN` исправляет существующий подэтап и не используется вместо новой буквенной версии для новой функциональности.
@@ -207,4 +213,4 @@ Stage 2: 0.2a → 0.2b → 0.2c → ... → 0.3
 
 ## Ближайший технический шаг
 
-Принять `0.2a` как отдельный build checkpoint, после чего перейти к **`0.2b — Pattern Recognizer`**.
+Проверить `0.2a fix1` в Fender Studio Pro. После принятия checkpoint `0.2a` перейти к **`0.2b — Pattern Recognizer`**.
