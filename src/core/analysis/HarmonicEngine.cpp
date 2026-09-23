@@ -147,20 +147,22 @@ HarmonicPattern recognizePattern(const HarmonicSituation& situation) noexcept
                            ConfidenceLevel::confirmed);
     }
 
-    if (situation.nextChordAvailable
-        && situation.currentChord.quality == ChordQuality::dominant
-        && situation.harmonic.dominantResolutionConfirmed)
+    // Applied dominants are a more specific interpretation than the generic
+    // dominant-to-target relation and therefore must win when confirmed.
+    if (situation.harmonic.appliedDominantConfirmed)
     {
-        return makePattern(HarmonicPatternType::dominantToTonic,
+        return makePattern(HarmonicPatternType::secondaryDominant,
                            PatternMemberRole::dominant,
                            0,
                            2,
                            ConfidenceLevel::confirmed);
     }
 
-    if (situation.harmonic.appliedDominantConfirmed)
+    if (situation.nextChordAvailable
+        && situation.currentChord.quality == ChordQuality::dominant
+        && situation.harmonic.dominantResolutionConfirmed)
     {
-        return makePattern(HarmonicPatternType::secondaryDominant,
+        return makePattern(HarmonicPatternType::dominantToTonic,
                            PatternMemberRole::dominant,
                            0,
                            2,
