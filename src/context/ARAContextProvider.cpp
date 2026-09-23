@@ -30,16 +30,19 @@ TimelineHarmonicSnapshot ARAContextProvider::timelineSnapshotAt(double ppq) noex
 
 double ARAContextProvider::nextChordStartAfter(double ppq) noexcept
 {
-    return harmony::nextChordStartAfter(SharedHarmonicContextBridge::instance().read(), ppq);
+    return ::smartimproviser::harmony::nextChordStartAfter(
+        SharedHarmonicContextBridge::instance().read(), ppq);
 }
 
 double ARAContextProvider::secondsAtPpq(double ppq) noexcept
 {
-    return harmony::secondsAtPpq(SharedHarmonicContextBridge::instance().read(), ppq);
+    return ::smartimproviser::harmony::secondsAtPpq(
+        SharedHarmonicContextBridge::instance().read(), ppq);
 }
 
 double ARAContextProvider::ppqAtSeconds(double seconds) noexcept
 {
-    return harmony::ppqAtSeconds(SharedHarmonicContextBridge::instance().read(), seconds);
+    return ::smartimproviser::harmony::ppqAtSeconds(
+        SharedHarmonicContextBridge::instance().read(), seconds);
 }
 }
