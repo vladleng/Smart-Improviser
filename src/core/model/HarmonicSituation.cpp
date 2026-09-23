@@ -100,7 +100,13 @@ HarmonicSituation buildHarmonicSituation(const TimelineHarmonicSnapshot& snapsho
         result.nextChordAvailable = result.nextChord.valid;
     }
 
-    if (! result.currentChord.valid || ! result.globalKey.valid)
+    // Stage 1 -> Stage 2 contract: a musical situation is analyzable only when
+    // its timeline coordinate is known and both current chord and global key
+    // are structurally defined. Missing data is a safe invalid state, not an
+    // invitation to invent host context.
+    if (! snapshot.positionAvailable
+        || ! result.currentChord.valid
+        || ! result.globalKey.valid)
         return result;
 
     result.valid = true;
@@ -142,7 +148,7 @@ HarmonicSituation buildHarmonicSituation(const TimelineHarmonicSnapshot& snapsho
     }
 
     // Pattern recognition and local key inference are intentionally left to
-    // dedicated Stage 2 analyzers. The 0.0b contract carries their output
+    // dedicated Stage 2 analyzers. The data-model contract carries their output
     // without guessing them in the data-model layer.
     result.pattern.type = HarmonicPatternType::none;
 
