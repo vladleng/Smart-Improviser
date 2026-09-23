@@ -1,0 +1,25 @@
+# Build directories
+build/
+cmake-build-*/
+out/
+
+# IDE
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+*.VC.db
+
+# Generated binaries
+*.dll
+*.exe
+*.pdb
+*.ilk
+*.lib
+*.exp
+*.vst3
+
+# OS
+.DS_Store
+Thumbs.db
