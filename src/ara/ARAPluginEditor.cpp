@@ -2,6 +2,7 @@
 #include "ara/ARAPluginProcessor.h"
 #include "ara/ARAContextDebugState.h"
 #include "context/SharedHarmonicContext.h"
+#include "context/TimelineContextMapper.h"
 #include "core/model/ChordModel.h"
 #include "core/model/KeyModel.h"
 
@@ -15,25 +16,6 @@
 
 namespace
 {
-constexpr double kPpqTolerance = 1.0e-6;
-
-template <typename Event>
-int findActiveEventIndex(const Event* events, int count, double ppq) noexcept
-{
-    if (count <= 0 || ppq < 0.0)
-        return -1;
-
-    int active = -1;
-    for (int i = 0; i < count; ++i)
-    {
-        if (events[i].position <= ppq + kPpqTolerance)
-            active = i;
-        else
-            break;
-    }
-    return active;
-}
-
 juce::String yesNo(bool value)
 {
     return value ? "YES" : "NO";
@@ -75,73 +57,35 @@ std::string fifthsName(std::int32_t fifths)
     return pitchClassNames[smartimproviser::harmony::circleOfFifthsToPitchClass(fifths)];
 }
 
-smartimproviser::harmony::ChordContext makeChordContext(const SharedChordEvent& event) noexcept
+juce::String chordDisplayName(const smartimproviser::harmony::ChordContext& context)
 {
-    smartimproviser::harmony::ChordContext context;
-    context.available = true;
-    context.startPpq = event.position;
-    context.root = event.root;
-    context.bass = event.bass;
+    if (! context.available)
+        return "-";
 
-    for (int i = 0; i < smartimproviser::harmony::kPitchClassCount; ++i)
-    {
-        context.intervals.values[static_cast<std::size_t>(i)] = event.intervals[i];
-        if (event.intervals[i] != 0)
-            context.defined = true;
-    }
-
-    return context;
+    const auto chord = smartimproviser::harmony::normalizeChord(context);
+    return chord.valid
+        ? utf8String(smartimproviser::harmony::normalizedChordSymbol(chord))
+        : juce::String("(no chord)");
 }
 
-smartimproviser::harmony::KeyContext makeKeyContext(const SharedKeySignatureEvent& event) noexcept
+juce::String keyDisplayName(const smartimproviser::harmony::KeyContext& context)
 {
-    smartimproviser::harmony::KeyContext context;
-    context.available = true;
-    context.startPpq = event.position;
-    context.root = event.root;
+    if (! context.available)
+        return "-";
 
-    for (int i = 0; i < smartimproviser::harmony::kPitchClassCount; ++i)
-    {
-        context.intervals.values[static_cast<std::size_t>(i)] = event.intervals[i];
-        if (event.intervals[i] != 0)
-            context.defined = true;
-    }
+    const auto key = smartimproviser::harmony::normalizeKey(context);
+    if (! key.valid)
+        return "(no key)";
 
-    return context;
-}
-
-juce::String chordDisplayName(const SharedChordEvent& event)
-{
-    const auto chord = smartimproviser::harmony::normalizeChord(makeChordContext(event));
-    if (chord.valid)
-        return utf8String(smartimproviser::harmony::normalizedChordSymbol(chord));
-
-    if (event.name[0] != '\0')
-        return juce::String::fromUTF8(event.name);
-
-    return "(no chord)";
-}
-
-juce::String keyDisplayName(const SharedKeySignatureEvent& event)
-{
-    const auto key = smartimproviser::harmony::normalizeKey(makeKeyContext(event));
-    if (key.valid)
-    {
-        return utf8String(fifthsName(key.rootFifths))
-             + " "
-             + smartimproviser::harmony::keyModeName(key.mode);
-    }
-
-    if (event.name[0] != '\0')
-        return juce::String::fromUTF8(event.name);
-
-    return "(no key)";
+    return utf8String(fifthsName(key.rootFifths))
+         + " "
+         + smartimproviser::harmony::keyModeName(key.mode);
 }
 
 double localBpm(const SharedHarmonicContextSnapshot& shared, double ppq) noexcept
 {
     const auto count = shared.tempoEntryStoredCount;
-    if (! shared.tempoEntriesAvailable || count < 2)
+    if (! shared.tempoEntriesAvailable || count < 2 || ppq < 0.0)
         return -1.0;
 
     int right = 1;
@@ -204,12 +148,19 @@ void SmartImproviserARAEditor::paint(juce::Graphics& g)
 
     const auto debug = ARAContextDebugState::instance().getSnapshot();
     const auto shared = SharedHarmonicContextBridge::instance().read();
+    const auto ppq = shared.transportAvailable ? shared.transportPpq : -1.0;
+    const auto timeline = smartimproviser::harmony::mapTimelineHarmonicSnapshot(shared, ppq);
+    const auto context = smartimproviser::harmony::mapHarmonicContext(shared, ppq);
 
     int y = 84;
     drawRow(g, y, "ARA binding", processor.isAraBound() ? "BOUND" : "NOT BOUND", true); y += 25;
     drawRow(g, y, "Document controller", yesNo(debug.documentControllerCreated)); y += 25;
     drawRow(g, y, "Host content access", yesNo(debug.hostContentAccessAvailable)); y += 25;
-    drawRow(g, y, "Musical contexts", juce::String(debug.musicalContextCount)); y += 25;
+
+    juce::String contextsText = juce::String(debug.musicalContextCount);
+    if (debug.selectedMusicalContextIndex >= 0)
+        contextsText += "  |  selected " + juce::String(debug.selectedMusicalContextIndex + 1);
+    drawRow(g, y, "Musical contexts", contextsText); y += 25;
     drawRow(g, y, "Shared context", yesNo(shared.connected), true); y += 34;
 
     const auto transportText = shared.transportAvailable
@@ -219,46 +170,23 @@ void SmartImproviserARAEditor::paint(juce::Graphics& g)
     drawRow(g, y, "PPQ", shared.transportAvailable ? juce::String(shared.transportPpq, 3) : "-"); y += 25;
     drawRow(g, y, "Seconds", shared.transportAvailable ? juce::String(shared.transportSeconds, 3) : "-"); y += 34;
 
-    const auto chordIndex = findActiveEventIndex(shared.sheetChords,
-                                                 shared.sheetChordStoredCount,
-                                                 shared.transportPpq);
-    const auto keyIndex = findActiveEventIndex(shared.keySignatures,
-                                               shared.keySignatureStoredCount,
-                                               shared.transportPpq);
-    const auto barIndex = findActiveEventIndex(shared.barSignatures,
-                                               shared.barSignatureStoredCount,
-                                               shared.transportPpq);
-
-    juce::String key = "-";
-    if (keyIndex >= 0)
-        key = keyDisplayName(shared.keySignatures[keyIndex]);
-
-    juce::String previous = "-";
-    juce::String current = "-";
-    juce::String next = "-";
-    if (chordIndex >= 0)
-    {
-        current = chordDisplayName(shared.sheetChords[chordIndex]);
-        if (chordIndex > 0)
-            previous = chordDisplayName(shared.sheetChords[chordIndex - 1]);
-        if (chordIndex + 1 < shared.sheetChordStoredCount)
-            next = chordDisplayName(shared.sheetChords[chordIndex + 1]);
-    }
-
-    drawRow(g, y, "Key", key, true); y += 25;
-    drawRow(g, y, "Previous chord", previous); y += 25;
-    drawRow(g, y, "Current chord", current, true); y += 25;
-    drawRow(g, y, "Next chord", next); y += 25;
+    drawRow(g, y, "Key", keyDisplayName(timeline.globalKey), true); y += 25;
+    drawRow(g, y, "Previous chord",
+            timeline.previousChordAvailable ? chordDisplayName(timeline.previousChord) : "-"); y += 25;
+    drawRow(g, y, "Current chord", chordDisplayName(timeline.currentChord), true); y += 25;
+    drawRow(g, y, "Next chord",
+            timeline.nextChordAvailable ? chordDisplayName(timeline.nextChord) : "-"); y += 25;
 
     juce::String timeSignature = "-";
-    if (barIndex >= 0)
+    if (context.timeSignature.available)
     {
-        const auto& bar = shared.barSignatures[barIndex];
-        timeSignature = juce::String(bar.numerator) + "/" + juce::String(bar.denominator);
+        timeSignature = juce::String(context.timeSignature.numerator)
+                      + "/"
+                      + juce::String(context.timeSignature.denominator);
     }
     drawRow(g, y, "Time signature", timeSignature); y += 25;
 
-    const auto bpm = localBpm(shared, shared.transportPpq);
+    const auto bpm = localBpm(shared, ppq);
     drawRow(g, y, "Tempo", bpm > 0.0 ? juce::String(bpm, 2) + " BPM" : "-"); y += 34;
 
     const auto counts = "Key " + juce::String(shared.keySignatureEventCount)
