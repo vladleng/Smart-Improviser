@@ -6,7 +6,12 @@
 
 ## Статус
 
-Проект находится на стадии **архитектурного проектирования**. Код будет добавлен позже.
+Проект находится на **Stage 0 — Foundation / Specification**.
+
+**Текущая рабочая версия:** `0.0a`  
+**Итог Stage 0:** `0.1`
+
+На текущем этапе уже перенесён чистый Harmony Core и ARA/context foundation из Smart Voicing без voicing-specific кода. Следующая задача — завершить собственную data model Smart Improviser Core.
 
 Первая целевая среда:
 
@@ -107,14 +112,34 @@ UI / Fretboard / Notation / TAB
 
 Цель проекта — не генерировать музыку вместо музыканта, а помогать **понимать гармонический контекст, управлять напряжением и превращать изученный vocabulary в собственный музыкальный язык**.
 
+## Версионирование
+
+Рабочая версия меняет букву после завершения отдельного подэтапа внутри Stage:
+
+```text
+0.0a → 0.0b → 0.0c → ... → 0.1
+```
+
+Если после живого теста конкретной буквенной версии требуется исправление:
+
+```text
+0.0b fix1
+0.0b fix2
+```
+
+Подробно: [`docs/VERSIONING.md`](docs/VERSIONING.md).
+
 ## Документация
 
+- [`docs/CURRENT_STATE.md`](docs/CURRENT_STATE.md) — короткая точка входа: текущая версия, активный Stage, PR, ветка, что уже сделано и что делать следующим.
 - [`docs/PROJECT_CONTEXT.md`](docs/PROJECT_CONTEXT.md) — основной living document проекта и архитектурный контекст.
 - [`docs/ROADMAP.md`](docs/ROADMAP.md) — этапы разработки от спецификации ядра до Improvisation Planner.
+- [`docs/VERSIONING.md`](docs/VERSIONING.md) — официальная схема версий, буквенных подэтапов и fix-сборок.
 - [`docs/ARCHITECTURAL_DECISIONS.md`](docs/ARCHITECTURAL_DECISIONS.md) — журнал ключевых архитектурных решений.
+- [`docs/MIGRATION_FROM_SMART_VOICING.md`](docs/MIGRATION_FROM_SMART_VOICING.md) — границы переноса компонентов из Smart Voicing.
 
 ## Ближайший технический этап
 
-Первым этапом разработки станет **Stage 0 — спецификация Smart Improviser Core**: формальное описание `Chord`, `KeyCenter`, `HarmonicFunction`, `HarmonicPattern`, `HarmonicSituation`, `ResolutionTarget`, `TensionLevel`, `ImprovisationStrategy` и `Phrase`.
+Текущая задача Stage 0 — закончить формальное описание `Chord`, `KeyCenter`, `HarmonicFunction`, `HarmonicPattern`, `HarmonicSituation`, `ResolutionTarget`, `TensionLevel`, `ImprovisationStrategy` и `Phrase`.
 
-После утверждения спецификации можно будет брать существующую базу с ARA 2 и переходить к реализации.
+После полного закрытия Stage 0 проект получает стабильную версию `0.1`, а Stage 1 начинается с `0.1a`.
