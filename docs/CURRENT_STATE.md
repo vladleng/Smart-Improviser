@@ -9,15 +9,15 @@
 - **Завершённый Stage:** Stage 1 — ARA Context Monitor
 - **Текущая стабильная версия:** `0.2`
 - **Активный Stage:** Stage 2 — Harmonic Engine
-- **Текущая рабочая версия:** `0.2a`
+- **Текущая рабочая версия:** `0.2a fix1`
 - **Stage 1 Issue:** #2 — Stage 1 — ARA Context Monitor
 - **Stage 2 Issue:** #3 — Stage 2 — Harmonic Engine
 - **Активная ветка:** `stage-2-harmonic-engine`
-- **Активный PR:** #15 — `0.2a — Stage 2 Harmonic Engine foundation`
+- **Активный PR:** #15 — `0.2a fix1 — Stage 2 Harmonic Engine diagnostics`
 
 Stage 1 принят после живых тестов `0.1a fix1` и `0.1b` в Fender Studio Pro. Финальная сборка этапа имеет версию `0.2`.
 
-Stage 2 начат с `0.2a`. На этом подэтапе музыкальная логика впервые вынесена в отдельный host-neutral `HarmonicEngine`, работающий поверх уже готового `TimelineHarmonicSnapshot`.
+Stage 2 начат с `0.2a`. Базовая `0.2a` успешно установилась в Fender Studio Pro и визуально подтвердила отсутствие regression Stage 1: ARA binding, Musical Context, transport, key, previous/current/next chords, tempo/time signature и revisions работают. При этом первоначальный UI показывал только Stage 1 diagnostics, поэтому для полноценной приёмки Harmonic Engine создан `0.2a fix1`.
 
 ## Общее правило Stage / build versions
 
@@ -53,11 +53,13 @@ buildHarmonicSituation()
 analyzeHarmonicSituation() / Harmonic Engine
         ↓
 HarmonicSituation
+        ↓
+Diagnostic UI / future product UI
 ```
 
-Core и Harmonic Engine не зависят от Fender Studio Pro, ARA, JUCE, VST3, UI или старого Smart Voicing engine.
+Core и Harmonic Engine не зависят от Fender Studio Pro, ARA, JUCE, VST3, UI или старого Smart Voicing engine. UI только отображает уже рассчитанный host-neutral `HarmonicSituation`.
 
-## Что подтверждено в живых тестах Stage 1
+## Что подтверждено в живых тестах Stage 1 / regression 0.2a
 
 На реальном проекте Fender Studio Pro подтверждено:
 
@@ -71,50 +73,11 @@ Core и Harmonic Engine не зависят от Fender Studio Pro, ARA, JUCE, V
 - Key Track — читается и нормализуется;
 - Chord Track — читается и нормализуется;
 - previous/current/next совпадают с Chord Track;
-- exact chord boundary корректно переключает current chord;
 - Tempo / Time Signature совпадают с DAW;
-- изменения Chord Track / Key Track обновляют snapshot;
-- после повторного открытия проекта binding/context восстанавливаются;
-- длина Audio Event не ограничивает Musical Context: Event является только ARA anchor;
-- explicit no-chord event обрабатывается как `available=true`, `defined=false`;
-- отсутствие Key events не ломает Chord context;
-- отсутствие активного chord event не ломает ARA connection;
-- до первого chord event корректно сохраняется future/next context;
-- после последнего event обработка остаётся безопасной и детерминированной.
-
-Multiple Musical Context не является блокером `0.2`. В `0.1b` реализована детерминированная policy выбора: максимум доступных content types → максимум events → первый context при равенстве; UI показывает `Musical contexts N | selected M`.
-
-## Стабильная 0.2 — Stage 1
-
-### ARA / host integration
-
-- ARA 2 Event FX для Fender Studio Pro;
-- Key Signature, Sheet Chords, Tempo Entries, Bar Signatures;
-- transport position / playing state;
-- изолированный Smart Improviser shared-memory ABI.
-
-### Host-neutral context layer
-
-- `SharedHarmonicContextData.h`;
-- `TimelineContextMapper.h/.cpp`;
-- `SmartImproviserContext` без JUCE/ARA зависимости;
-- `ARAContextProvider`;
-- `HarmonicContext`;
-- `TimelineHarmonicSnapshot`.
-
-### Stage 1 → Stage 2 contract
-
-Формальный контракт:
-
-```text
-docs/STAGE_1_TO_STAGE_2_CONTRACT.md
-```
-
-Stage 2 получает host-neutral `TimelineHarmonicSnapshot` и не знает деталей ARA SDK, JUCE, shared memory или Fender Studio Pro.
+- revisions обновляются;
+- базовая `0.2a` действительно установлена и показывает build label `Smart Improviser 0.2a`.
 
 ## Stage 2 — план логических подэтапов
-
-Текущий план build checkpoints:
 
 ```text
 0.2a — Harmonic Engine foundation
@@ -128,50 +91,62 @@ Stage 2 получает host-neutral `TimelineHarmonicSnapshot` и не зна�
 
 План может уточняться, если в ходе разработки обнаружится отдельная самостоятельная задача. Такая задача должна получить собственную следующую буквенную версию, а не быть незаметно добавлена в уже принятый подэтап.
 
-## Рабочая 0.2a — Harmonic Engine foundation
+## 0.2a — Harmonic Engine foundation
 
-В `0.2a` реализуется первый контекстный музыкальный анализ.
-
-Уже добавлено в активной ветке:
+Реализовано:
 
 - `src/core/analysis/HarmonicEngine.h/.cpp`;
 - host-neutral entry point `analyzeHarmonicSituation()`;
-- распознавание major `ii–V–I` для текущей позиции V;
-- распознавание minor `iiø–V–i` для текущей позиции V;
+- анализ global key + previous/current/next context;
+- major `ii–V–I` для текущей позиции V;
+- minor `iiø–V–i` для текущей позиции V;
 - fallback `V–I`;
 - secondary dominant с приоритетом над generic dominant-to-target;
 - temporary local key center для подтверждённого applied dominant;
 - scope `temporary`, чтобы tonicization не трактовалась как полноценная модуляция;
 - safe non-analysis при missing position/current chord/global key;
-- отдельный regression target `SmartImproviserHarmonicEngineTests`.
+- regression target `SmartImproviserHarmonicEngineTests`.
 
-Пока **не входят / не завершены** — они относятся к следующим буквенным версиям:
+## 0.2a fix1 — Harmonic Engine diagnostics
 
-- полный pattern-position analysis для всех членов оборота → `0.2b`;
-- `I–VI–ii–V` и расширенный Pattern Recognizer → `0.2b`;
-- tritone substitution / `ii–SubV–I` → `0.2c`;
-- длинные tonicization chains и полноценный local-key analysis → `0.2d`;
-- ambiguity / alternative interpretations → `0.2e`;
-- общая интеграция и musical validation → `0.2f`.
+Причина fix:
 
-## Версия 0.2a
+Базовая `0.2a` показывала в плагине только Stage 1 ARA Context Monitor. Harmonic Engine работал в Core и покрывался тестами, но его результат невозможно было проверить непосредственно в Fender Studio Pro.
+
+В `0.2a fix1` добавлено:
+
+- расширенное диагностическое окно Stage 1 + Stage 2;
+- прямой вызов `analyzeHarmonicSituation(timeline)` только на UI/diagnostic boundary;
+- отображение `Situation: VALID / NO ANALYSIS`;
+- `Function`: scale degree + effective harmonic function;
+- `Relation`: diatonic/chromatic;
+- `Local center`: tonic/mode + scope (`temporary` и т.д.);
+- `Pattern`;
+- `Pattern position`: role + index/length;
+- `Resolution`: target chord + confirmed status;
+- `Confidence`: confidence + interpretation status;
+- увеличена высота diagnostic UI, чтобы Stage 1 и Stage 2 данные были видны одновременно.
+
+Важно: это **не новый функциональный подэтап Stage 2**, поэтому версия остаётся `0.2a fix1`, а не `0.2b`.
+
+## Версия 0.2a fix1
 
 Build label:
 
 ```text
-Smart Improviser 0.2a
+Smart Improviser 0.2a fix1
 ```
 
 CMake project version:
 
 ```text
-0.2.1
+0.2.2
 ```
 
-GitHub Actions artifact после успешного CI:
+GitHub Actions artifact:
 
 ```text
-Smart-Improviser-0.2a-Windows
+Smart-Improviser-0.2a-fix1-Windows
 └── Smart Improviser.vst3
 ```
 
@@ -179,7 +154,7 @@ Smart-Improviser-0.2a-Windows
 
 ## Regression tests
 
-Для `0.2a` CI должен запускать:
+CI запускает:
 
 ```text
 SmartImproviserCoreTests
@@ -188,21 +163,31 @@ SmartImproviserHarmonicEngineTests
 SmartImproviserTimelineContextTests
 ```
 
+## Что относится к следующим буквенным версиям
+
+- полный pattern-position analysis для всех членов оборота → `0.2b`;
+- `I–VI–ii–V` и расширенный Pattern Recognizer → `0.2b`;
+- tritone substitution / `ii–SubV–I` → `0.2c`;
+- длинные tonicization chains и полноценный local-key analysis → `0.2d`;
+- ambiguity / alternative interpretations → `0.2e`;
+- общая интеграция и musical validation → `0.2f`.
+
 ## Рабочая линия
 
 ```text
 Stage 0 → 0.1  [COMPLETED]
 Stage 1 → 0.2  [COMPLETED]
-Stage 2 → 0.2a → 0.2b → 0.2c → 0.2d → 0.2e → 0.2f → 0.3  [ACTIVE]
+Stage 2 → 0.2a → 0.2a fix1 → 0.2b → 0.2c → 0.2d → 0.2e → 0.2f → 0.3  [ACTIVE]
 ```
 
 ## Что делать следующим
 
-1. проверить Windows CI PR #15;
-2. если CI зелёный — проверить artifact `Smart-Improviser-0.2a-Windows`;
-3. проверить, что Stage 1 ARA/context diagnostics не получили regression;
-4. принять `0.2a` как отдельный build checkpoint;
-5. только после принятия `0.2a` перейти к `0.2b — Pattern Recognizer`.
+1. дождаться зелёного Windows CI для `0.2a fix1`;
+2. скачать `Smart-Improviser-0.2a-fix1-Windows`;
+3. заменить установленную папку `Smart Improviser.vst3`;
+4. проверить Stage 1 regression;
+5. проверить Stage 2 diagnostics на нескольких гармонических ситуациях;
+6. после принятия `0.2a fix1` закрыть checkpoint `0.2a` и перейти к `0.2b — Pattern Recognizer`.
 
 ## Что читать в новом чате Stage 2
 
