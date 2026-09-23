@@ -73,39 +73,67 @@ Fix1 не меняет уже работающий ARA transport/context path. �
 - build label: `0.1a fix1`;
 - artifact: `Smart-Improviser-0.1a-fix1-Windows`.
 
-## Что проверить в fix1
+## Результаты fix1
 
 ### Harmonic context
 
-- [ ] Key отображается музыкальным именем, например `C major`, а не `(unnamed)`;
-- [ ] Previous / Current / Next chord отображаются как реальные символы;
-- [ ] при перемещении курсора по Chord Track current chord меняется на реальной event boundary;
-- [ ] на `G7` в `Dm7 | G7 | Cmaj7` отображается previous=`Dm7`, current=`G7`, next=`Cmaj7`;
-- [ ] на следующем аккорде previous/current/next сдвигаются без задержки.
+- [x] Key отображается музыкальным именем (`C major`), а не `(unnamed)`;
+- [x] Previous / Current / Next chord отображаются как реальные символы;
+- [x] current chord меняется на реальной event boundary;
+- [x] previous/current/next сдвигаются без задержки;
+- [x] участок без активного chord event обрабатывается безопасно: `Current=(no chord)` при сохранении корректных Previous/Next.
+
+Подтверждённые кейсы:
+
+```text
+PPQ 172.000
+Previous chord  C
+Current chord   (no chord)
+Next chord      Cmaj7
+```
+
+```text
+PPQ 180.000
+Previous chord  Cmaj7
+Current chord   Am7
+Next chord      Dm7
+```
+
+```text
+Previous chord  Am7
+Current chord   Dm7
+Next chord      G13
+```
 
 ### Timeline / transport
 
-- [ ] STOP position остаётся корректным;
-- [ ] PLAY обновляет PPQ во время воспроизведения;
-- [ ] seek назад/вперёд немедленно обновляет контекст;
-- [ ] tempo/time signature продолжают совпадать с DAW.
+- [x] STOP position остаётся корректным;
+- [x] PLAY обновляет PPQ/context во время воспроизведения;
+- [x] seek назад/вперёд немедленно обновляет контекст;
+- [x] tempo/time signature продолжают совпадать с DAW.
 
 ### UI
 
-- [ ] строка `Revisions` полностью видна;
-- [ ] footer не перекрывает данные;
-- [ ] заголовок `Stage 1 - ARA Context Monitor` отображается без битой кодировки.
+- [x] строка `Revisions` полностью видна;
+- [x] footer не перекрывает данные;
+- [x] заголовок `Stage 1 - ARA Context Monitor` отображается без битой кодировки.
 
 ### Изменения проекта
 
-- [ ] после редактирования Chord Track context обновляется;
-- [ ] после редактирования Key Track context обновляется;
-- [ ] после повторного открытия проекта ARA binding/context восстанавливаются.
+- [x] после редактирования Chord Track context обновляется;
+- [x] после редактирования Key Track context обновляется;
+- [x] после повторного открытия проекта ARA binding/context восстанавливаются.
 
-### Несколько Musical Context
+## Статус 0.1a
 
-- [ ] если в проекте появится больше одного Musical Context, проверить выбор и отсутствие смешивания событий.
+`0.1a fix1` принят как успешный checkpoint. Основной live-path Stage 1 подтверждён.
+
+Для следующего подэтапа остаются отдельные edge cases:
+
+- [ ] поведение при полном отсутствии Key/Chord/Tempo данных;
+- [ ] несколько Musical Context, если удастся воспроизвести такой сценарий в Studio Pro;
+- [ ] формальный контракт данных Stage 1 → Stage 2.
 
 ## Правило fix-версий
 
-Если `0.1a fix1` выявит следующую ошибку текущего checkpoint, используется `0.1a fix2`. Новая буква `0.1b` начинается только после принятия задач 0.1a.
+Если следующий подэтап выявит ошибку именно принятого поведения 0.1a, можно вернуться к `0.1a fix2`; иначе дальнейшая разработка продолжается как `0.1b`.
