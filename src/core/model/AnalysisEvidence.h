@@ -13,6 +13,13 @@ enum class ConfidenceLevel : std::uint8_t
     confirmed
 };
 
+enum class InterpretationStatus : std::uint8_t
+{
+    unknown = 0,
+    unique,
+    ambiguous
+};
+
 enum class EvidenceFlag : std::uint32_t
 {
     none = 0,
@@ -36,6 +43,8 @@ constexpr std::uint32_t evidenceMask(EvidenceFlag flag) noexcept
 struct AnalysisEvidence
 {
     ConfidenceLevel confidence = ConfidenceLevel::unknown;
+    InterpretationStatus interpretation = InterpretationStatus::unknown;
+    std::uint8_t alternativeCount = 0;
     std::uint32_t flags = 0;
 
     constexpr bool has(EvidenceFlag flag) const noexcept
@@ -46,6 +55,18 @@ struct AnalysisEvidence
     constexpr void add(EvidenceFlag flag) noexcept
     {
         flags |= evidenceMask(flag);
+    }
+
+    constexpr void markUnique() noexcept
+    {
+        interpretation = InterpretationStatus::unique;
+        alternativeCount = 0;
+    }
+
+    constexpr void markAmbiguous(std::uint8_t alternatives) noexcept
+    {
+        interpretation = InterpretationStatus::ambiguous;
+        alternativeCount = alternatives;
     }
 };
 }
