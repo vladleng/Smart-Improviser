@@ -6,13 +6,19 @@
 
 ## Статус
 
-**Stage 0 — Foundation / Specification завершён.**
+**Stage 0 — Foundation / Specification завершён.**  
+**Stage 1 — ARA Context Monitor завершён.**  
+**Активный Stage:** Stage 2 — Harmonic Engine.
 
-**Текущая стабильная версия:** `0.1`  
-**Следующий Stage:** Stage 1 — ARA Context Monitor  
-**Следующая рабочая версия:** `0.1a`
+**Текущая стабильная версия:** `0.2`  
+**Текущая рабочая версия:** `0.2a`  
+**Активная ветка:** `stage-2-harmonic-engine`  
+**Stage 2 Issue:** #3  
+**Stage 2 PR:** #15
 
-В `0.1` зафиксированы host-neutral Harmony Core, ARA/context foundation и собственная data model Smart Improviser: `HarmonicSituation`, `KeyCenter`, `HarmonicPattern`, `ResolutionTarget`, confidence/evidence contracts, Tension/Strategy/Phrase contracts и regression tests.
+В `0.2` завершён ARA/context pipeline: Fender Studio Pro передаёт host-neutral `TimelineHarmonicSnapshot` с current/previous/next chord, global key, tempo/time-signature и transport context.
+
+В `0.2a` начинается Harmonic Engine: отдельный host-neutral analyzer поверх `HarmonicSituation`, первый pattern recognition и evidence-backed temporary local center.
 
 Первая целевая среда:
 
@@ -79,10 +85,14 @@ Timeline Context
         ↓
 TimelineHarmonicSnapshot
         ↓
+buildHarmonicSituation()
+        ↓
+analyzeHarmonicSituation()
+        ↓
 HarmonicSituation
         ↓
 Smart Improviser Core analyzers
-        ├── Harmonic Analyzer
+        ├── Harmonic Engine
         ├── Harmonic Pattern Recognizer
         ├── Resolution Analyzer
         ├── Tension Engine
@@ -95,6 +105,28 @@ UI / Fretboard / Notation / TAB
 ```
 
 Центральная сущность ядра — **`HarmonicSituation`**, которая описывает не просто аккорд, а его функцию и положение в музыкальном контексте.
+
+## Stage 2 / 0.2a
+
+Первый подэтап Harmonic Engine включает:
+
+- отдельный host-neutral `HarmonicEngine`;
+- анализ current chord относительно global key;
+- использование previous/current/next context;
+- major `ii–V–I` для текущей позиции V;
+- minor `iiø–V–i` для текущей позиции V;
+- `V–I` fallback;
+- secondary dominant pattern;
+- temporary local center только при подтверждённом applied dominant;
+- regression tests для Harmonic Engine.
+
+Следующие подэтапы Stage 2 должны добавить:
+
+- pattern positions для всех членов оборота;
+- `I–VI–ii–V`;
+- tritone substitution / `ii–SubV–I`;
+- более длинные local-center/tonicization rules;
+- ambiguity и alternative interpretations.
 
 ## Долгосрочное направление
 
@@ -119,37 +151,32 @@ UI / Fretboard / Notation / TAB
 
 ## Версионирование
 
-Рабочая версия меняет букву после завершения отдельного подэтапа внутри Stage. Stage 0 прошёл линию:
-
 ```text
-0.0a → 0.0b → 0.1
-```
-
-Stage 1 начинается с:
-
-```text
-0.1a → 0.1b → ... → 0.2
+Stage 0: 0.0a → ... → 0.1
+Stage 1: 0.1a → ... → 0.2
+Stage 2: 0.2a → ... → 0.3
 ```
 
 Если после живого теста конкретной буквенной версии требуется исправление:
 
 ```text
-0.1a fix1
-0.1a fix2
+0.2a fix1
+0.2a fix2
 ```
 
 Подробно: [`docs/VERSIONING.md`](docs/VERSIONING.md).
 
 ## Документация
 
-- [`docs/CURRENT_STATE.md`](docs/CURRENT_STATE.md) — короткая точка входа: текущая версия, завершённый/следующий Stage и что делать дальше.
-- [`docs/CORE_DATA_MODEL_0.0b.md`](docs/CORE_DATA_MODEL_0.0b.md) — спецификация data model, завершившей Stage 0.
+- [`docs/CURRENT_STATE.md`](docs/CURRENT_STATE.md) — короткая точка входа: текущая версия, активный Stage и что делать дальше.
+- [`docs/STAGE_1_TO_STAGE_2_CONTRACT.md`](docs/STAGE_1_TO_STAGE_2_CONTRACT.md) — формальная граница ARA/context layer → Harmonic Engine.
+- [`docs/CORE_DATA_MODEL_0.0b.md`](docs/CORE_DATA_MODEL_0.0b.md) — спецификация host-neutral data model.
 - [`docs/PROJECT_CONTEXT.md`](docs/PROJECT_CONTEXT.md) — основной living document проекта и архитектурный контекст.
 - [`docs/ROADMAP.md`](docs/ROADMAP.md) — этапы разработки от спецификации ядра до Improvisation Planner.
 - [`docs/VERSIONING.md`](docs/VERSIONING.md) — официальная схема версий, буквенных подэтапов и fix-сборок.
 - [`docs/ARCHITECTURAL_DECISIONS.md`](docs/ARCHITECTURAL_DECISIONS.md) — журнал ключевых архитектурных решений.
 - [`docs/MIGRATION_FROM_SMART_VOICING.md`](docs/MIGRATION_FROM_SMART_VOICING.md) — границы переноса компонентов из Smart Voicing.
 
-## Ближайший технический этап
+## Ближайший технический шаг
 
-Следующий этап — **Stage 1: ARA Context Monitor**, начиная с версии `0.1a` и живой проверки ARA/context foundation в Fender Studio Pro.
+Завершить CI/проверку `0.2a`, затем продолжить Stage 2 расширением pattern-position analysis, turnaround/tritone-substitution и ambiguity/local-center logic.
