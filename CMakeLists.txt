@@ -44,6 +44,28 @@ if(MSVC)
 endif()
 
 # -----------------------------------------------------------------------------
+# Stage 1 context mapping contract. This layer converts the ARA/shared snapshot
+# into host-neutral HarmonicContext / TimelineHarmonicSnapshot values and has no
+# JUCE/ARA dependency, so edge cases can be regression-tested directly.
+add_library(SmartImproviserContext STATIC
+    src/context/SharedHarmonicContextData.h
+    src/context/TimelineContextMapper.cpp
+    src/context/TimelineContextMapper.h
+)
+
+target_include_directories(SmartImproviserContext
+    PUBLIC
+        "${CMAKE_CURRENT_SOURCE_DIR}/src"
+)
+
+target_link_libraries(SmartImproviserContext PUBLIC SmartImproviserCore)
+target_compile_features(SmartImproviserContext PUBLIC cxx_std_20)
+
+if(MSVC)
+    target_compile_options(SmartImproviserContext PRIVATE /utf-8)
+endif()
+
+# -----------------------------------------------------------------------------
 # JUCE / ARA infrastructure reused from Smart Voicing, with a new isolated ABI.
 FetchContent_Declare(
     JUCE
@@ -118,12 +140,12 @@ target_compile_definitions(SmartImproviserARA
         JUCE_WEB_BROWSER=0
         JUCE_USE_CURL=0
         JUCE_VST3_CAN_REPLACE_VST2=0
-        SMART_IMPROVISER_BUILD_VERSION="0.1a fix1"
+        SMART_IMPROVISER_BUILD_VERSION="0.1b"
 )
 
 target_link_libraries(SmartImproviserARA
     PRIVATE
-        SmartImproviserCore
+        SmartImproviserContext
         juce::juce_audio_utils
     PUBLIC
         juce::juce_recommended_config_flags
@@ -136,7 +158,7 @@ if(MSVC)
 endif()
 
 # -----------------------------------------------------------------------------
-# Host-neutral regression tests.
+# Regression tests.
 add_executable(SmartImproviserCoreTests
     tests/CoreHarmonyTests.cpp
 )
@@ -151,10 +173,19 @@ add_executable(SmartImproviserDataModelTests
 target_link_libraries(SmartImproviserDataModelTests PRIVATE SmartImproviserCore)
 target_compile_features(SmartImproviserDataModelTests PRIVATE cxx_std_20)
 
+add_executable(SmartImproviserTimelineContextTests
+    tests/TimelineContextMapperTests.cpp
+)
+
+target_link_libraries(SmartImproviserTimelineContextTests PRIVATE SmartImproviserContext)
+target_compile_features(SmartImproviserTimelineContextTests PRIVATE cxx_std_20)
+
 if(MSVC)
     target_compile_options(SmartImproviserCoreTests PRIVATE /utf-8)
     target_compile_options(SmartImproviserDataModelTests PRIVATE /utf-8)
+    target_compile_options(SmartImproviserTimelineContextTests PRIVATE /utf-8)
 endif()
 
 add_test(NAME SmartImproviserCoreTests COMMAND SmartImproviserCoreTests)
 add_test(NAME SmartImproviserDataModelTests COMMAND SmartImproviserDataModelTests)
+add_test(NAME SmartImproviserTimelineContextTests COMMAND SmartImproviserTimelineContextTests)
