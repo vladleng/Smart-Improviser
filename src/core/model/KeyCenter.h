@@ -16,11 +16,21 @@ enum class KeyCenterScope : std::uint8_t
     modal
 };
 
+enum class KeyCenterStatus : std::uint8_t
+{
+    undefined = 0,
+    candidate,
+    tonicized,
+    established,
+    modulationCandidate
+};
+
 struct KeyCenter
 {
     bool valid = false;
     NormalizedKey key;
     KeyCenterScope scope = KeyCenterScope::undefined;
+    KeyCenterStatus status = KeyCenterStatus::undefined;
     AnalysisEvidence evidence;
 };
 
@@ -30,6 +40,7 @@ inline KeyCenter makeGlobalKeyCenter(const NormalizedKey& key) noexcept
     center.valid = key.valid;
     center.key = key;
     center.scope = key.valid ? KeyCenterScope::global : KeyCenterScope::undefined;
+    center.status = key.valid ? KeyCenterStatus::established : KeyCenterStatus::undefined;
 
     if (key.valid)
     {

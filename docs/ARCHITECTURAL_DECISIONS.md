@@ -169,6 +169,48 @@ Context
 
 ---
 
+## ADR-012 — Global project key и Local Key Center являются разными слоями
+
+**Статус:** принято
+
+Тональность проекта, полученная от DAW, является **global key** и не должна автоматически переписываться Harmonic Engine при каждом временном отклонении.
+
+Джазовая гармония часто содержит кратковременные tonicization, local ii–V, secondary dominants, tritone substitutions и локальные центры, не требующие смены project key.
+
+Поэтому `HarmonicSituation` хранит параллельно:
+
+```text
+Global key
+Local key center
+Global harmonic interpretation
+Local harmonic interpretation
+Global pattern
+Local pattern
+```
+
+Local Key Center может находиться в состояниях:
+
+```text
+candidate
+→ tonicized / temporary
+→ established local center
+→ modulationCandidate
+```
+
+`modulationCandidate` не означает автоматическую модуляцию и никогда сам не меняет explicit global key. Он только фиксирует evidence, что видимое окно лучше объясняется новой локальной тональностью.
+
+При полном локальном `ii–V–I`, `iiø–V–i` или `ii–SubV–I` local interpretation имеет собственную harmonic function и pattern. Конфликты между global и local interpretations должны разрешаться отдельным Ambiguity / Confidence layer, а не скрытым перезаписыванием одного анализа другим.
+
+Причины:
+
+- это соответствует реальному восприятию jazz harmony;
+- пользователь не должен вручную менять тональность проекта при каждом отклонении;
+- global key остаётся стабильной опорой формы;
+- local function полезнее для импровизации над временными центрами;
+- архитектура остаётся детерминированной и тестируемой.
+
+---
+
 # Как обновлять этот файл
 
 При появлении важного решения добавляется новый ADR:

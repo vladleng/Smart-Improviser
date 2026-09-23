@@ -42,10 +42,16 @@ struct HarmonicSituation
     KeyCenter localKey;
 
     HarmonicAnalysis harmonic;
+    HarmonicAnalysis localHarmonic;
     HarmonicPattern pattern;
+    HarmonicPattern localPattern;
     ResolutionTarget resolution;
     AnalysisEvidence evidence;
 };
 
 HarmonicSituation buildHarmonicSituation(const TimelineHarmonicSnapshot& snapshot) noexcept;
+
+// Stage 2/0.2d host-neutral local-center analyzer. It enriches an already
+// normalized HarmonicSituation without consulting JUCE, ARA or DAW state.
+void analyzeLocalKeyCenter(HarmonicSituation& situation) noexcept;
 }

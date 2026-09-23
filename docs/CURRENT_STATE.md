@@ -7,17 +7,16 @@
 - **Завершённый Stage:** Stage 1 — ARA Context Monitor
 - **Текущая стабильная версия:** `0.2`
 - **Активный Stage:** Stage 2 — Harmonic Engine
-- **Последний принятый checkpoint:** `0.2b — Pattern Recognizer`
-- **Текущая рабочая версия:** `0.2c — Tritone Substitution`
+- **Последний принятый checkpoint:** `0.2d — Local Key Center`
+- **Следующий checkpoint:** `0.2e — Ambiguity / Confidence`
 - **Stage 2 Issue:** #3 — Stage 2 — Harmonic Engine
-- **Активная ветка:** `stage-2-tritone-substitution`
-- **Активный PR:** #17 — `0.2c — Tritone Substitution`
+- **Принятый PR:** #18 — `0.2d — Local Key Center`
 
-`0.2b` принят после CI и live-test в Fender Studio Pro и слит в `main` через PR #16.
+`0.2d` принят после успешного CI и полного live-test в Fender Studio Pro. Все заявленные checkpoint-проверки пройдены без обнаруженных проблем.
 
 ## Архитектурная граница
 
-Stage 1 остаётся закрытым. `0.2c` не меняет ARA/context contract:
+Stage 1 остаётся закрытым. `0.2d` не меняет ARA/context contract и не меняет project key в DAW:
 
 ```text
 Fender Studio Pro / ARA 2
@@ -25,79 +24,87 @@ Fender Studio Pro / ARA 2
 TimelineHarmonicSnapshot
 (previous / current / next)
         ↓
-buildHarmonicSituation()
-        ↓
-analyzeHarmonicSituation()
+Harmonic Engine
+        ├── global interpretation
+        └── Local Key Center Analyzer
+                ↓
+          local interpretation
         ↓
 HarmonicSituation
 ```
 
-Core/Harmonic Engine остаётся host-neutral.
+Core остаётся host-neutral.
 
-## Принятый checkpoint 0.2b
+## Принятый checkpoint 0.2d — Local Key Center
 
-Подтверждено live-test:
+Главная идея: global key проекта остаётся стабильным, а движок отдельно определяет активный локальный/временный тональный центр.
 
-- major `ii–V–I` на позициях `ii / V / I`;
-- minor `iiø–V–i` на позициях `iiø / V / i`;
-- `I–VI–ii–V`;
-- dominant chain;
-- pattern role / position / confidence;
-- Stage 1 regression не обнаружен.
-
-## Рабочая 0.2c — Tritone Substitution
-
-Реализовано в активной ветке:
-
-- `HarmonicFunction::substituteDominant`;
-- substitute-dominant candidate / confirmed state;
-- distinction ordinary `V7` vs `SubV7` по реальному next chord;
-- major `ii–SubV–I`;
-- minor `iiø–SubV–i`;
-- boundary positions `ii / I` для tritone-substitution pattern;
-- applied SubV к нетонической ступени, например `Ab7 → G` в C major;
-- priority SubV над generic chromatic/secondary-dominant interpretation при подтверждённом semitone resolution;
-- корректная guide-tone resolution logic: `Db7 → Cmaj7` даёт `F → E` и `Cb/B → C`;
-- local-key inference для SubV сознательно отложен до `0.2d`;
-- расширены CoreHarmonyTests и HarmonicEngineTests.
-
-## Версия 0.2c
+Пример:
 
 ```text
-Build label: Smart Improviser 0.2c
-CMake:      0.2.4
-Artifact:   Smart-Improviser-0.2c-Windows
+Global key: F major
+Em7b5 → A7 → Dm
+
+Current: A7
+Global interpretation: chromatic / applied dominant
+Local center: D minor
+Local function: V / Dominant
+Local pattern: minor iiø–V–i
+```
+
+### Модель local center
+
+```text
+candidate
+    ↓
+tonicized / temporary
+    ↓
+established local center
+    ↓
+modulationCandidate
+```
+
+`modulationCandidate` никогда автоматически не меняет global project key. Это только evidence-backed гипотеза для будущего ambiguity layer.
+
+### Реализовано и принято
+
+- отдельный host-neutral `LocalKeyCenterAnalyzer`;
+- `KeyCenterStatus`: `candidate`, `tonicized`, `established`, `modulationCandidate`;
+- unresolved `ii–V` / `iiø–V` → candidate local center;
+- `V→target` → confirmed temporary tonicization;
+- `SubV→target` → confirmed temporary tonicization;
+- полный local `ii–V–I` / `iiø–V–i` → established local center;
+- полный local `ii–SubV–I` / `iiø–SubV–i` → established local center;
+- remote centers могут находиться вне набора ступеней global key;
+- `localHarmonic` хранит функцию current chord относительно local center;
+- `localPattern` хранит pattern относительно local center;
+- global-key cadence не создаёт redundant local center;
+- `V–I–X`, где X поддерживает local center и конфликтует с global key, создаёт только `modulationCandidate`;
+- отдельные evidence flags для candidate / tonicization / local cadence / modulation evidence;
+- diagnostic UI показывает global и local interpretation раздельно;
+- отдельный набор `SmartImproviserLocalKeyCenterTests`;
+- Stage 1 regression не обнаружен.
+
+## Версия 0.2d
+
+```text
+Build label: Smart Improviser 0.2d
+CMake:      0.2.5
+Artifact:   Smart-Improviser-0.2d-Windows
 Package:    Smart Improviser.vst3
 ```
 
-## Минимальный live-test 0.2c
+Финальный Windows Build #180 прошёл Configure / Build / Test / package / artifact upload успешно.
 
-```text
-Global key: C major
-Dm7 → Db7 → Cmaj7
-Current: Db7
+## Пройденные live-tests 0.2d
 
-Function         Substitute dominant
-Relation         Chromatic
-Pattern          Tritone substitution
-Pattern position Substitute dominant | 2 / 3
-Resolution       Cmaj7 | CONFIRMED
-Confidence       confirmed | unique
-```
-
-Дополнительные проверки:
-
-```text
-A minor: Bm7b5 → Bb7 → Am
-```
-
-и applied SubV:
-
-```text
-C major: Ab7 → G
-```
-
-где Ab7 должен трактоваться как substitute dominant к G, а не как ordinary secondary dominant.
+- F major: `Em7b5 → A7 → Dm`, current A7 → `D minor | local | established`;
+- F major: `Em7b5 → A7`, current Em7b5 → candidate `D minor | temporary`;
+- C major: `D7 → G` → temporary G major;
+- C major: `Ab7 → G` → temporary G major through SubV;
+- C major: `G#m7 → C#7 → F#maj7` → remote local F# major;
+- global `Dm7 → G7 → Cmaj7` не создаёт отдельный local center;
+- Stage 1 regression повторно проверен.
 
 ## Линия Stage 2
 
@@ -105,33 +112,26 @@ C major: Ab7 → G
 0.2a — Harmonic Engine foundation          [ACCEPTED]
 0.2a fix1 — Harmonic Engine diagnostics    [ACCEPTED]
 0.2b — Pattern Recognizer                  [ACCEPTED]
-0.2c — Tritone Substitution                [ACTIVE]
-0.2d — Local Key Center
-0.2e — Ambiguity / Confidence
+0.2c — Tritone Substitution                [ACCEPTED]
+0.2d — Local Key Center                    [ACCEPTED]
+0.2e — Ambiguity / Confidence              [NEXT]
 0.2f — Integration / musical validation
 0.3  — Stage 2 complete
 ```
 
-## Следующий checkpoint после 0.2c
+## Следующий checkpoint — 0.2e Ambiguity / Confidence
 
-`0.2d — Local Key Center` должен развить уже существующую temporary-center идею в полноценное автоматическое определение локальных/субтональных центров без необходимости постоянно менять project key в DAW.
+`0.2e` должен научить движок не делать преждевременный единственный вывод там, где один и тот же контекст допускает несколько музыкально правдоподобных трактовок.
 
-План 0.2d:
+План:
 
-- candidate local center;
-- temporary tonicization;
-- confirmed local center;
-- отличие local center от настоящей modulation;
-- `ii–V`, `iiø–V`, applied dominant и SubV evidence;
-- возврат к global key;
-- кейсы джазовых стандартов с частыми временными отклонениями.
-
-## Что делать следующим
-
-1. дождаться CI PR #17;
-2. при зелёном CI установить `Smart-Improviser-0.2c-Windows`;
-3. провести отдельный live-test 0.2c;
-4. при успешном тесте принять checkpoint и перейти к `0.2d`.
+- `unique / ambiguous` interpretations;
+- alternative interpretation candidates;
+- borrowed/modal ambiguity;
+- candidate local centers с confidence/evidence;
+- разрешение конфликтов global pattern vs local pattern;
+- ambiguous-context regression tests;
+- диагностический вывод альтернатив и confidence для live-test.
 
 ## Что читать в новом чате Stage 2
 
@@ -143,4 +143,4 @@ C major: Ab7 → G
 6. `docs/ROADMAP.md`;
 7. `docs/VERSIONING.md`;
 8. Issue #3 — Stage 2 — Harmonic Engine;
-9. PR #17 — `0.2c — Tritone Substitution`.
+9. PR #18 — `0.2d — Local Key Center`.

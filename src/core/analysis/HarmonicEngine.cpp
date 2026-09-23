@@ -10,68 +10,6 @@ constexpr int wrap12(int value) noexcept
     return value < 0 ? value + kPitchClassCount : value;
 }
 
-NormalizedKey makeKeyFromRootAndMode(int rootPitchClass, KeyMode mode) noexcept
-{
-    NormalizedKey key;
-    if (mode != KeyMode::major && mode != KeyMode::minor)
-        return key;
-
-    static constexpr int majorIntervals[] = { 0, 2, 4, 5, 7, 9, 11 };
-    static constexpr int minorIntervals[] = { 0, 2, 3, 5, 7, 8, 10 };
-
-    key.valid = true;
-    key.rootPitchClass = wrap12(rootPitchClass);
-    key.mode = mode;
-
-    const auto* intervals = mode == KeyMode::major ? majorIntervals : minorIntervals;
-    for (int i = 0; i < 7; ++i)
-        key.tones[static_cast<std::size_t>(intervals[i])] = true;
-
-    return key;
-}
-
-KeyMode targetModeFromChord(const NormalizedChord& chord) noexcept
-{
-    switch (chord.quality)
-    {
-        case ChordQuality::minor:
-        case ChordQuality::diminished:
-        case ChordQuality::halfDiminished:
-            return KeyMode::minor;
-        case ChordQuality::major:
-        case ChordQuality::dominant:
-        case ChordQuality::augmented:
-            return KeyMode::major;
-        default:
-            return KeyMode::undefined;
-    }
-}
-
-KeyCenter inferTemporaryCenter(const HarmonicSituation& situation) noexcept
-{
-    KeyCenter center;
-
-    if (! situation.valid
-        || ! situation.nextChordAvailable
-        || ! situation.harmonic.appliedDominantConfirmed)
-        return center;
-
-    const auto mode = targetModeFromChord(situation.nextChord);
-    const auto key = makeKeyFromRootAndMode(situation.nextChord.rootPitchClass, mode);
-    if (! key.valid)
-        return center;
-
-    center.valid = true;
-    center.key = key;
-    center.scope = KeyCenterScope::temporary;
-    center.evidence.confidence = ConfidenceLevel::high;
-    center.evidence.markUnique();
-    center.evidence.add(EvidenceFlag::nextChord);
-    center.evidence.add(EvidenceFlag::confirmedResolution);
-    center.evidence.add(EvidenceFlag::inferredLocalCenter);
-    return center;
-}
-
 bool isDegree(const NormalizedChord& chord, const NormalizedKey& key, int degree) noexcept
 {
     return chord.valid && key.valid
@@ -155,7 +93,7 @@ HarmonicPattern recognizePattern(const HarmonicSituation& situation) noexcept
 
     const auto& key = situation.globalKey.key;
 
-    // Full ordinary ii-V-I cadence window.
+    // Full ordinary major ii-V-I.
     if (situation.previousChordAvailable
         && situation.nextChordAvailable
         && key.mode == KeyMode::major
@@ -177,6 +115,7 @@ HarmonicPattern recognizePattern(const HarmonicSituation& situation) noexcept
                            true);
     }
 
+    // Full ordinary minor iiø-V-i.
     if (situation.previousChordAvailable
         && situation.nextChordAvailable
         && key.mode == KeyMode::minor
@@ -198,8 +137,7 @@ HarmonicPattern recognizePattern(const HarmonicSituation& situation) noexcept
                            true);
     }
 
-    // Full ii-SubV-I cadence. The substitute dominant sits a semitone above
-    // the target tonic and resolves by root semitone descent.
+    // Full ii-SubV-I in major.
     if (situation.previousChordAvailable
         && situation.nextChordAvailable
         && key.mode == KeyMode::major
@@ -220,6 +158,7 @@ HarmonicPattern recognizePattern(const HarmonicSituation& situation) noexcept
                            true);
     }
 
+    // Full iiø-SubV-i in minor.
     if (situation.previousChordAvailable
         && situation.nextChordAvailable
         && key.mode == KeyMode::minor
@@ -240,7 +179,7 @@ HarmonicPattern recognizePattern(const HarmonicSituation& situation) noexcept
                            true);
     }
 
-    // A dominant chain is more specific than a single secondary dominant.
+    // Linked dominants are more specific than a single secondary dominant.
     if (situation.previousChordAvailable
         && situation.nextChordAvailable
         && isDominantOf(situation.previousChord, situation.currentChord)
@@ -358,8 +297,7 @@ HarmonicPattern recognizePattern(const HarmonicSituation& situation) noexcept
                            false);
     }
 
-    // Tritone-substitution boundary positions. We only infer what is visible:
-    // ii + SubV or SubV + I is high-confidence, not a confirmed full cadence.
+    // Tritone-substitution boundary positions.
     if (key.mode == KeyMode::major
         && situation.nextChordAvailable
         && isDegree(situation.currentChord, key, 2)
@@ -437,9 +375,6 @@ HarmonicPattern recognizePattern(const HarmonicSituation& situation) noexcept
                            false);
     }
 
-    // A confirmed substitute dominant must win over generic chromatic/applied
-    // dominant interpretations when the real next chord confirms semitone
-    // resolution.
     if (situation.harmonic.substituteDominantConfirmed)
     {
         return makePattern(HarmonicPatternType::tritoneSubstitution,
@@ -452,7 +387,6 @@ HarmonicPattern recognizePattern(const HarmonicSituation& situation) noexcept
                            true);
     }
 
-    // Applied dominants are more specific than generic dominant-to-target.
     if (situation.harmonic.appliedDominantConfirmed)
     {
         return makePattern(HarmonicPatternType::secondaryDominant,
@@ -510,12 +444,13 @@ HarmonicSituation analyzeHarmonicSituation(const TimelineHarmonicSnapshot& snaps
     if (! result.valid)
         return result;
 
-    result.localKey = inferTemporaryCenter(result);
-    if (result.localKey.valid)
-        result.evidence.add(EvidenceFlag::inferredLocalCenter);
-
     result.pattern = recognizePattern(result);
     mergePatternEvidence(result);
+
+    // 0.2d: infer the active local/sub-tonal center independently from the
+    // DAW project key. This analyzer may expose candidate, temporary, local or
+    // modulation-candidate states, but never mutates the explicit global key.
+    analyzeLocalKeyCenter(result);
 
     if (result.evidence.interpretation == InterpretationStatus::unknown)
         result.evidence.markUnique();

@@ -32,7 +32,11 @@ enum class EvidenceFlag : std::uint32_t
     confirmedResolution = 1u << 6,
     patternMatch = 1u << 7,
     modalInterchange = 1u << 8,
-    inferredLocalCenter = 1u << 9
+    inferredLocalCenter = 1u << 9,
+    candidateLocalCenter = 1u << 10,
+    tonicization = 1u << 11,
+    localCadence = 1u << 12,
+    modulationEvidence = 1u << 13
 };
 
 constexpr std::uint32_t evidenceMask(EvidenceFlag flag) noexcept

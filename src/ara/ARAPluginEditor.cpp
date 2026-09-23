@@ -174,6 +174,20 @@ const char* keyCenterScopeName(smartimproviser::harmony::KeyCenterScope scope) n
     }
 }
 
+const char* keyCenterStatusName(smartimproviser::harmony::KeyCenterStatus status) noexcept
+{
+    using smartimproviser::harmony::KeyCenterStatus;
+    switch (status)
+    {
+        case KeyCenterStatus::candidate: return "candidate";
+        case KeyCenterStatus::tonicized: return "tonicized";
+        case KeyCenterStatus::established: return "established";
+        case KeyCenterStatus::modulationCandidate: return "modulation candidate";
+        case KeyCenterStatus::undefined:
+        default: return "undefined";
+    }
+}
+
 juce::String localCenterDisplayName(const smartimproviser::harmony::KeyCenter& center)
 {
     if (! center.valid || ! center.key.valid)
@@ -183,7 +197,19 @@ juce::String localCenterDisplayName(const smartimproviser::harmony::KeyCenter& c
          + " "
          + smartimproviser::harmony::keyModeName(center.key.mode)
          + "  |  "
-         + keyCenterScopeName(center.scope);
+         + keyCenterScopeName(center.scope)
+         + "  |  "
+         + keyCenterStatusName(center.status);
+}
+
+juce::String harmonicDisplay(const smartimproviser::harmony::HarmonicAnalysis& harmonic)
+{
+    if (! harmonic.valid)
+        return "-";
+
+    return juce::String(smartimproviser::harmony::scaleDegreeName(harmonic.rootScaleDegree))
+         + "  |  "
+         + smartimproviser::harmony::harmonicFunctionName(harmonic.effectiveFunction);
 }
 
 juce::String patternPositionDisplay(const smartimproviser::harmony::HarmonicPattern& pattern)
@@ -249,7 +275,7 @@ void drawRow(juce::Graphics& g,
 SmartImproviserARAEditor::SmartImproviserARAEditor(SmartImproviserARAProcessor& p)
     : juce::AudioProcessorEditor(p), processor(p)
 {
-    setSize(640, 790);
+    setSize(640, 875);
     startTimerHz(10);
 }
 
@@ -333,25 +359,37 @@ void SmartImproviserARAEditor::paint(juce::Graphics& g)
     g.drawText("STAGE 2 - HARMONIC ENGINE", 24, y, 590, 22, juce::Justification::centredLeft); y += 28;
 
     drawRow(g, y, "Situation", situation.valid ? "VALID" : "NO ANALYSIS", true); y += 24;
-
-    juce::String functionText = "-";
-    if (situation.valid && situation.harmonic.valid)
-    {
-        functionText = smartimproviser::harmony::scaleDegreeName(situation.harmonic.rootScaleDegree);
-        functionText += "  |  ";
-        functionText += smartimproviser::harmony::harmonicFunctionName(situation.harmonic.effectiveFunction);
-    }
-    drawRow(g, y, "Function", functionText, true); y += 24;
+    drawRow(g, y, "Global function", harmonicDisplay(situation.harmonic), true); y += 24;
 
     drawRow(g, y, "Relation",
             situation.valid && situation.harmonic.valid
                 ? juce::String(smartimproviser::harmony::harmonicRelationName(situation.harmonic.relation))
                 : juce::String("-")); y += 24;
 
-    drawRow(g, y, "Local center", localCenterDisplayName(situation.localKey)); y += 24;
-    drawRow(g, y, "Pattern", situation.valid ? juce::String(patternName(situation.pattern.type)) : "-"); y += 24;
+    drawRow(g, y, "Global pattern",
+            situation.valid ? juce::String(patternName(situation.pattern.type)) : "-"); y += 24;
     drawRow(g, y, "Pattern position", patternPositionDisplay(situation.pattern)); y += 24;
     drawRow(g, y, "Resolution", resolutionDisplay(situation)); y += 24;
+
+    g.setColour(juce::Colour::fromRGB(77, 81, 89));
+    g.drawHorizontalLine(y, 24.0f, static_cast<float>(getWidth() - 24)); y += 10;
+
+    drawRow(g, y, "Local center", localCenterDisplayName(situation.localKey), true); y += 24;
+    drawRow(g, y, "Local function", harmonicDisplay(situation.localHarmonic), true); y += 24;
+    drawRow(g, y, "Local pattern",
+            situation.localPattern.recognized()
+                ? juce::String(patternName(situation.localPattern.type))
+                : juce::String("-")); y += 24;
+    drawRow(g, y, "Local position", patternPositionDisplay(situation.localPattern)); y += 24;
+
+    juce::String localConfidence = "-";
+    if (situation.localKey.valid)
+    {
+        localConfidence = confidenceName(situation.localKey.evidence.confidence);
+        localConfidence += "  |  ";
+        localConfidence += interpretationName(situation.localKey.evidence.interpretation);
+    }
+    drawRow(g, y, "Local confidence", localConfidence); y += 24;
 
     juce::String confidence = "-";
     if (situation.valid)
