@@ -2,7 +2,7 @@
 
 **Smart Improviser** — VST3/ARA 2 плагин для DAW, который помогает гитаристу строить джазовую импровизацию на основе **гармонического контекста**, а не только текущего аккорда.
 
-> Главная идея: отвечать не только на вопрос «что здесь можно сыграть?», но и «что музыкально уместно сыграть именно здесь, зачем и с какой степенью напряжения?»
+> Главная идея: отвечать не только на вопрос «что здесь можно сыграть?», но и «что музыкально уместно сыграть именно здесь, зачем, куда это разрешить и с какой степенью напряжения?»
 
 ## Статус
 
@@ -11,15 +11,13 @@
 **Активный Stage:** Stage 2 — Harmonic Engine.
 
 **Текущая стабильная версия:** `0.2`  
-**Последний принятый checkpoint:** `0.2b — Pattern Recognizer`  
-**Текущая рабочая версия:** `0.2c — Tritone Substitution`  
-**Активная ветка:** `stage-2-tritone-substitution`  
+**Последний принятый checkpoint:** `0.2c — Tritone Substitution`  
+**Текущая рабочая версия:** `0.2d — Local Key Center`  
+**Активная ветка:** `stage-2-local-key-center`  
 **Stage 2 Issue:** #3  
-**Stage 2 PR:** #17
+**Stage 2 PR:** #18
 
-`0.2b` принят после CI и live-test в Fender Studio Pro и слит в `main` через PR #16.
-
-`0.2c` добавляет понимание tritone substitution: ordinary `V7` и `SubV7`, `ii–SubV–I`, applied SubV и отдельную guide-tone resolution logic.
+`0.2c` принят после CI и live-test в Fender Studio Pro и слит в `main` через PR #17.
 
 Первая целевая среда:
 
@@ -31,18 +29,12 @@
 
 ## Ключевая идея
 
-Вместо простой схемы:
-
-```text
-Chord → Scale
-```
-
-Smart Improviser строится вокруг цепочки:
+Smart Improviser строится не вокруг простой схемы `Chord → Scale`, а вокруг цепочки:
 
 ```text
 Harmony
 → Context
-→ Function
+→ Global / Local Function
 → Harmonic Pattern
 → Tension
 → Strategy
@@ -50,22 +42,11 @@ Harmony
 → Phrase / Vocabulary
 ```
 
-Плагин должен понимать:
-
-- global key и local tonal center;
-- current / previous / next chord;
-- harmonic function;
-- harmonic pattern;
-- положение аккорда внутри оборота;
-- ordinary dominant / secondary dominant / substitute dominant;
-- ожидаемое разрешение;
-- guide tones и target notes;
-- tensions и степень музыкального напряжения;
-- подходящие стратегии импровизации.
+Центральная сущность ядра — `HarmonicSituation`.
 
 ## Архитектура
 
-Музыкальное ядро отделено от DAW, ARA, VST3 и UI.
+Музыкальное ядро отделено от DAW, ARA, VST3 и UI:
 
 ```text
 Fender Studio Pro
@@ -75,30 +56,95 @@ ARA 2 Adapter
 TimelineHarmonicSnapshot
 (previous / current / next)
         ↓
-buildHarmonicSituation()
-        ↓
-analyzeHarmonicSituation()
+Harmonic Engine
+        ├── Pattern Recognizer
+        ├── Tritone Substitution
+        └── Local Key Center Analyzer
         ↓
 HarmonicSituation
         ↓
-Smart Improviser Core analyzers
-        ├── Harmonic Engine
-        ├── Pattern Recognizer
-        ├── Resolution Analyzer
-        ├── Local Key Center
-        ├── Tension Engine
-        ├── Improvisation Strategy Engine
-        ├── Phrase Library
-        └── Explanation Engine
+Tension / Strategy / Resolution / Phrase engines
         ↓
 UI / Fretboard / Notation / TAB
 ```
 
-Центральная сущность ядра — **`HarmonicSituation`**. Stage 1 contract закрыт: Harmonic Engine получает только host-neutral timeline snapshot и не зависит от JUCE/ARA/Fender Studio Pro.
+Stage 1 contract закрыт: Harmonic Engine получает только host-neutral timeline context и не зависит от JUCE/ARA/Fender Studio Pro.
+
+## Global key и Local Key Center
+
+Начиная с `0.2d`, project key и активный тональный центр — разные сущности.
+
+Пример:
+
+```text
+GLOBAL KEY
+F major
+    ↓
+LOCAL CENTER
+D minor
+    ↓
+CURRENT LOCAL FUNCTION
+A7 = V of D minor
+```
+
+Project key в DAW не требуется менять при каждом временном отклонении.
+
+Local-center states:
+
+```text
+candidate
+    ↓
+tonicized / temporary
+    ↓
+established local center
+    ↓
+modulationCandidate
+```
+
+`modulationCandidate` — только гипотеза, а не автоматическая смена global key.
+
+## Что уже умеет Harmonic Engine
+
+К принятому `0.2c`:
+
+- basic harmonic functions;
+- major `ii–V–I` на `ii / V / I`;
+- minor `iiø–V–i` на `iiø / V / i`;
+- `I–VI–ii–V`;
+- secondary dominants;
+- dominant chains;
+- ordinary `V7` / `SubV7`;
+- major/minor `ii–SubV–I`;
+- applied SubV;
+- guide-tone resolution;
+- evidence-aware confidence;
+- Stage 2 diagnostic UI.
+
+Рабочий `0.2d` добавляет:
+
+- candidate local center по unresolved `ii–V` / `iiø–V`;
+- temporary tonicization по `V→target` и `SubV→target`;
+- established local center по полному local cadence;
+- remote local centers вне global-key scale degrees;
+- `localHarmonic` — функцию аккорда относительно local center;
+- `localPattern` — pattern относительно local center;
+- cautious `modulationCandidate` без изменения project key.
+
+Основной кейс:
+
+```text
+Global key: F major
+Em7b5 → A7 → Dm
+Current: A7
+
+Local center: D minor
+Local function: V / Dominant
+Local pattern: Minor iiø–V–i
+```
 
 ## Правило разработки Stage
 
-Каждый Stage делится на логически завершённые подэтапы. Каждому соответствует отдельная буквенная build-версия.
+Каждый Stage делится на логически завершённые build checkpoints:
 
 ```text
 новая буква = новая функциональная часть Stage
@@ -112,79 +158,19 @@ Stage 2:
 0.2a — Harmonic Engine foundation          [ACCEPTED]
 0.2a fix1 — Harmonic Engine diagnostics    [ACCEPTED]
 0.2b — Pattern Recognizer                  [ACCEPTED]
-0.2c — Tritone Substitution                [ACTIVE]
-0.2d — Local Key Center
+0.2c — Tritone Substitution                [ACCEPTED]
+0.2d — Local Key Center                    [ACTIVE]
 0.2e — Ambiguity / Confidence
 0.2f — Integration / musical validation
 0.3  — Stage 2 complete
 ```
 
-## Что уже умеет Harmonic Engine
-
-К принятому `0.2b` реализованы:
-
-- basic harmonic functions;
-- major `ii–V–I` на позициях `ii / V / I`;
-- minor `iiø–V–i` на позициях `iiø / V / i`;
-- `I–VI–ii–V`;
-- secondary dominants;
-- dominant chains;
-- pattern role / position;
-- evidence-aware confidence;
-- temporary local center для подтверждённого applied dominant;
-- live diagnostic UI.
-
-## 0.2c — Tritone Substitution
-
-Рабочая версия добавляет:
-
-- `HarmonicFunction::substituteDominant`;
-- distinction `V7` / `SubV7`;
-- major `ii–SubV–I`;
-- minor `iiø–SubV–i`;
-- boundary pattern positions;
-- applied SubV, например `Ab7 → G` в C major;
-- guide-tone resolution для SubV;
-- regression protection от ошибочной трактовки SubV как secondary dominant.
-
-Основной тест:
-
-```text
-C major
-Dm7 → Db7 → Cmaj7
-
-Db7:
-Function = Substitute dominant
-Pattern = Tritone substitution
-Role = Substitute dominant | 2 / 3
-Resolution = Cmaj7 | CONFIRMED
-```
-
-## Local Key Center — следующий шаг
-
-После принятия `0.2c` checkpoint `0.2d` должен научить движок автоматически определять локальные/субтональные центры **без необходимости менять project key в DAW**.
-
-Предполагаемая модель:
-
-```text
-GLOBAL KEY
-F major
-    ↓
-LOCAL / TEMPORARY CENTER
-D minor
-    ↓
-CURRENT FUNCTION
-A7 = V of D minor
-```
-
-Local-center engine должен различать candidate center, temporary tonicization, устойчивый local center и настоящую modulation. Evidence будут давать `ii–V`, `iiø–V`, secondary dominants, SubV и реальные resolution.
-
 ## Tension Engine
 
-Одна из главных идей проекта — три уровня напряжения:
+Следующий крупный слой после Harmonic Engine — три уровня напряжения:
 
-- **Tension 1 — Stable:** chord tones, guide tones, устойчивые extensions и ясное проведение гармонии.
-- **Tension 2 — Color:** chromatic approaches, enclosures, melodic-minor applications, upper structures и контролируемые alterations.
+- **Tension 1 — Stable:** chord tones, guide tones, устойчивые extensions.
+- **Tension 2 — Color:** chromatic approaches, enclosures, melodic-minor applications, upper structures.
 - **Tension 3 — Outside / Maximum:** altered/diminished language, substitutions, side slipping, superimposed harmony и delayed resolution.
 
 В дальнейшем tension должен работать и как **Tension Curve** для нескольких тактов или chorus.
@@ -193,20 +179,19 @@ Local-center engine должен различать candidate center, temporary 
 
 Smart Improviser должен объединить:
 
-- гармонический анализ;
+- harmonic analysis;
 - local tonal-center detection;
-- три уровня tension;
+- tension levels и tension curve;
 - target notes и resolution logic;
 - jazz vocabulary;
-- семантическое хранение фраз;
+- semantic Phrase Library;
 - functional transpose;
 - major ↔ minor adaptation;
 - V7 ↔ SubV7 adaptation;
-- approach notes и enclosures;
+- approach notes / enclosures;
 - fretboard / notation / TAB;
-- пользовательскую Phrase Library;
 - Phrase Transformation Engine;
-- планирование драматургии импровизации.
+- драматургию импровизации.
 
 Цель проекта — не генерировать музыку вместо музыканта, а помогать **понимать гармонический контекст, управлять напряжением и превращать изученный vocabulary в собственный музыкальный язык**.
 
@@ -222,4 +207,4 @@ Smart Improviser должен объединить:
 
 ## Ближайший технический шаг
 
-Дождаться CI PR #17, установить `Smart-Improviser-0.2c-Windows` и провести live-test tritone substitution перед переходом к `0.2d — Local Key Center`.
+Дождаться зелёного CI PR #18, установить `Smart-Improviser-0.2d-Windows` и провести live-test Local Key Center перед переходом к `0.2e — Ambiguity / Confidence`.
