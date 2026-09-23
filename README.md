@@ -131,6 +131,7 @@ UI / Fretboard / Notation / TAB
 
 ## Документация
 
+- [`docs/CURRENT_STATE.md`](docs/CURRENT_STATE.md) — короткая точка входа: текущая версия, активный Stage, PR, ветка, что уже сделано и что делать следующим.
 - [`docs/PROJECT_CONTEXT.md`](docs/PROJECT_CONTEXT.md) — основной living document проекта и архитектурный контекст.
 - [`docs/ROADMAP.md`](docs/ROADMAP.md) — этапы разработки от спецификации ядра до Improvisation Planner.
 - [`docs/VERSIONING.md`](docs/VERSIONING.md) — официальная схема версий, буквенных подэтапов и fix-сборок.
