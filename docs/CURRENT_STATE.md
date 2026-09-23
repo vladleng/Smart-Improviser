@@ -9,39 +9,12 @@
 - **Завершённый Stage:** Stage 0 — Спецификация Smart Improviser Core
 - **Текущая стабильная версия:** `0.1`
 - **Активный Stage:** Stage 1 — ARA Context Monitor
-- **Текущая рабочая версия:** `0.1a`
+- **Текущая рабочая версия:** `0.1a fix1`
 - **Активный Issue:** #2 — Stage 1 — ARA Context Monitor
 - **Активная ветка:** `stage-1-ara-context-monitor`
+- **Активный PR:** #14
 
-Stage 1 начат. Версия `0.1a` готовится как первый живой ARA/context checkpoint для Fender Studio Pro.
-
-## Что вошло в 0.1
-
-### Фундамент из 0.0a
-- host-neutral `HarmonicContext` без Voicing/Voice сущностей;
-- `ChordModel`;
-- `KeyModel`;
-- базовый `HarmonicFunction`;
-- real next-chord resolution evidence;
-- headless ARA helper;
-- ARA Chord/Key/Tempo/Bar/Transport context;
-- `ARAContextProvider`;
-- изолированный Smart Improviser shared-memory ABI;
-- Windows CI и базовые Core regression tests.
-
-### Core data model из 0.0b
-- `AnalysisEvidence` / `ConfidenceLevel`;
-- `InterpretationStatus` (`unknown / unique / ambiguous`) + alternative count;
-- `KeyCenter` со scope `global / local / temporary / modal`;
-- `HarmonicPattern` + роль/позиция внутри паттерна;
-- `ResolutionTarget` + structural tendency/resolution moves;
-- `TensionLevel` 1/2/3;
-- базовый `ImprovisationStrategy` contract;
-- минимальный семантический `Phrase` contract;
-- центральный `HarmonicSituation`;
-- host-neutral `TimelineHarmonicSnapshot → HarmonicSituation` builder;
-- major ii–V–I и minor iiø–V–i reference cases;
-- отдельные Core data-model regression tests.
+Stage 1 находится в первом live-test checkpoint. Базовая ARA-инфраструктура уже подтверждена в Fender Studio Pro; `0.1a fix1` исправляет диагностическое отображение Key/Chord и UI после первого живого теста.
 
 ## Архитектурная граница
 
@@ -61,89 +34,112 @@ HarmonicSituation
 
 Core не зависит от Fender Studio Pro, ARA, JUCE, VST3, UI или старого Voicing engine.
 
-Pattern recognition и local-key inference **не выполняются data-model layer**. Модель хранит их результат, а вычисление относится к Stage 2.
+## Что вошло в 0.1a
 
-## Что уже сделано в 0.1a
-
-- создана ветка `stage-1-ara-context-monitor`;
-- `ARAContextProvider` теперь имеет явный Core-ready API:
+- `ARAContextProvider` получил Core-ready API:
   - `currentTimelineSnapshot()`;
   - `timelineSnapshotAt(ppq)`;
-- snapshot формирует:
-  - previous chord;
-  - current chord;
-  - next chord;
-  - global key;
-  - PPQ position;
-- `ARAContextProvider.cpp` теперь реально входит в Windows build target, поэтому Stage 1 provider проверяется компилятором в CI;
+- snapshot формирует previous/current/next chord, global key и PPQ;
+- `ARAContextProvider.cpp` реально входит в Windows build target;
 - ARA helper линкуется с `SmartImproviserCore`;
-- build version для checkpoint зафиксирована как `0.1a`;
-- Windows workflow публикует artifact `Smart-Improviser-0.1a-Windows`;
-- внутри artifact находится готовая устанавливаемая папка `Smart Improviser.vst3`;
-- имя установленной папки `Smart Improviser.vst3` остаётся постоянным между рабочими версиями и `fixN`, чтобы новую сборку можно было просто положить в системную VST3-папку с заменой предыдущей;
-- добавлен `docs/STAGE_1_0.1a_LIVE_TEST.md` с чек-листом первого теста в Fender Studio Pro.
-
-## Что проверено ранее
-
-Версия `0.1` прошла:
-
-- Windows CMake Configure — **OK**;
-- Windows Build — **OK**;
-- `SmartImproviserCoreTests` — **OK**;
-- `SmartImproviserDataModelTests` — **OK**;
-- сборка headless ARA helper — **OK**.
-
-Эталонный major case:
+- добавлен временный Stage 1 UI `ARA Context Monitor`;
+- Windows CI формирует готовый drop-in package:
 
 ```text
-C major
-Dm7 → G7 → Cmaj7
+Smart Improviser.vst3
 ```
 
-Для `G7` builder формирует confirmed resolution на `Cmaj7` и структурные движения `B→C`, `F→E`.
+Имя установленной VST3-папки остаётся постоянным между версиями и `fixN`.
 
-Эталонный minor case:
+## Результат первого live-теста 0.1a
+
+На реальном проекте Fender Studio Pro подтверждено:
+
+- ARA binding — **BOUND**;
+- Document Controller — **YES**;
+- Host Content Access — **YES**;
+- Musical Contexts — **1**;
+- Shared Context — **YES**;
+- STOP position — **OK**;
+- PPQ — **OK**, начало такта 30 = `116.000`;
+- Time Signature — **4/4**, совпадает с DAW;
+- Tempo — **110.00 BPM**, совпадает с DAW;
+- ARA events получены: `Key 2 | Chords 13 | Tempo 16 | Bars 1`;
+- короткий Audio Event в начале проекта не ограничивает доступный Musical Context и работает только как точка ARA binding.
+
+Таким образом основной ARA path Stage 1 уже работает:
 
 ```text
-A minor
-Bm7b5 → E7 → Am
+Studio Pro
+→ Event FX / ARA binding
+→ Musical Context
+→ SharedHarmonicContext
+→ transport / key / chord / tempo / bar events
 ```
 
-Для `E7` builder подтверждает resolution на `Am` и сохраняет major/minor quality target.
+## Почему понадобился 0.1a fix1
 
-## Что должен подтвердить 0.1a
+Первый live test выявил три проблемы диагностического слоя, а не ARA foundation:
 
-Первый live test относится к реальной DAW и должен проверить:
+1. Studio Pro передаёт Chord/Key структурно (`root`, `bass`, `intervals`), но не заполняет `event.name`, поэтому UI показывал `(unnamed)`.
+2. Строка `Revisions` перекрывалась footer-текстом.
+3. Длинное тире в диагностическом заголовке отображалось с mojibake.
 
-- загрузку `Smart Improviser.vst3` в Fender Studio Pro;
-- ARA binding;
-- получение Key Track / Chord Track;
-- Tempo / Time Signature;
-- STOP / PLAY / seek;
-- точные chord boundaries;
-- previous/current/next snapshot на реальном timeline;
-- обновление context после редактирования Chord/Key Track;
-- несколько Musical Context;
-- повторное открытие проекта.
+## Что сделано в 0.1a fix1
 
-Подробный сценарий: `docs/STAGE_1_0.1a_LIVE_TEST.md`.
+- Chord symbols теперь строятся из структурных ARA-данных через `ChordModel` / `normalizedChordSymbol()`;
+- Key display строится через `KeyModel` из `root + intervals`;
+- ARA `name` остаётся только fallback;
+- высота диагностического окна увеличена с 520 до 570 px;
+- footer отделён от строки `Revisions`;
+- диагностический UI использует ASCII punctuation в местах, где была проблема кодировки;
+- build label изменён на `0.1a fix1`;
+- CI artifact: `Smart-Improviser-0.1a-fix1-Windows`;
+- внутри artifact по-прежнему готовая папка `Smart Improviser.vst3`.
+
+## Что проверить в 0.1a fix1
+
+1. Key должен отображаться как музыкальное имя, например `C major`.
+2. Previous / Current / Next chord должны отображаться реальными символами.
+3. На последовательности `Dm7 | G7 | Cmaj7` при курсоре на G7 ожидается:
+
+```text
+Previous chord  Dm7
+Current chord   G7
+Next chord      Cmaj7
+```
+
+4. Перемещение курсора должно переключать current chord точно на event boundary.
+5. PLAY / STOP / seek должны сохранять корректное обновление PPQ/context.
+6. Tempo и Time Signature должны продолжать совпадать с DAW.
+7. `Revisions` и footer должны отображаться без перекрытия.
+8. После редактирования Chord/Key Track context должен обновляться.
+9. После повторного открытия проекта ARA binding/context должен восстанавливаться.
+
+Подробно: `docs/STAGE_1_0.1a_LIVE_TEST.md`.
 
 ## Рабочая линия Stage 1
 
 ```text
-0.1a → 0.1b → ... → 0.2
+0.1a
+→ 0.1a fix1
+→ при необходимости 0.1a fix2...
+→ 0.1b
+→ ...
+→ 0.2
 ```
 
-Если живой тест `0.1a` выявит ошибку, применяется `0.1a fix1`, `0.1a fix2` и т.д. Новая буква означает новый подэтап, а не исправление текущего checkpoint.
+Новая буква означает новый подэтап. Исправления текущего live-test checkpoint используют `fixN`.
 
 ## Ближайший следующий шаг
 
-1. получить успешный Windows CI для ветки/PR 0.1a;
-2. скачать artifact `Smart-Improviser-0.1a-Windows`;
-3. извлечь готовую папку `Smart Improviser.vst3` и заменить ею предыдущую в системной папке VST3;
-4. выполнить live test по `docs/STAGE_1_0.1a_LIVE_TEST.md`;
-5. результаты занести в Issue #2;
-6. при ошибках выпустить `0.1a fixN`, при успешном принятии перейти к следующему подэтапу `0.1b`.
+1. получить успешный Windows CI для `0.1a fix1`;
+2. скачать artifact `Smart-Improviser-0.1a-fix1-Windows`;
+3. заменить предыдущую папку на новую `Smart Improviser.vst3`;
+4. проверить Key и previous/current/next chord на реальном Chord Track;
+5. проверить PLAY / seek / chord boundaries;
+6. результат занести в Issue #2;
+7. при ошибке выпустить `0.1a fix2`, при принятии 0.1a перейти к следующему подэтапу `0.1b`.
 
 ## Что читать в новом чате Stage 1
 
