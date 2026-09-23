@@ -8,12 +8,12 @@
 
 - **Завершённый Stage:** Stage 0 — Спецификация Smart Improviser Core
 - **Текущая стабильная версия:** `0.1`
-- **Последний рабочий подэтап:** `0.0b` — Core data model
-- **Следующий Stage:** Stage 1 — ARA Context Monitor
-- **Следующая рабочая версия:** `0.1a`
-- **Следующий Issue:** #2 — Stage 1 — ARA Context Monitor
+- **Активный Stage:** Stage 1 — ARA Context Monitor
+- **Текущая рабочая версия:** `0.1a`
+- **Активный Issue:** #2 — Stage 1 — ARA Context Monitor
+- **Активная ветка:** `stage-1-ara-context-monitor`
 
-Stage 0 завершён. Новый чат проекта должен начинаться уже со Stage 1.
+Stage 1 начат. Версия `0.1a` готовится как первый живой ARA/context checkpoint для Fender Studio Pro.
 
 ## Что вошло в 0.1
 
@@ -43,12 +43,14 @@ Stage 0 завершён. Новый чат проекта должен начи
 - major ii–V–I и minor iiø–V–i reference cases;
 - отдельные Core data-model regression tests.
 
-## Архитектурная граница после Stage 0
+## Архитектурная граница
 
 ```text
 DAW / ARA
     ↓
 Timeline Context
+    ↓
+ARAContextProvider
     ↓
 TimelineHarmonicSnapshot
     ↓
@@ -61,7 +63,25 @@ Core не зависит от Fender Studio Pro, ARA, JUCE, VST3, UI или ст
 
 Pattern recognition и local-key inference **не выполняются data-model layer**. Модель хранит их результат, а вычисление относится к Stage 2.
 
-## Что проверено
+## Что уже сделано в 0.1a
+
+- создана ветка `stage-1-ara-context-monitor`;
+- `ARAContextProvider` теперь имеет явный Core-ready API:
+  - `currentTimelineSnapshot()`;
+  - `timelineSnapshotAt(ppq)`;
+- snapshot формирует:
+  - previous chord;
+  - current chord;
+  - next chord;
+  - global key;
+  - PPQ position;
+- `ARAContextProvider.cpp` теперь реально входит в Windows build target, поэтому Stage 1 provider проверяется компилятором в CI;
+- ARA helper линкуется с `SmartImproviserCore`;
+- build version для checkpoint зафиксирована как `0.1a`;
+- Windows workflow публикует VST3 artifact `Smart-Improviser-0.1a-Windows`;
+- добавлен `docs/STAGE_1_0.1a_LIVE_TEST.md` с чек-листом первого теста в Fender Studio Pro.
+
+## Что проверено ранее
 
 Версия `0.1` прошла:
 
@@ -89,51 +109,50 @@ Bm7b5 → E7 → Am
 
 Для `E7` builder подтверждает resolution на `Am` и сохраняет major/minor quality target.
 
-## Что ещё НЕ проверено
+## Что должен подтвердить 0.1a
 
-Живые DAW-тесты относятся к Stage 1:
+Первый live test относится к реальной DAW и должен проверить:
 
-- загрузка `Smart Improviser ARA.vst3` в Fender Studio Pro;
+- загрузку `Smart Improviser ARA.vst3` в Fender Studio Pro;
 - ARA binding;
 - получение Key Track / Chord Track;
 - Tempo / Time Signature;
 - STOP / PLAY / seek;
 - точные chord boundaries;
+- previous/current/next snapshot на реальном timeline;
 - обновление context после редактирования Chord/Key Track;
+- несколько Musical Context;
 - повторное открытие проекта.
 
-## Следующий Stage — Stage 1
+Подробный сценарий: `docs/STAGE_1_0.1a_LIVE_TEST.md`.
 
-Рабочая линия:
+## Рабочая линия Stage 1
 
 ```text
 0.1a → 0.1b → ... → 0.2
 ```
 
-Первый фокус `0.1a`:
+Если живой тест `0.1a` выявит ошибку, применяется `0.1a fix1`, `0.1a fix2` и т.д. Новая буква означает новый подэтап, а не исправление текущего checkpoint.
 
-1. подготовить тестовый VST3 package;
-2. выполнить первый live test в Fender Studio Pro;
-3. подтвердить ARA binding и Chord/Key context;
-4. проверить transport и event boundaries;
-5. зафиксировать найденные host-specific проблемы.
+## Ближайший следующий шаг
 
-Если живой тест `0.1a` выявит ошибку, применяется `0.1a fix1`, `fix2` и т.д.
+1. дождаться успешного Windows CI для ветки/PR 0.1a;
+2. скачать artifact `Smart-Improviser-0.1a-Windows`;
+3. выполнить live test по `docs/STAGE_1_0.1a_LIVE_TEST.md`;
+4. результаты занести в Issue #2;
+5. при ошибках выпустить `0.1a fixN`, при успешном принятии перейти к следующему подэтапу `0.1b`.
 
 ## Что читать в новом чате Stage 1
 
 1. `docs/CURRENT_STATE.md`;
 2. Issue #2 — Stage 1 — ARA Context Monitor;
-3. `docs/CORE_DATA_MODEL_0.0b.md`;
-4. `docs/PROJECT_CONTEXT.md`;
-5. `docs/ARCHITECTURAL_DECISIONS.md`;
-6. `docs/ROADMAP.md`;
-7. `docs/VERSIONING.md`;
-8. `docs/MIGRATION_FROM_SMART_VOICING.md` при необходимости.
-
-## Шаблон старта следующего чата
-
-> Продолжаем разработку Smart Improviser. Stage 0 завершён версией `0.1`. Репозиторий: `https://github.com/vladleng/Smart-Improviser`. Прочитай `docs/CURRENT_STATE.md`, Issue #2 и архитектурную документацию. Начинаем Stage 1 с версии `0.1a`.
+3. `docs/STAGE_1_0.1a_LIVE_TEST.md`;
+4. `docs/CORE_DATA_MODEL_0.0b.md`;
+5. `docs/PROJECT_CONTEXT.md`;
+6. `docs/ARCHITECTURAL_DECISIONS.md`;
+7. `docs/ROADMAP.md`;
+8. `docs/VERSIONING.md`;
+9. `docs/MIGRATION_FROM_SMART_VOICING.md` при необходимости.
 
 ## Правило обновления этого файла
 
