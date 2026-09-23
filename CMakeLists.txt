@@ -59,38 +59,10 @@ endif()
 
 juce_set_ara_sdk_path("${ara_sdk_SOURCE_DIR}")
 
-# Context reader library used later by the main Smart Improviser plug-in.
-add_library(SmartImproviserContext STATIC
-    src/context/SharedHarmonicContext.h
-    src/context/ARAContextProvider.cpp
-    src/context/ARAContextProvider.h
-)
-
-juce_generate_juce_header(SmartImproviserContext)
-
-target_include_directories(SmartImproviserContext
-    PUBLIC
-        "${CMAKE_CURRENT_SOURCE_DIR}/src"
-)
-
-target_link_libraries(SmartImproviserContext
-    PUBLIC
-        SmartImproviserCore
-        juce::juce_audio_utils
-        juce::juce_recommended_config_flags
-        juce::juce_recommended_warning_flags
-)
-
-target_compile_definitions(SmartImproviserContext
-    PUBLIC
-        JUCE_WEB_BROWSER=0
-        JUCE_USE_CURL=0
-        JUCE_VST3_CAN_REPLACE_VST2=0
-)
-
-if(MSVC)
-    target_compile_options(SmartImproviserContext PRIVATE /utf-8)
-endif()
+# The context provider source is already migrated in src/context, but it is not
+# made a separate JUCE target yet. It will be compiled as part of the future
+# main Smart Improviser plug-in, which is the actual consumer of the IPC bridge.
+# This keeps Stage 0 free from an artificial JUCE dependency in the Core layer.
 
 # Headless ARA/Event-FX helper. It reads Studio Pro musical context and publishes
 # it to the isolated Smart Improviser shared-memory bridge. No voicing, MIDI
