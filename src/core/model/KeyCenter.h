@@ -34,6 +34,7 @@ inline KeyCenter makeGlobalKeyCenter(const NormalizedKey& key) noexcept
     if (key.valid)
     {
         center.evidence.confidence = ConfidenceLevel::confirmed;
+        center.evidence.markUnique();
         center.evidence.add(EvidenceFlag::explicitKey);
     }
 
