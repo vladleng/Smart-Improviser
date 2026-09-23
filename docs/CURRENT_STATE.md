@@ -7,28 +7,26 @@
 - **Завершённый Stage:** Stage 1 — ARA Context Monitor
 - **Текущая стабильная версия:** `0.2`
 - **Активный Stage:** Stage 2 — Harmonic Engine
-- **Последний принятый checkpoint:** `0.2a / 0.2a fix1`
-- **Следующая рабочая версия:** `0.2b — Pattern Recognizer`
+- **Последний принятый checkpoint:** `0.2b — Pattern Recognizer`
+- **Следующая рабочая версия:** `0.2c — Tritone Substitution`
 - **Stage 2 Issue:** #3 — Stage 2 — Harmonic Engine
-- **Рабочая ветка:** `stage-2-harmonic-engine`
-- **PR checkpoint 0.2a:** #15 — `0.2a fix1 — Stage 2 Harmonic Engine diagnostics`
+- **Принятый PR 0.2b:** #16 — `0.2b — Pattern Recognizer`
 
-## Принятие checkpoint 0.2a
+## Принятие checkpoint 0.2b
 
-`0.2a` и `0.2a fix1` **приняты по результатам CI и live-test в Fender Studio Pro**.
+`0.2b — Pattern Recognizer` **принят по результатам CI и live-test в Fender Studio Pro**.
 
 Подтверждено:
 
-- Windows Build #148 — success;
-- artifact `Smart-Improviser-0.2a-fix1-Windows` установлен;
+- Windows CI для финального HEAD PR #16 — success;
+- artifact `Smart-Improviser-0.2b-Windows` опубликован и установлен;
+- major `ii–V–I` корректно распознаётся на позициях `ii / V / I`;
+- minor `iiø–V–i` корректно распознаётся на позициях `iiø / V / i`;
+- `I–VI–ii–V` корректно распознаётся в доступном previous/current/next окне;
+- dominant chain корректно распознаётся;
+- pattern role / position / confidence соответствуют ожидаемому evidence;
 - Stage 1 ARA/context regression не обнаружен;
-- Harmonic Engine diagnostics работают в реальном plugin UI;
-- `Cmaj7` в C major → `I | Tonic`, Diatonic;
-- `Am7` → `VI | Tonic`, Diatonic;
-- `Dm7` → `II | Predominant`, Diatonic;
-- `Dm7 → G7 → Cmaj7` на G7 → `V | Dominant`, `Major ii-V-I`, `Dominant | 2 / 3`, resolution `Cmaj7 | CONFIRMED`;
-- `D7 → G7` в C major на D7 → Chromatic, `Secondary dominant`, local center `G major | temporary`, resolution `G7 | CONFIRMED`;
-- confidence/evidence обновляются ожидаемо (`high/confirmed | unique`).
+- Stage 1 contract не расширялся: Harmonic Engine по-прежнему получает host-neutral `previous / current / next`.
 
 ## Архитектурная цепочка
 
@@ -48,41 +46,42 @@ Diagnostic UI / future product UI
 
 Core и Harmonic Engine остаются host-neutral. UI только отображает уже рассчитанный `HarmonicSituation`.
 
-## Что закрыто в 0.2a
+## Что закрыто к 0.2b
 
-- отдельный `HarmonicEngine`;
-- global key + previous/current/next analysis;
-- basic harmonic function;
-- major `ii–V–I` для current V;
-- minor `iiø–V–i` для current V;
-- fallback `V–I`;
+- basic harmonic functions;
+- major `ii–V–I` на всех доступных позициях;
+- minor `iiø–V–i` на всех доступных позициях;
+- `I–VI–ii–V`;
 - secondary dominant;
-- evidence-backed temporary local center;
-- safe non-analysis states;
+- dominant chains;
+- pattern role / position;
+- evidence-aware confidence;
+- temporary local center для подтверждённого applied dominant;
 - regression tests;
-- Stage 2 diagnostic UI.
+- Stage 2 diagnostics в plugin UI.
 
-## Следующий подэтап — 0.2b Pattern Recognizer
+## Следующий подэтап — 0.2c Tritone Substitution
 
-Цель: расширить pattern recognition с текущего минимального варианта до полноценного анализа позиции внутри оборота.
+Цель: научить Harmonic Engine отличать обычный dominant от substitute dominant и распознавать tritone-substitution контекст.
 
 План:
 
-- распознавать major `ii–V–I` для позиций `ii / V / I`;
-- распознавать minor `iiø–V–i` для позиций `iiø / V / i`;
-- добавить `I–VI–ii–V`;
-- добавить secondary-dominant chains;
-- добавить pattern positions: начало / середина / resolution;
-- добавить pattern evidence/confidence;
-- boundary regression tests.
+- добавить `SubV` / substitute-dominant functional role;
+- распознавать `ii–SubV–I`;
+- различать `V7` и `SubV7` относительно target center;
+- добавить substitute-dominant resolution logic;
+- корректно определять pattern role / position для SubV;
+- не спутывать chromatic dominant, secondary dominant и tritone substitute;
+- добавить regression tests для major/minor target cases и boundary cases;
+- провести отдельный live-test checkpoint в Fender Studio Pro.
 
 ## Дальнейшая линия Stage 2
 
 ```text
 0.2a — Harmonic Engine foundation          [ACCEPTED]
 0.2a fix1 — Harmonic Engine diagnostics    [ACCEPTED]
-0.2b — Pattern Recognizer                  [NEXT]
-0.2c — Tritone Substitution
+0.2b — Pattern Recognizer                  [ACCEPTED]
+0.2c — Tritone Substitution                [NEXT]
 0.2d — Local Key Center
 0.2e — Ambiguity / Confidence
 0.2f — Integration / musical validation
@@ -91,10 +90,11 @@ Core и Harmonic Engine остаются host-neutral. UI только отоб�
 
 ## Что делать следующим
 
-1. начать реализацию `0.2b — Pattern Recognizer`;
-2. не расширять `0.2a fix1` новой функциональностью;
-3. сохранить host-neutral границу Harmonic Engine;
-4. после завершения `0.2b` провести отдельный regression/live-test checkpoint перед переходом к `0.2c`.
+1. начать реализацию `0.2c — Tritone Substitution` в отдельной ветке от принятого `main`;
+2. не расширять закрытый Stage 1 context contract;
+3. сохранить host-neutral Harmonic Engine;
+4. после зелёного CI передать `0.2c` на отдельный live-test;
+5. не смешивать полноценный Local Key Center inference с `0.2c` — это отдельный checkpoint `0.2d`.
 
 ## Что читать в новом чате Stage 2
 

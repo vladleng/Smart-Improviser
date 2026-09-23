@@ -84,11 +84,30 @@ bool isMinorFamily(const NormalizedChord& chord) noexcept
         || chord.quality == ChordQuality::halfDiminished;
 }
 
+bool isTurnaroundSix(const NormalizedChord& chord, const NormalizedKey& key) noexcept
+{
+    return isDegree(chord, key, 6)
+        && (chord.quality == ChordQuality::minor
+            || chord.quality == ChordQuality::dominant);
+}
+
+bool isDominantOf(const NormalizedChord& dominant,
+                  const NormalizedChord& target) noexcept
+{
+    return dominant.valid
+        && target.valid
+        && dominant.quality == ChordQuality::dominant
+        && wrap12(dominant.rootPitchClass - target.rootPitchClass) == 7;
+}
+
 HarmonicPattern makePattern(HarmonicPatternType type,
                             PatternMemberRole role,
                             int positionIndex,
                             int length,
-                            ConfidenceLevel confidence) noexcept
+                            ConfidenceLevel confidence,
+                            bool previousEvidence = false,
+                            bool nextEvidence = false,
+                            bool resolutionEvidence = false) noexcept
 {
     HarmonicPattern pattern;
     pattern.type = type;
@@ -98,6 +117,14 @@ HarmonicPattern makePattern(HarmonicPatternType type,
     pattern.evidence.confidence = confidence;
     pattern.evidence.markUnique();
     pattern.evidence.add(EvidenceFlag::patternMatch);
+
+    if (previousEvidence)
+        pattern.evidence.add(EvidenceFlag::previousChord);
+    if (nextEvidence)
+        pattern.evidence.add(EvidenceFlag::nextChord);
+    if (resolutionEvidence)
+        pattern.evidence.add(EvidenceFlag::confirmedResolution);
+
     return pattern;
 }
 
@@ -111,6 +138,8 @@ HarmonicPattern recognizePattern(const HarmonicSituation& situation) noexcept
 
     const auto& key = situation.globalKey.key;
 
+    // Full three-event cadence window. This remains the strongest ii-V-I
+    // interpretation because both preparation and real resolution are visible.
     if (situation.previousChordAvailable
         && situation.nextChordAvailable
         && key.mode == KeyMode::major
@@ -126,7 +155,10 @@ HarmonicPattern recognizePattern(const HarmonicSituation& situation) noexcept
                            PatternMemberRole::dominant,
                            1,
                            3,
-                           ConfidenceLevel::confirmed);
+                           ConfidenceLevel::confirmed,
+                           true,
+                           true,
+                           true);
     }
 
     if (situation.previousChordAvailable
@@ -144,7 +176,166 @@ HarmonicPattern recognizePattern(const HarmonicSituation& situation) noexcept
                            PatternMemberRole::dominant,
                            1,
                            3,
-                           ConfidenceLevel::confirmed);
+                           ConfidenceLevel::confirmed,
+                           true,
+                           true,
+                           true);
+    }
+
+    // A dominant chain is more specific than a single secondary dominant.
+    // With the Stage 1 contract we can confirm a three-chord chain when the
+    // current dominant is bracketed by two real dominant relationships.
+    if (situation.previousChordAvailable
+        && situation.nextChordAvailable
+        && isDominantOf(situation.previousChord, situation.currentChord)
+        && isDominantOf(situation.currentChord, situation.nextChord))
+    {
+        return makePattern(HarmonicPatternType::dominantChain,
+                           PatternMemberRole::dominant,
+                           1,
+                           3,
+                           ConfidenceLevel::confirmed,
+                           true,
+                           true,
+                           true);
+    }
+
+    // I-VI-ii-V can be recognized strongly on its two middle positions because
+    // the complete three-event window around the current chord is available.
+    if (key.mode == KeyMode::major
+        && situation.previousChordAvailable
+        && situation.nextChordAvailable
+        && isDegree(situation.previousChord, key, 1)
+        && situation.previousChord.quality == ChordQuality::major
+        && isTurnaroundSix(situation.currentChord, key)
+        && isDegree(situation.nextChord, key, 2)
+        && situation.nextChord.quality == ChordQuality::minor)
+    {
+        return makePattern(HarmonicPatternType::turnaroundIVIiiV,
+                           PatternMemberRole::preparation,
+                           1,
+                           4,
+                           ConfidenceLevel::high,
+                           true,
+                           true);
+    }
+
+    if (key.mode == KeyMode::major
+        && situation.previousChordAvailable
+        && situation.nextChordAvailable
+        && isTurnaroundSix(situation.previousChord, key)
+        && isDegree(situation.currentChord, key, 2)
+        && situation.currentChord.quality == ChordQuality::minor
+        && isDegree(situation.nextChord, key, 5)
+        && situation.nextChord.quality == ChordQuality::dominant)
+    {
+        return makePattern(HarmonicPatternType::turnaroundIVIiiV,
+                           PatternMemberRole::predominant,
+                           2,
+                           4,
+                           ConfidenceLevel::high,
+                           true,
+                           true);
+    }
+
+    // Boundary positions use the strongest pair available in the immutable
+    // Stage 1 previous/current/next contract. They are intentionally high,
+    // rather than confirmed: the missing third cadence member is not invented.
+    if (key.mode == KeyMode::major
+        && situation.nextChordAvailable
+        && isDegree(situation.currentChord, key, 2)
+        && situation.currentChord.quality == ChordQuality::minor
+        && isDegree(situation.nextChord, key, 5)
+        && situation.nextChord.quality == ChordQuality::dominant)
+    {
+        return makePattern(HarmonicPatternType::majorIiVI,
+                           PatternMemberRole::predominant,
+                           0,
+                           3,
+                           ConfidenceLevel::high,
+                           false,
+                           true);
+    }
+
+    if (key.mode == KeyMode::major
+        && situation.previousChordAvailable
+        && isDegree(situation.previousChord, key, 5)
+        && situation.previousChord.quality == ChordQuality::dominant
+        && isDegree(situation.currentChord, key, 1)
+        && situation.currentChord.quality == ChordQuality::major)
+    {
+        return makePattern(HarmonicPatternType::majorIiVI,
+                           PatternMemberRole::resolution,
+                           2,
+                           3,
+                           ConfidenceLevel::high,
+                           true,
+                           false);
+    }
+
+    if (key.mode == KeyMode::minor
+        && situation.nextChordAvailable
+        && isDegree(situation.currentChord, key, 2)
+        && situation.currentChord.quality == ChordQuality::halfDiminished
+        && isDegree(situation.nextChord, key, 5)
+        && situation.nextChord.quality == ChordQuality::dominant)
+    {
+        return makePattern(HarmonicPatternType::minorIiHalfDimVi,
+                           PatternMemberRole::predominant,
+                           0,
+                           3,
+                           ConfidenceLevel::high,
+                           false,
+                           true);
+    }
+
+    if (key.mode == KeyMode::minor
+        && situation.previousChordAvailable
+        && isDegree(situation.previousChord, key, 5)
+        && situation.previousChord.quality == ChordQuality::dominant
+        && isDegree(situation.currentChord, key, 1)
+        && isMinorFamily(situation.currentChord))
+    {
+        return makePattern(HarmonicPatternType::minorIiHalfDimVi,
+                           PatternMemberRole::resolution,
+                           2,
+                           3,
+                           ConfidenceLevel::high,
+                           true,
+                           false);
+    }
+
+    // Turnaround boundary candidates. A full ii-V-I cadence above has higher
+    // priority whenever a real tonic resolution is visible.
+    if (key.mode == KeyMode::major
+        && situation.nextChordAvailable
+        && isDegree(situation.currentChord, key, 1)
+        && situation.currentChord.quality == ChordQuality::major
+        && isTurnaroundSix(situation.nextChord, key))
+    {
+        return makePattern(HarmonicPatternType::turnaroundIVIiiV,
+                           PatternMemberRole::tonic,
+                           0,
+                           4,
+                           ConfidenceLevel::medium,
+                           false,
+                           true);
+    }
+
+    if (key.mode == KeyMode::major
+        && situation.previousChordAvailable
+        && isDegree(situation.previousChord, key, 2)
+        && situation.previousChord.quality == ChordQuality::minor
+        && isDegree(situation.currentChord, key, 5)
+        && situation.currentChord.quality == ChordQuality::dominant)
+    {
+        return makePattern(HarmonicPatternType::turnaroundIVIiiV,
+                           PatternMemberRole::dominant,
+                           3,
+                           4,
+                           ConfidenceLevel::medium,
+                           true,
+                           false);
     }
 
     // Applied dominants are a more specific interpretation than the generic
@@ -155,7 +346,10 @@ HarmonicPattern recognizePattern(const HarmonicSituation& situation) noexcept
                            PatternMemberRole::dominant,
                            0,
                            2,
-                           ConfidenceLevel::confirmed);
+                           ConfidenceLevel::confirmed,
+                           false,
+                           true,
+                           true);
     }
 
     if (situation.nextChordAvailable
@@ -166,10 +360,34 @@ HarmonicPattern recognizePattern(const HarmonicSituation& situation) noexcept
                            PatternMemberRole::dominant,
                            0,
                            2,
-                           ConfidenceLevel::confirmed);
+                           ConfidenceLevel::confirmed,
+                           false,
+                           true,
+                           true);
     }
 
     return none;
+}
+
+void mergePatternEvidence(HarmonicSituation& situation) noexcept
+{
+    if (! situation.pattern.recognized())
+        return;
+
+    situation.evidence.add(EvidenceFlag::patternMatch);
+
+    if (situation.pattern.evidence.has(EvidenceFlag::previousChord))
+        situation.evidence.add(EvidenceFlag::previousChord);
+    if (situation.pattern.evidence.has(EvidenceFlag::nextChord))
+        situation.evidence.add(EvidenceFlag::nextChord);
+    if (situation.pattern.evidence.has(EvidenceFlag::confirmedResolution))
+        situation.evidence.add(EvidenceFlag::confirmedResolution);
+
+    if (static_cast<int>(situation.pattern.evidence.confidence)
+        > static_cast<int>(situation.evidence.confidence))
+    {
+        situation.evidence.confidence = situation.pattern.evidence.confidence;
+    }
 }
 }
 
@@ -184,12 +402,7 @@ HarmonicSituation analyzeHarmonicSituation(const TimelineHarmonicSnapshot& snaps
         result.evidence.add(EvidenceFlag::inferredLocalCenter);
 
     result.pattern = recognizePattern(result);
-    if (result.pattern.recognized())
-    {
-        result.evidence.add(EvidenceFlag::patternMatch);
-        if (result.pattern.evidence.confidence == ConfidenceLevel::confirmed)
-            result.evidence.confidence = ConfidenceLevel::confirmed;
-    }
+    mergePatternEvidence(result);
 
     if (result.evidence.interpretation == InterpretationStatus::unknown)
         result.evidence.markUnique();
