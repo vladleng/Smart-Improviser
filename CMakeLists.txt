@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.22)
 
 project(SmartImproviser
-    VERSION 0.0.1
+    VERSION 0.1.0
     DESCRIPTION "Smart Improviser - context-aware jazz improvisation assistant"
     LANGUAGES C CXX)
 
@@ -67,11 +67,6 @@ endif()
 
 juce_set_ara_sdk_path("${ara_sdk_SOURCE_DIR}")
 
-# The context provider source is already migrated in src/context, but it is not
-# made a separate JUCE target yet. It will be compiled as part of the future
-# main Smart Improviser plug-in, which is the actual consumer of the IPC bridge.
-# This keeps Stage 0 free from an artificial JUCE dependency in the Core layer.
-
 # Headless ARA/Event-FX helper. It reads Studio Pro musical context and publishes
 # it to the isolated Smart Improviser shared-memory bridge. No voicing, MIDI
 # routing, harmonizer or UI code is included here.
@@ -96,6 +91,8 @@ juce_generate_juce_header(SmartImproviserARA)
 
 target_sources(SmartImproviserARA
     PRIVATE
+        src/context/ARAContextProvider.cpp
+        src/context/ARAContextProvider.h
         src/context/SharedHarmonicContext.h
         src/ara/ARAContextDebugState.h
         src/ara/ARAContextDocumentController.cpp
@@ -114,10 +111,12 @@ target_compile_definitions(SmartImproviserARA
         JUCE_WEB_BROWSER=0
         JUCE_USE_CURL=0
         JUCE_VST3_CAN_REPLACE_VST2=0
+        SMART_IMPROVISER_BUILD_VERSION="0.1a"
 )
 
 target_link_libraries(SmartImproviserARA
     PRIVATE
+        SmartImproviserCore
         juce::juce_audio_utils
     PUBLIC
         juce::juce_recommended_config_flags
