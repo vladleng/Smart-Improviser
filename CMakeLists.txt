@@ -16,10 +16,18 @@ include(CTest)
 # Host-neutral harmony core. This layer must remain independent from JUCE/ARA.
 add_library(SmartImproviserCore STATIC
     src/core/context/HarmonicContext.h
+    src/core/model/AnalysisEvidence.h
     src/core/model/ChordModel.cpp
     src/core/model/ChordModel.h
+    src/core/model/HarmonicPattern.h
+    src/core/model/HarmonicSituation.cpp
+    src/core/model/HarmonicSituation.h
+    src/core/model/ImprovisationContracts.h
+    src/core/model/KeyCenter.h
     src/core/model/KeyModel.cpp
     src/core/model/KeyModel.h
+    src/core/model/Phrase.h
+    src/core/model/ResolutionTarget.h
     src/core/analysis/HarmonicFunction.cpp
     src/core/analysis/HarmonicFunction.h
 )
@@ -130,8 +138,17 @@ add_executable(SmartImproviserCoreTests
 target_link_libraries(SmartImproviserCoreTests PRIVATE SmartImproviserCore)
 target_compile_features(SmartImproviserCoreTests PRIVATE cxx_std_20)
 
+add_executable(SmartImproviserDataModelTests
+    tests/CoreDataModelTests.cpp
+)
+
+target_link_libraries(SmartImproviserDataModelTests PRIVATE SmartImproviserCore)
+target_compile_features(SmartImproviserDataModelTests PRIVATE cxx_std_20)
+
 if(MSVC)
     target_compile_options(SmartImproviserCoreTests PRIVATE /utf-8)
+    target_compile_options(SmartImproviserDataModelTests PRIVATE /utf-8)
 endif()
 
 add_test(NAME SmartImproviserCoreTests COMMAND SmartImproviserCoreTests)
+add_test(NAME SmartImproviserDataModelTests COMMAND SmartImproviserDataModelTests)
