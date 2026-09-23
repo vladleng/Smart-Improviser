@@ -1,4 +1,5 @@
 #include "ara/ARAPluginProcessor.h"
+#include "ara/ARAPluginEditor.h"
 #include "ara/ARAContextDocumentController.h"
 #include "context/SharedHarmonicContext.h"
 
@@ -84,6 +85,11 @@ void SmartImproviserARAProcessor::processBlock(juce::AudioBuffer<float>& buffer,
     }
 
     juce::ignoreUnused(buffer, midiMessages);
+}
+
+juce::AudioProcessorEditor* SmartImproviserARAProcessor::createEditor()
+{
+    return new SmartImproviserARAEditor(*this);
 }
 
 void SmartImproviserARAProcessor::getStateInformation(juce::MemoryBlock& destData)

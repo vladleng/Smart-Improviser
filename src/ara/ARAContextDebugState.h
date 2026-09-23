@@ -11,6 +11,9 @@ struct ARAContextDebugSnapshot
     bool documentControllerCreated = false;
     bool hostContentAccessAvailable = false;
     int musicalContextCount = 0;
+    int selectedMusicalContextIndex = -1;
+    int selectedContextContentTypeCount = 0;
+    int selectedContextEventCount = 0;
 
     bool keySignaturesAvailable = false;
     int keySignatureEventCount = 0;
@@ -76,11 +79,7 @@ public:
         }
 
         best.registeredControllerCount = static_cast<int>(snapshots.size());
-        best.sharedContextAvailable = best.musicalContextCount > 0
-                                   && (best.keySignaturesAvailable
-                                       || best.sheetChordsAvailable
-                                       || best.tempoEntriesAvailable
-                                       || best.barSignaturesAvailable);
+        best.sharedContextAvailable = best.harmonicContext.connected;
         return best;
     }
 

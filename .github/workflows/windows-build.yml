@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - main
-      - stage-0-core-migration
+      - stage-1-ara-context-monitor
   pull_request:
   workflow_dispatch:
 
@@ -24,3 +24,28 @@ jobs:
 
       - name: Test
         run: ctest --test-dir build -C Release --output-on-failure
+
+      - name: Prepare drop-in VST3 package
+        shell: pwsh
+        run: |
+          $source = "build/SmartImproviserARA_artefacts/Release/VST3/Smart Improviser.vst3"
+          $packageRoot = "package"
+          $destination = Join-Path $packageRoot "Smart Improviser.vst3"
+
+          if (-not (Test-Path $source)) {
+            throw "Built VST3 package not found: $source"
+          }
+
+          if (Test-Path $packageRoot) {
+            Remove-Item $packageRoot -Recurse -Force
+          }
+
+          New-Item -ItemType Directory -Path $packageRoot | Out-Null
+          Copy-Item $source $destination -Recurse
+
+      - name: Upload Smart Improviser 0.2 VST3
+        uses: actions/upload-artifact@v4
+        with:
+          name: Smart-Improviser-0.2-Windows
+          path: package
+          if-no-files-found: error

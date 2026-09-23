@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.22)
 
 project(SmartImproviser
-    VERSION 0.0.1
+    VERSION 0.2.0
     DESCRIPTION "Smart Improviser - context-aware jazz improvisation assistant"
     LANGUAGES C CXX)
 
@@ -44,6 +44,28 @@ if(MSVC)
 endif()
 
 # -----------------------------------------------------------------------------
+# Stage 1 context mapping contract. This layer converts the ARA/shared snapshot
+# into host-neutral HarmonicContext / TimelineHarmonicSnapshot values and has no
+# JUCE/ARA dependency, so edge cases can be regression-tested directly.
+add_library(SmartImproviserContext STATIC
+    src/context/SharedHarmonicContextData.h
+    src/context/TimelineContextMapper.cpp
+    src/context/TimelineContextMapper.h
+)
+
+target_include_directories(SmartImproviserContext
+    PUBLIC
+        "${CMAKE_CURRENT_SOURCE_DIR}/src"
+)
+
+target_link_libraries(SmartImproviserContext PUBLIC SmartImproviserCore)
+target_compile_features(SmartImproviserContext PUBLIC cxx_std_20)
+
+if(MSVC)
+    target_compile_options(SmartImproviserContext PRIVATE /utf-8)
+endif()
+
+# -----------------------------------------------------------------------------
 # JUCE / ARA infrastructure reused from Smart Voicing, with a new isolated ABI.
 FetchContent_Declare(
     JUCE
@@ -67,21 +89,21 @@ endif()
 
 juce_set_ara_sdk_path("${ara_sdk_SOURCE_DIR}")
 
-# The context provider source is already migrated in src/context, but it is not
-# made a separate JUCE target yet. It will be compiled as part of the future
-# main Smart Improviser plug-in, which is the actual consumer of the IPC bridge.
-# This keeps Stage 0 free from an artificial JUCE dependency in the Core layer.
-
-# Headless ARA/Event-FX helper. It reads Studio Pro musical context and publishes
-# it to the isolated Smart Improviser shared-memory bridge. No voicing, MIDI
-# routing, harmonizer or UI code is included here.
+# ARA/Event-FX helper. It reads Studio Pro musical context and publishes it to
+# the isolated Smart Improviser shared-memory bridge. During Stage 1 it also
+# exposes a small diagnostics editor so live ARA/context tests are observable.
+# No voicing, MIDI routing or harmonizer code is included here.
+#
+# User-facing package name is deliberately stable across all checkpoints:
+#     Smart Improviser.vst3
+# This allows each test build to replace the previous VST3 package directly.
 juce_add_plugin(SmartImproviserARA
     COMPANY_NAME "Moon River Studio"
     BUNDLE_ID "com.moonriverstudio.smartimproviserara"
     PLUGIN_MANUFACTURER_CODE MNRV
     PLUGIN_CODE SmIA
     FORMATS VST3
-    PRODUCT_NAME "Smart Improviser ARA"
+    PRODUCT_NAME "Smart Improviser"
     IS_SYNTH FALSE
     VST3_CATEGORIES Fx
     NEEDS_MIDI_INPUT FALSE
@@ -96,10 +118,14 @@ juce_generate_juce_header(SmartImproviserARA)
 
 target_sources(SmartImproviserARA
     PRIVATE
+        src/context/ARAContextProvider.cpp
+        src/context/ARAContextProvider.h
         src/context/SharedHarmonicContext.h
         src/ara/ARAContextDebugState.h
         src/ara/ARAContextDocumentController.cpp
         src/ara/ARAContextDocumentController.h
+        src/ara/ARAPluginEditor.cpp
+        src/ara/ARAPluginEditor.h
         src/ara/ARAPluginProcessor.cpp
         src/ara/ARAPluginProcessor.h
 )
@@ -114,10 +140,12 @@ target_compile_definitions(SmartImproviserARA
         JUCE_WEB_BROWSER=0
         JUCE_USE_CURL=0
         JUCE_VST3_CAN_REPLACE_VST2=0
+        SMART_IMPROVISER_BUILD_VERSION="0.2"
 )
 
 target_link_libraries(SmartImproviserARA
     PRIVATE
+        SmartImproviserContext
         juce::juce_audio_utils
     PUBLIC
         juce::juce_recommended_config_flags
@@ -130,7 +158,7 @@ if(MSVC)
 endif()
 
 # -----------------------------------------------------------------------------
-# Host-neutral regression tests.
+# Regression tests.
 add_executable(SmartImproviserCoreTests
     tests/CoreHarmonyTests.cpp
 )
@@ -145,10 +173,19 @@ add_executable(SmartImproviserDataModelTests
 target_link_libraries(SmartImproviserDataModelTests PRIVATE SmartImproviserCore)
 target_compile_features(SmartImproviserDataModelTests PRIVATE cxx_std_20)
 
+add_executable(SmartImproviserTimelineContextTests
+    tests/TimelineContextMapperTests.cpp
+)
+
+target_link_libraries(SmartImproviserTimelineContextTests PRIVATE SmartImproviserContext)
+target_compile_features(SmartImproviserTimelineContextTests PRIVATE cxx_std_20)
+
 if(MSVC)
     target_compile_options(SmartImproviserCoreTests PRIVATE /utf-8)
     target_compile_options(SmartImproviserDataModelTests PRIVATE /utf-8)
+    target_compile_options(SmartImproviserTimelineContextTests PRIVATE /utf-8)
 endif()
 
 add_test(NAME SmartImproviserCoreTests COMMAND SmartImproviserCoreTests)
 add_test(NAME SmartImproviserDataModelTests COMMAND SmartImproviserDataModelTests)
+add_test(NAME SmartImproviserTimelineContextTests COMMAND SmartImproviserTimelineContextTests)

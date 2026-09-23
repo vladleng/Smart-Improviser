@@ -6,134 +6,190 @@
 
 ## Текущее состояние
 
-- **Завершённый Stage:** Stage 0 — Спецификация Smart Improviser Core
-- **Текущая стабильная версия:** `0.1`
-- **Последний рабочий подэтап:** `0.0b` — Core data model
-- **Следующий Stage:** Stage 1 — ARA Context Monitor
-- **Следующая рабочая версия:** `0.1a`
-- **Следующий Issue:** #2 — Stage 1 — ARA Context Monitor
+- **Завершённый Stage:** Stage 1 — ARA Context Monitor
+- **Текущая стабильная версия:** `0.2`
+- **Следующий Stage:** Stage 2 — Harmonic Engine
+- **Следующая рабочая версия:** `0.2a`
+- **Stage 1 Issue:** #2 — Stage 1 — ARA Context Monitor
+- **Stage 1 ветка:** `stage-1-ara-context-monitor`
+- **Stage 1 PR:** #14
 
-Stage 0 завершён. Новый чат проекта должен начинаться уже со Stage 1.
+Stage 1 принят после живых тестов `0.1a fix1` и `0.1b` в Fender Studio Pro. Финальная сборка этапа имеет версию `0.2`.
 
-## Что вошло в 0.1
-
-### Фундамент из 0.0a
-- host-neutral `HarmonicContext` без Voicing/Voice сущностей;
-- `ChordModel`;
-- `KeyModel`;
-- базовый `HarmonicFunction`;
-- real next-chord resolution evidence;
-- headless ARA helper;
-- ARA Chord/Key/Tempo/Bar/Transport context;
-- `ARAContextProvider`;
-- изолированный Smart Improviser shared-memory ABI;
-- Windows CI и базовые Core regression tests.
-
-### Core data model из 0.0b
-- `AnalysisEvidence` / `ConfidenceLevel`;
-- `InterpretationStatus` (`unknown / unique / ambiguous`) + alternative count;
-- `KeyCenter` со scope `global / local / temporary / modal`;
-- `HarmonicPattern` + роль/позиция внутри паттерна;
-- `ResolutionTarget` + structural tendency/resolution moves;
-- `TensionLevel` 1/2/3;
-- базовый `ImprovisationStrategy` contract;
-- минимальный семантический `Phrase` contract;
-- центральный `HarmonicSituation`;
-- host-neutral `TimelineHarmonicSnapshot → HarmonicSituation` builder;
-- major ii–V–I и minor iiø–V–i reference cases;
-- отдельные Core data-model regression tests.
-
-## Архитектурная граница после Stage 0
+## Завершённая архитектурная цепочка Stage 1
 
 ```text
-DAW / ARA
-    ↓
-Timeline Context
-    ↓
-TimelineHarmonicSnapshot
-    ↓
+Fender Studio Pro / ARA 2
+        ↓
+Musical Context
+        ↓
+SharedHarmonicContextSnapshot
+        ↓
+TimelineContextMapper
+        ↓
+ARAContextProvider
+        ↓
+HarmonicContext / TimelineHarmonicSnapshot
+        ↓
 HarmonicSituation
-    ↓
-будущие Harmonic / Tension / Improvisation analyzers
+        ↓
+Stage 2 Harmonic Engine
 ```
 
-Core не зависит от Fender Studio Pro, ARA, JUCE, VST3, UI или старого Voicing engine.
+Core не зависит от Fender Studio Pro, ARA, JUCE, VST3, UI или старого Smart Voicing engine.
 
-Pattern recognition и local-key inference **не выполняются data-model layer**. Модель хранит их результат, а вычисление относится к Stage 2.
+## Что подтверждено в живых тестах Stage 1
 
-## Что проверено
+На реальном проекте Fender Studio Pro подтверждено:
 
-Версия `0.1` прошла:
+- ARA binding — **BOUND**;
+- Document Controller — **YES**;
+- Host Content Access — **YES**;
+- Musical Context — доступен;
+- Shared Context — **YES**;
+- STOP / PLAY / seek — корректны;
+- PPQ и seconds — корректно обновляются;
+- Key Track — читается и нормализуется;
+- Chord Track — читается и нормализуется;
+- previous/current/next совпадают с Chord Track;
+- exact chord boundary корректно переключает current chord;
+- Tempo / Time Signature совпадают с DAW;
+- изменения Chord Track / Key Track обновляют snapshot;
+- после повторного открытия проекта binding/context восстанавливаются;
+- длина Audio Event не ограничивает Musical Context: Event является только ARA anchor;
+- explicit no-chord event обрабатывается как `available=true`, `defined=false`;
+- отсутствие Key events не ломает Chord context;
+- отсутствие активного chord event не ломает ARA connection;
+- до первого chord event корректно сохраняется future/next context;
+- после последнего event обработка остаётся безопасной и детерминированной.
 
-- Windows CMake Configure — **OK**;
-- Windows Build — **OK**;
-- `SmartImproviserCoreTests` — **OK**;
-- `SmartImproviserDataModelTests` — **OK**;
-- сборка headless ARA helper — **OK**.
-
-Эталонный major case:
+Подтверждённые примеры:
 
 ```text
-C major
-Dm7 → G7 → Cmaj7
+Previous chord  C
+Current chord   (no chord)
+Next chord      Cmaj7
 ```
-
-Для `G7` builder формирует confirmed resolution на `Cmaj7` и структурные движения `B→C`, `F→E`.
-
-Эталонный minor case:
 
 ```text
-A minor
-Bm7b5 → E7 → Am
+Previous chord  Cmaj7
+Current chord   Am7
+Next chord      Dm7
 ```
-
-Для `E7` builder подтверждает resolution на `Am` и сохраняет major/minor quality target.
-
-## Что ещё НЕ проверено
-
-Живые DAW-тесты относятся к Stage 1:
-
-- загрузка `Smart Improviser ARA.vst3` в Fender Studio Pro;
-- ARA binding;
-- получение Key Track / Chord Track;
-- Tempo / Time Signature;
-- STOP / PLAY / seek;
-- точные chord boundaries;
-- обновление context после редактирования Chord/Key Track;
-- повторное открытие проекта.
-
-## Следующий Stage — Stage 1
-
-Рабочая линия:
 
 ```text
-0.1a → 0.1b → ... → 0.2
+Key             -
+Previous chord  -
+Current chord   (no chord)
+Next chord      C
+Tempo           120 BPM
+Time signature  4/4
 ```
 
-Первый фокус `0.1a`:
+Multiple Musical Context не является блокером `0.2`, если отдельный воспроизводимый сценарий Studio Pro недоступен. В `0.1b` реализована детерминированная policy выбора: максимум доступных content types → максимум events → первый context при равенстве; UI показывает `Musical contexts N | selected M`.
 
-1. подготовить тестовый VST3 package;
-2. выполнить первый live test в Fender Studio Pro;
-3. подтвердить ARA binding и Chord/Key context;
-4. проверить transport и event boundaries;
-5. зафиксировать найденные host-specific проблемы.
+## Что входит в стабильную 0.2
 
-Если живой тест `0.1a` выявит ошибку, применяется `0.1a fix1`, `fix2` и т.д.
+### ARA / host integration
 
-## Что читать в новом чате Stage 1
+- ARA 2 Event FX для Fender Studio Pro;
+- Key Signature, Sheet Chords, Tempo Entries, Bar Signatures;
+- transport position / playing state;
+- изолированный Smart Improviser shared-memory ABI.
+
+### Host-neutral context layer
+
+- `SharedHarmonicContextData.h`;
+- `TimelineContextMapper.h/.cpp`;
+- `SmartImproviserContext` без JUCE/ARA зависимости;
+- `ARAContextProvider`;
+- `HarmonicContext`;
+- `TimelineHarmonicSnapshot`.
+
+### Edge-case semantics
+
+- missing Key / Chord / Tempo sources;
+- undefined key/chord event;
+- explicit no-chord;
+- before-first chord;
+- after-last chord;
+- exact event boundary;
+- safe PPQ ↔ seconds conversion;
+- single tempo anchor без выдумывания неизвестного tempo slope.
+
+### Regression tests
+
+CI запускает:
+
+```text
+SmartImproviserCoreTests
+SmartImproviserDataModelTests
+SmartImproviserTimelineContextTests
+```
+
+### Stage 1 → Stage 2 contract
+
+Формальный контракт зафиксирован в:
+
+```text
+docs/STAGE_1_TO_STAGE_2_CONTRACT.md
+```
+
+Stage 2 получает host-neutral `TimelineHarmonicSnapshot` / `HarmonicContext` и не должен знать деталей ARA SDK, JUCE, shared memory или Fender Studio Pro.
+
+## Финальная сборка Stage 1
+
+Build label:
+
+```text
+Smart Improviser 0.2
+```
+
+CMake project version:
+
+```text
+0.2.0
+```
+
+GitHub Actions artifact:
+
+```text
+Smart-Improviser-0.2-Windows
+└── Smart Improviser.vst3
+```
+
+Устанавливаемая папка всегда называется `Smart Improviser.vst3` и целиком заменяет предыдущую версию.
+
+## Следующий этап — Stage 2 / 0.2a
+
+Stage 2 — **Harmonic Engine**.
+
+Первый подэтап `0.2a` должен начать музыкальный анализ уже готового `TimelineHarmonicSnapshot`:
+
+1. global key и подготовка local key center;
+2. basic harmonic functions;
+3. previous/current/next analysis;
+4. базовый pattern recognition;
+5. первые целевые паттерны: major ii–V–I, minor iiø–V–i, V–I, I–VI–ii–V, secondary dominant, tritone substitution.
+
+## Рабочая линия
+
+```text
+Stage 0 → 0.1  [COMPLETED]
+Stage 1 → 0.2  [COMPLETED]
+Stage 2 → 0.2a ... → 0.3
+```
+
+## Что читать в новом чате Stage 2
 
 1. `docs/CURRENT_STATE.md`;
-2. Issue #2 — Stage 1 — ARA Context Monitor;
+2. `docs/STAGE_1_TO_STAGE_2_CONTRACT.md`;
 3. `docs/CORE_DATA_MODEL_0.0b.md`;
 4. `docs/PROJECT_CONTEXT.md`;
 5. `docs/ARCHITECTURAL_DECISIONS.md`;
 6. `docs/ROADMAP.md`;
 7. `docs/VERSIONING.md`;
-8. `docs/MIGRATION_FROM_SMART_VOICING.md` при необходимости.
-
-## Шаблон старта следующего чата
-
-> Продолжаем разработку Smart Improviser. Stage 0 завершён версией `0.1`. Репозиторий: `https://github.com/vladleng/Smart-Improviser`. Прочитай `docs/CURRENT_STATE.md`, Issue #2 и архитектурную документацию. Начинаем Stage 1 с версии `0.1a`.
+8. Issue следующего Stage 2 после его создания.
 
 ## Правило обновления этого файла
 

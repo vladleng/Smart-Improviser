@@ -17,8 +17,8 @@ public:
     bool isBusesLayoutSupported(const BusesLayout& layouts) const override;
     void processBlock(juce::AudioBuffer<float>&, juce::MidiBuffer&) override;
 
-    juce::AudioProcessorEditor* createEditor() override { return nullptr; }
-    bool hasEditor() const override { return false; }
+    juce::AudioProcessorEditor* createEditor() override;
+    bool hasEditor() const override { return true; }
 
     const juce::String getName() const override { return JucePlugin_Name; }
     bool acceptsMidi() const override { return false; }
@@ -34,6 +34,8 @@ public:
 
     void getStateInformation(juce::MemoryBlock& destData) override;
     void setStateInformation(const void* data, int sizeInBytes) override;
+
+    bool isAraBound() const noexcept { return araBound.load(std::memory_order_relaxed); }
 
 protected:
 #if JucePlugin_Enable_ARA
