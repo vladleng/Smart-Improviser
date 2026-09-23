@@ -14,7 +14,7 @@
 - **Активная ветка:** `stage-1-ara-context-monitor`
 - **Активный PR:** #14
 
-Stage 1 находится в первом live-test checkpoint. Базовая ARA-инфраструктура уже подтверждена в Fender Studio Pro; `0.1a fix1` исправляет диагностическое отображение Key/Chord и UI после первого живого теста.
+`0.1a fix1` успешно прошёл второй живой тест в Fender Studio Pro. ARA binding, Musical Context, STOP position, PPQ, Key, previous/current/next chord, Tempo и Time Signature отображаются корректно на реальном проекте.
 
 ## Архитектурная граница
 
@@ -65,58 +65,72 @@ Smart Improviser.vst3
 - Time Signature — **4/4**, совпадает с DAW;
 - Tempo — **110.00 BPM**, совпадает с DAW;
 - ARA events получены: `Key 2 | Chords 13 | Tempo 16 | Bars 1`;
-- короткий Audio Event в начале проекта не ограничивает доступный Musical Context и работает только как точка ARA binding.
+- короткий Audio Event не ограничивает доступный Musical Context и работает только как точка ARA binding.
 
-Таким образом основной ARA path Stage 1 уже работает:
+Первый тест также показал, что Studio Pro передаёт Key/Chord структурно (`root`, `bass`, `intervals`), но не обязан заполнять ARA `event.name`.
+
+## Что исправлено в 0.1a fix1
+
+- Chord symbols строятся из структурных ARA-данных через `ChordModel` / `normalizedChordSymbol()`;
+- Key display строится через `KeyModel` из `root + intervals`;
+- ARA `name` остаётся только fallback;
+- высота диагностического окна увеличена;
+- footer больше не перекрывает `Revisions`;
+- устранена проблема кодировки диагностического заголовка;
+- build label — `0.1a fix1`;
+- CI artifact — `Smart-Improviser-0.1a-fix1-Windows`;
+- внутри artifact — готовая папка `Smart Improviser.vst3`.
+
+## Результат live-теста 0.1a fix1
+
+На позиции внутри реальной последовательности:
+
+```text
+Am7 → Dm7 → G7add13
+```
+
+Smart Improviser показывает:
+
+```text
+ARA binding          BOUND
+Document controller  YES
+Host content access  YES
+Musical contexts     1
+Shared context       YES
+Transport            STOP
+PPQ                  186.000
+Seconds              120.007
+Key                  C major
+Previous chord       Am7
+Current chord        Dm7
+Next chord           G13
+Time signature       4/4
+Tempo                110.00 BPM
+ARA events           Key 2 | Chords 22 | Tempo 16 | Bars 1
+```
+
+`G13` — нормализованное представление `G7add13` из Chord Track.
+
+Это подтверждает реальную цепочку:
 
 ```text
 Studio Pro
 → Event FX / ARA binding
 → Musical Context
 → SharedHarmonicContext
-→ transport / key / chord / tempo / bar events
+→ ARAContextProvider
+→ previous/current/next + key + timeline
 ```
 
-## Почему понадобился 0.1a fix1
+## Что ещё нужно проверить перед принятием 0.1a
 
-Первый live test выявил три проблемы диагностического слоя, а не ARA foundation:
-
-1. Studio Pro передаёт Chord/Key структурно (`root`, `bass`, `intervals`), но не заполняет `event.name`, поэтому UI показывал `(unnamed)`.
-2. Строка `Revisions` перекрывалась footer-текстом.
-3. Длинное тире в диагностическом заголовке отображалось с mojibake.
-
-## Что сделано в 0.1a fix1
-
-- Chord symbols теперь строятся из структурных ARA-данных через `ChordModel` / `normalizedChordSymbol()`;
-- Key display строится через `KeyModel` из `root + intervals`;
-- ARA `name` остаётся только fallback;
-- высота диагностического окна увеличена с 520 до 570 px;
-- footer отделён от строки `Revisions`;
-- диагностический UI использует ASCII punctuation в местах, где была проблема кодировки;
-- build label изменён на `0.1a fix1`;
-- CI artifact: `Smart-Improviser-0.1a-fix1-Windows`;
-- внутри artifact по-прежнему готовая папка `Smart Improviser.vst3`.
-
-## Что проверить в 0.1a fix1
-
-1. Key должен отображаться как музыкальное имя, например `C major`.
-2. Previous / Current / Next chord должны отображаться реальными символами.
-3. На последовательности `Dm7 | G7 | Cmaj7` при курсоре на G7 ожидается:
-
-```text
-Previous chord  Dm7
-Current chord   G7
-Next chord      Cmaj7
-```
-
-4. Перемещение курсора должно переключать current chord точно на event boundary.
-5. PLAY / STOP / seek должны сохранять корректное обновление PPQ/context.
-6. Tempo и Time Signature должны продолжать совпадать с DAW.
-7. `Revisions` и footer должны отображаться без перекрытия.
-8. После редактирования Chord/Key Track context должен обновляться.
-9. После повторного открытия проекта ARA binding/context должен восстанавливаться.
-
-Подробно: `docs/STAGE_1_0.1a_LIVE_TEST.md`.
+1. PLAY: PPQ/context обновляются во время воспроизведения.
+2. Seek: прыжки курсора назад/вперёд немедленно обновляют context.
+3. Chord boundaries: переключение current chord происходит точно на границе события.
+4. Edit refresh: изменение Chord Track и Key Track обновляет snapshot без перезагрузки плагина.
+5. Reopen: после повторного открытия проекта ARA binding/context восстанавливаются.
+6. Missing data: безопасное поведение без Key/Chord/Tempo данных.
+7. Multiple Musical Context: проверить реальный проект с более чем одним Musical Context, если Studio Pro создаёт такой сценарий.
 
 ## Рабочая линия Stage 1
 
@@ -133,13 +147,7 @@ Next chord      Cmaj7
 
 ## Ближайший следующий шаг
 
-1. получить успешный Windows CI для `0.1a fix1`;
-2. скачать artifact `Smart-Improviser-0.1a-fix1-Windows`;
-3. заменить предыдущую папку на новую `Smart Improviser.vst3`;
-4. проверить Key и previous/current/next chord на реальном Chord Track;
-5. проверить PLAY / seek / chord boundaries;
-6. результат занести в Issue #2;
-7. при ошибке выпустить `0.1a fix2`, при принятии 0.1a перейти к следующему подэтапу `0.1b`.
+Продолжить live-тест `0.1a fix1` по оставшимся сценариям: PLAY, seek, chord boundaries, edit refresh и reopen. Если новых ошибок нет, принять `0.1a` и определить состав следующего подэтапа `0.1b`. Если найдётся ошибка текущего checkpoint — выпустить `0.1a fix2`.
 
 ## Что читать в новом чате Stage 1
 
