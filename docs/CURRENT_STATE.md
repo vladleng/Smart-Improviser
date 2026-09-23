@@ -19,6 +19,20 @@ Stage 1 принят после живых тестов `0.1a fix1` и `0.1b` в
 
 Stage 2 начат с `0.2a`. На этом подэтапе музыкальная логика впервые вынесена в отдельный host-neutral `HarmonicEngine`, работающий поверх уже готового `TimelineHarmonicSnapshot`.
 
+## Общее правило Stage / build versions
+
+Каждый Stage проекта делится на логически завершённые подэтапы. Каждому подэтапу соответствует отдельная буквенная build-версия.
+
+```text
+новая буква = новая логическая часть Stage
+fixN        = исправление текущей логической части
+числовая версия без буквы = Stage complete
+```
+
+Буквенная версия является самостоятельным build checkpoint с понятной целью, checklist и тестами. Stage не должен разрабатываться одной большой буквенной версией.
+
+Нормативное описание этого правила находится в `docs/VERSIONING.md`, а план подэтапов — в `docs/ROADMAP.md` и соответствующем Stage Issue.
+
 ## Архитектурная цепочка
 
 ```text
@@ -98,6 +112,22 @@ docs/STAGE_1_TO_STAGE_2_CONTRACT.md
 
 Stage 2 получает host-neutral `TimelineHarmonicSnapshot` и не знает деталей ARA SDK, JUCE, shared memory или Fender Studio Pro.
 
+## Stage 2 — план логических подэтапов
+
+Текущий план build checkpoints:
+
+```text
+0.2a — Harmonic Engine foundation
+0.2b — Pattern Recognizer
+0.2c — Tritone Substitution
+0.2d — Local Key Center
+0.2e — Ambiguity / Confidence
+0.2f — Integration / musical validation
+0.3  — Stage 2 complete
+```
+
+План может уточняться, если в ходе разработки обнаружится отдельная самостоятельная задача. Такая задача должна получить собственную следующую буквенную версию, а не быть незаметно добавлена в уже принятый подэтап.
+
 ## Рабочая 0.2a — Harmonic Engine foundation
 
 В `0.2a` реализуется первый контекстный музыкальный анализ.
@@ -115,14 +145,14 @@ Stage 2 получает host-neutral `TimelineHarmonicSnapshot` и не зна�
 - safe non-analysis при missing position/current chord/global key;
 - отдельный regression target `SmartImproviserHarmonicEngineTests`.
 
-Пока **не входят / не завершены**:
+Пока **не входят / не завершены** — они относятся к следующим буквенным версиям:
 
-- полный pattern-position analysis для всех членов оборота;
-- `I–VI–ii–V`;
-- tritone substitution / `ii–SubV–I`;
-- длинные tonicization chains;
-- полноценное local-key/modulation inference;
-- ambiguity / alternative interpretations.
+- полный pattern-position analysis для всех членов оборота → `0.2b`;
+- `I–VI–ii–V` и расширенный Pattern Recognizer → `0.2b`;
+- tritone substitution / `ii–SubV–I` → `0.2c`;
+- длинные tonicization chains и полноценный local-key analysis → `0.2d`;
+- ambiguity / alternative interpretations → `0.2e`;
+- общая интеграция и musical validation → `0.2f`.
 
 ## Версия 0.2a
 
@@ -163,15 +193,16 @@ SmartImproviserTimelineContextTests
 ```text
 Stage 0 → 0.1  [COMPLETED]
 Stage 1 → 0.2  [COMPLETED]
-Stage 2 → 0.2a ... → 0.3  [ACTIVE]
+Stage 2 → 0.2a → 0.2b → 0.2c → 0.2d → 0.2e → 0.2f → 0.3  [ACTIVE]
 ```
 
 ## Что делать следующим
 
-1. дождаться и проверить Windows CI PR #15;
-2. если CI зелёный — скачать `Smart-Improviser-0.2a-Windows`;
+1. проверить Windows CI PR #15;
+2. если CI зелёный — проверить artifact `Smart-Improviser-0.2a-Windows`;
 3. проверить, что Stage 1 ARA/context diagnostics не получили regression;
-4. после принятия `0.2a` перейти к следующему подэтапу Stage 2: расширению pattern-position analysis, turnaround/tritone-substitution и ambiguity/local-center logic.
+4. принять `0.2a` как отдельный build checkpoint;
+5. только после принятия `0.2a` перейти к `0.2b — Pattern Recognizer`.
 
 ## Что читать в новом чате Stage 2
 
