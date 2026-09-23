@@ -10,10 +10,14 @@ GitHub Actions artifact:
 
 ```text
 Smart-Improviser-0.1a-Windows
-└── Smart Improviser ARA.vst3
+└── Smart Improviser.vst3
 ```
 
-Плагин остаётся headless ARA helper. Наличие отдельного полноценного Smart Improviser UI на этом этапе не требуется.
+`Smart Improviser.vst3` — готовый drop-in VST3 package. Для установки новой тестовой версии достаточно заменить предыдущую папку `Smart Improviser.vst3` в системной папке VST3.
+
+Имя VST3 package остаётся постоянным между версиями (`0.1a`, `0.1a fix1`, `0.1b` и т.д.). Версия сборки отслеживается отдельно через build version и имя GitHub Actions artifact.
+
+На Stage 1 сам плагин по-прежнему является headless ARA helper. Наличие отдельного полноценного Smart Improviser UI на этом этапе не требуется.
 
 ## Подготовка тестового проекта
 
@@ -32,7 +36,7 @@ Time Signature: 4/4
 
 ### ARA binding
 
-- [ ] `Smart Improviser ARA.vst3` виден Fender Studio Pro.
+- [ ] `Smart Improviser.vst3` виден Fender Studio Pro.
 - [ ] Плагин успешно создаётся как ARA/Event-FX helper.
 - [ ] ARA document controller получает Musical Context.
 
