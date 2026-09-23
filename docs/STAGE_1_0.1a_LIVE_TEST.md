@@ -13,11 +13,25 @@ Smart-Improviser-0.1a-Windows
 └── Smart Improviser.vst3
 ```
 
-`Smart Improviser.vst3` — готовый drop-in VST3 package. Для установки новой тестовой версии достаточно заменить предыдущую папку `Smart Improviser.vst3` в системной папке VST3.
+Плагин остаётся headless ARA helper. Наличие отдельного полноценного Smart Improviser UI на этом этапе не требуется.
 
-Имя VST3 package остаётся постоянным между версиями (`0.1a`, `0.1a fix1`, `0.1b` и т.д.). Версия сборки отслеживается отдельно через build version и имя GitHub Actions artifact.
+## Важное правило ARA-подключения
 
-На Stage 1 сам плагин по-прежнему является headless ARA helper. Наличие отдельного полноценного Smart Improviser UI на этом этапе не требуется.
+В Fender Studio Pro Smart Improviser нужно подключать как **Event FX / ARA extension**.
+
+Audio Event в данном случае служит **только точкой подключения ARA**. По результатам предыдущих live-тестов Smart Voicing длина этого Audio Event не ограничивает диапазон Musical Context, доступного через ARA. Поэтому не требуется растягивать Event на всю композицию: достаточно любого подходящего Audio Event, на который можно установить Smart Improviser как Event FX.
+
+То есть модель использования такая:
+
+```text
+Audio Event любой длины
+        ↓
+Event FX: Smart Improviser
+        ↓
+ARA 2 binding
+        ↓
+Musical Context всего проекта
+```
 
 ## Подготовка тестового проекта
 
@@ -39,6 +53,7 @@ Time Signature: 4/4
 - [ ] `Smart Improviser.vst3` виден Fender Studio Pro.
 - [ ] Плагин успешно создаётся как ARA/Event-FX helper.
 - [ ] ARA document controller получает Musical Context.
+- [ ] Короткий Audio Event подтверждает, что его длина не ограничивает доступный Musical Context.
 
 ### Harmonic context
 
@@ -94,6 +109,7 @@ Chord boundaries: OK / FAIL
 Edit refresh: OK / FAIL
 Reopen project: OK / FAIL
 Multiple Musical Context: result
+Short Event as ARA anchor: OK / FAIL
 ```
 
 При `FAIL` желательно указать точный сценарий и что наблюдается в Studio Pro.
