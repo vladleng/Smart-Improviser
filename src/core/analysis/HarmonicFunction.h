@@ -13,6 +13,7 @@ enum class HarmonicFunction : std::uint8_t
     tonic,
     predominant,
     dominant,
+    substituteDominant,
     other
 };
 
@@ -37,10 +38,15 @@ struct HarmonicAnalysis
     int appliedTargetPitchClass = -1;
     int appliedTargetScaleDegree = 0;
 
+    bool substituteDominantCandidate = false;
+    int substituteTargetPitchClass = -1;
+    int substituteTargetScaleDegree = 0;
+
     bool nextChordAvailable = false;
     int nextChordRootPitchClass = -1;
     ChordQuality nextChordQuality = ChordQuality::undefined;
     bool appliedDominantConfirmed = false;
+    bool substituteDominantConfirmed = false;
 
     bool dominantResolutionConfirmed = false;
     int dominantTargetPitchClass = -1;

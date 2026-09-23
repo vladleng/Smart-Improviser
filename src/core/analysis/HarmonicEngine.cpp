@@ -100,6 +100,23 @@ bool isDominantOf(const NormalizedChord& dominant,
         && wrap12(dominant.rootPitchClass - target.rootPitchClass) == 7;
 }
 
+bool isSubstituteDominantOf(const NormalizedChord& dominant,
+                            const NormalizedChord& target) noexcept
+{
+    return dominant.valid
+        && target.valid
+        && dominant.quality == ChordQuality::dominant
+        && wrap12(dominant.rootPitchClass - target.rootPitchClass) == 1;
+}
+
+bool isSubstituteDominantForRoot(const NormalizedChord& dominant,
+                                 int targetRootPitchClass) noexcept
+{
+    return dominant.valid
+        && dominant.quality == ChordQuality::dominant
+        && wrap12(dominant.rootPitchClass - targetRootPitchClass) == 1;
+}
+
 HarmonicPattern makePattern(HarmonicPatternType type,
                             PatternMemberRole role,
                             int positionIndex,
@@ -138,8 +155,7 @@ HarmonicPattern recognizePattern(const HarmonicSituation& situation) noexcept
 
     const auto& key = situation.globalKey.key;
 
-    // Full three-event cadence window. This remains the strongest ii-V-I
-    // interpretation because both preparation and real resolution are visible.
+    // Full ordinary ii-V-I cadence window.
     if (situation.previousChordAvailable
         && situation.nextChordAvailable
         && key.mode == KeyMode::major
@@ -182,9 +198,49 @@ HarmonicPattern recognizePattern(const HarmonicSituation& situation) noexcept
                            true);
     }
 
+    // Full ii-SubV-I cadence. The substitute dominant sits a semitone above
+    // the target tonic and resolves by root semitone descent.
+    if (situation.previousChordAvailable
+        && situation.nextChordAvailable
+        && key.mode == KeyMode::major
+        && isDegree(situation.previousChord, key, 2)
+        && situation.previousChord.quality == ChordQuality::minor
+        && isSubstituteDominantOf(situation.currentChord, situation.nextChord)
+        && isDegree(situation.nextChord, key, 1)
+        && situation.nextChord.quality == ChordQuality::major
+        && situation.harmonic.substituteDominantConfirmed)
+    {
+        return makePattern(HarmonicPatternType::tritoneSubstitution,
+                           PatternMemberRole::substituteDominant,
+                           1,
+                           3,
+                           ConfidenceLevel::confirmed,
+                           true,
+                           true,
+                           true);
+    }
+
+    if (situation.previousChordAvailable
+        && situation.nextChordAvailable
+        && key.mode == KeyMode::minor
+        && isDegree(situation.previousChord, key, 2)
+        && situation.previousChord.quality == ChordQuality::halfDiminished
+        && isSubstituteDominantOf(situation.currentChord, situation.nextChord)
+        && isDegree(situation.nextChord, key, 1)
+        && isMinorFamily(situation.nextChord)
+        && situation.harmonic.substituteDominantConfirmed)
+    {
+        return makePattern(HarmonicPatternType::tritoneSubstitution,
+                           PatternMemberRole::substituteDominant,
+                           1,
+                           3,
+                           ConfidenceLevel::confirmed,
+                           true,
+                           true,
+                           true);
+    }
+
     // A dominant chain is more specific than a single secondary dominant.
-    // With the Stage 1 contract we can confirm a three-chord chain when the
-    // current dominant is bracketed by two real dominant relationships.
     if (situation.previousChordAvailable
         && situation.nextChordAvailable
         && isDominantOf(situation.previousChord, situation.currentChord)
@@ -200,8 +256,7 @@ HarmonicPattern recognizePattern(const HarmonicSituation& situation) noexcept
                            true);
     }
 
-    // I-VI-ii-V can be recognized strongly on its two middle positions because
-    // the complete three-event window around the current chord is available.
+    // I-VI-ii-V middle positions.
     if (key.mode == KeyMode::major
         && situation.previousChordAvailable
         && situation.nextChordAvailable
@@ -238,9 +293,7 @@ HarmonicPattern recognizePattern(const HarmonicSituation& situation) noexcept
                            true);
     }
 
-    // Boundary positions use the strongest pair available in the immutable
-    // Stage 1 previous/current/next contract. They are intentionally high,
-    // rather than confirmed: the missing third cadence member is not invented.
+    // Ordinary cadence boundary positions.
     if (key.mode == KeyMode::major
         && situation.nextChordAvailable
         && isDegree(situation.currentChord, key, 2)
@@ -305,8 +358,54 @@ HarmonicPattern recognizePattern(const HarmonicSituation& situation) noexcept
                            false);
     }
 
-    // Turnaround boundary candidates. A full ii-V-I cadence above has higher
-    // priority whenever a real tonic resolution is visible.
+    // Tritone-substitution boundary positions. We only infer what is visible:
+    // ii + SubV or SubV + I is high-confidence, not a confirmed full cadence.
+    if (key.mode == KeyMode::major
+        && situation.nextChordAvailable
+        && isDegree(situation.currentChord, key, 2)
+        && situation.currentChord.quality == ChordQuality::minor
+        && isSubstituteDominantForRoot(situation.nextChord, key.rootPitchClass))
+    {
+        return makePattern(HarmonicPatternType::tritoneSubstitution,
+                           PatternMemberRole::predominant,
+                           0,
+                           3,
+                           ConfidenceLevel::high,
+                           false,
+                           true);
+    }
+
+    if (key.mode == KeyMode::minor
+        && situation.nextChordAvailable
+        && isDegree(situation.currentChord, key, 2)
+        && situation.currentChord.quality == ChordQuality::halfDiminished
+        && isSubstituteDominantForRoot(situation.nextChord, key.rootPitchClass))
+    {
+        return makePattern(HarmonicPatternType::tritoneSubstitution,
+                           PatternMemberRole::predominant,
+                           0,
+                           3,
+                           ConfidenceLevel::high,
+                           false,
+                           true);
+    }
+
+    if (situation.previousChordAvailable
+        && isDegree(situation.currentChord, key, 1)
+        && isSubstituteDominantOf(situation.previousChord, situation.currentChord)
+        && ((key.mode == KeyMode::major && situation.currentChord.quality == ChordQuality::major)
+            || (key.mode == KeyMode::minor && isMinorFamily(situation.currentChord))))
+    {
+        return makePattern(HarmonicPatternType::tritoneSubstitution,
+                           PatternMemberRole::resolution,
+                           2,
+                           3,
+                           ConfidenceLevel::high,
+                           true,
+                           false);
+    }
+
+    // Turnaround boundary candidates.
     if (key.mode == KeyMode::major
         && situation.nextChordAvailable
         && isDegree(situation.currentChord, key, 1)
@@ -338,8 +437,22 @@ HarmonicPattern recognizePattern(const HarmonicSituation& situation) noexcept
                            false);
     }
 
-    // Applied dominants are a more specific interpretation than the generic
-    // dominant-to-target relation and therefore must win when confirmed.
+    // A confirmed substitute dominant must win over generic chromatic/applied
+    // dominant interpretations when the real next chord confirms semitone
+    // resolution.
+    if (situation.harmonic.substituteDominantConfirmed)
+    {
+        return makePattern(HarmonicPatternType::tritoneSubstitution,
+                           PatternMemberRole::substituteDominant,
+                           0,
+                           2,
+                           ConfidenceLevel::confirmed,
+                           false,
+                           true,
+                           true);
+    }
+
+    // Applied dominants are more specific than generic dominant-to-target.
     if (situation.harmonic.appliedDominantConfirmed)
     {
         return makePattern(HarmonicPatternType::secondaryDominant,

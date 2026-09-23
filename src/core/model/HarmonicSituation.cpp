@@ -40,7 +40,10 @@ ResolutionTarget buildResolutionTarget(const NormalizedChord& currentChord,
                                        const HarmonicAnalysis& harmonic) noexcept
 {
     ResolutionTarget target;
-    if (! harmonic.dominantResolutionConfirmed || ! nextChord.valid)
+    const auto ordinaryDominant = harmonic.dominantResolutionConfirmed;
+    const auto substituteDominant = harmonic.substituteDominantConfirmed;
+
+    if ((! ordinaryDominant && ! substituteDominant) || ! nextChord.valid)
         return target;
 
     target.available = true;
@@ -53,6 +56,37 @@ ResolutionTarget buildResolutionTarget(const NormalizedChord& currentChord,
     target.evidence.add(EvidenceFlag::nextChord);
     target.evidence.add(EvidenceFlag::confirmedResolution);
 
+    const auto thirdInterval = targetThirdInterval(nextChord.quality);
+
+    if (substituteDominant)
+    {
+        // Tritone substitution preserves the same guide-tone resolution as the
+        // ordinary V7, but the two guide tones exchange their target roles.
+        // Example Db7 -> Cmaj7: F (3rd) -> E (3rd), Cb/B (b7) -> C (root).
+        if (currentChord.valid && currentChord.hasTone(4)
+            && thirdInterval >= 0 && nextChord.hasTone(thirdInterval))
+        {
+            const auto from = wrap12(currentChord.rootPitchClass + 4);
+            const auto to = wrap12(nextChord.rootPitchClass + thirdInterval);
+            target.addMove({ from,
+                             to,
+                             shortestSemitoneDelta(from, to),
+                             ResolutionImportance::structural });
+        }
+
+        if (currentChord.valid && currentChord.hasTone(10))
+        {
+            const auto from = wrap12(currentChord.rootPitchClass + 10);
+            const auto to = nextChord.rootPitchClass;
+            target.addMove({ from,
+                             to,
+                             shortestSemitoneDelta(from, to),
+                             ResolutionImportance::structural });
+        }
+
+        return target;
+    }
+
     if (currentChord.valid && currentChord.hasTone(4))
     {
         const auto from = wrap12(currentChord.rootPitchClass + 4);
@@ -63,7 +97,6 @@ ResolutionTarget buildResolutionTarget(const NormalizedChord& currentChord,
                          ResolutionImportance::structural });
     }
 
-    const auto thirdInterval = targetThirdInterval(nextChord.quality);
     if (currentChord.valid && currentChord.hasTone(10)
         && thirdInterval >= 0 && nextChord.hasTone(thirdInterval))
     {

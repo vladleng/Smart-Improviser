@@ -77,6 +77,7 @@ int main()
     expect(gAnalysis.rootScaleDegree == 5, "G7 is V in C");
     expect(gAnalysis.effectiveFunction == HarmonicFunction::dominant, "V7 is dominant");
     expect(gAnalysis.dominantResolutionConfirmed, "G7->C resolution confirmed");
+    expect(! gAnalysis.substituteDominantConfirmed, "ordinary V7 is not SubV7");
     expect(cAnalysis.rootFunction == HarmonicFunction::tonic, "I is tonic");
 
     const auto d7 = normalizeChord(makeChord(2, { 0, 4, 7, 10 }));
@@ -85,6 +86,24 @@ int main()
     expect(d7ToG.appliedDominantCandidate, "D7 in C is applied dominant candidate");
     expect(d7ToG.appliedTargetScaleDegree == 5, "D7 targets V");
     expect(d7ToG.appliedDominantConfirmed, "D7->G confirms V/V");
+    expect(! d7ToG.substituteDominantConfirmed, "D7->G is not a tritone substitute");
+
+    // Db7 is the tritone substitute of G7 and resolves to C by root semitone.
+    const auto db7 = normalizeChord(makeChord(-5, { 0, 4, 7, 10 }));
+    const auto db7Static = analyzeHarmonicFunction(db7, cMajor);
+    expect(db7Static.substituteDominantCandidate, "Db7 in C is SubV candidate");
+    expect(db7Static.substituteTargetScaleDegree == 1, "Db7 substitute target is tonic");
+    expect(db7Static.effectiveFunction == HarmonicFunction::substituteDominant,
+           "unambiguous Db7 exposes substitute-dominant function");
+
+    const auto db7ToC = analyzeHarmonicFunction(db7, cMajor, cMaj7);
+    expect(db7ToC.substituteDominantConfirmed, "Db7->C confirms SubV/I");
+    expect(! db7ToC.dominantResolutionConfirmed,
+           "Db7->C is not ordinary dominant-resolution motion");
+    expect(! db7ToC.appliedDominantConfirmed,
+           "Db7->C is not an applied dominant");
+    expect(db7ToC.effectiveFunction == HarmonicFunction::substituteDominant,
+           "confirmed Db7->C keeps substitute-dominant function");
 
     const auto fMin7 = normalizeChord(makeChord(-1, { 0, 3, 7, 10 }));
     const auto fMinInC = analyzeHarmonicFunction(fMin7, cMajor);

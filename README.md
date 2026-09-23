@@ -2,7 +2,7 @@
 
 **Smart Improviser** — VST3/ARA 2 плагин для DAW, который помогает гитаристу строить джазовую импровизацию на основе **гармонического контекста**, а не только текущего аккорда.
 
-> Главная идея: плагин должен отвечать не только на вопрос «что здесь можно сыграть?», но и «что музыкально уместно сыграть именно здесь, зачем и с какой степенью напряжения?»
+> Главная идея: отвечать не только на вопрос «что здесь можно сыграть?», но и «что музыкально уместно сыграть именно здесь, зачем и с какой степенью напряжения?»
 
 ## Статус
 
@@ -11,15 +11,15 @@
 **Активный Stage:** Stage 2 — Harmonic Engine.
 
 **Текущая стабильная версия:** `0.2`  
-**Последний принятый checkpoint:** `0.2a / 0.2a fix1`  
-**Текущая рабочая версия:** `0.2b — Pattern Recognizer`  
-**Активная ветка:** `stage-2-pattern-recognizer`  
+**Последний принятый checkpoint:** `0.2b — Pattern Recognizer`  
+**Текущая рабочая версия:** `0.2c — Tritone Substitution`  
+**Активная ветка:** `stage-2-tritone-substitution`  
 **Stage 2 Issue:** #3  
-**Stage 2 PR:** #16
+**Stage 2 PR:** #17
 
-`0.2a / 0.2a fix1` принят после CI и live-test в Fender Studio Pro и слит в `main`.
+`0.2b` принят после CI и live-test в Fender Studio Pro и слит в `main` через PR #16.
 
-`0.2b` расширяет Harmonic Engine до полноценного базового Pattern Recognizer, сохраняя закрытый Stage 1 contract `previous / current / next`.
+`0.2c` добавляет понимание tritone substitution: ordinary `V7` и `SubV7`, `ii–SubV–I`, applied SubV и отдельную guide-tone resolution logic.
 
 Первая целевая среда:
 
@@ -29,7 +29,7 @@
 - **Платформа:** Windows
 - **Основной сценарий:** джазовая импровизация на гитаре
 
-## Ключевая особенность
+## Ключевая идея
 
 Вместо простой схемы:
 
@@ -52,18 +52,18 @@ Harmony
 
 Плагин должен понимать:
 
-- общую и локальную тональность;
-- текущий, предыдущий и следующий аккорды;
-- функцию аккорда;
-- гармонический оборот;
+- global key и local tonal center;
+- current / previous / next chord;
+- harmonic function;
+- harmonic pattern;
 - положение аккорда внутри оборота;
+- ordinary dominant / secondary dominant / substitute dominant;
 - ожидаемое разрешение;
 - guide tones и target notes;
-- допустимые tensions;
-- степень музыкального напряжения;
+- tensions и степень музыкального напряжения;
 - подходящие стратегии импровизации.
 
-## Smart Improviser Core
+## Архитектура
 
 Музыкальное ядро отделено от DAW, ARA, VST3 и UI.
 
@@ -71,8 +71,6 @@ Harmony
 Fender Studio Pro
         ↓
 ARA 2 Adapter
-        ↓
-Timeline Context
         ↓
 TimelineHarmonicSnapshot
 (previous / current / next)
@@ -85,169 +83,143 @@ HarmonicSituation
         ↓
 Smart Improviser Core analyzers
         ├── Harmonic Engine
-        ├── Harmonic Pattern Recognizer
+        ├── Pattern Recognizer
         ├── Resolution Analyzer
+        ├── Local Key Center
         ├── Tension Engine
         ├── Improvisation Strategy Engine
         ├── Phrase Library
-        ├── Phrase Transformation Engine
         └── Explanation Engine
         ↓
 UI / Fretboard / Notation / TAB
 ```
 
-Центральная сущность ядра — **`HarmonicSituation`**, которая описывает не просто аккорд, а его функцию и положение в музыкальном контексте.
+Центральная сущность ядра — **`HarmonicSituation`**. Stage 1 contract закрыт: Harmonic Engine получает только host-neutral timeline snapshot и не зависит от JUCE/ARA/Fender Studio Pro.
 
 ## Правило разработки Stage
 
-Каждый Stage делится на отдельные **логически завершённые подэтапы**, и каждому подэтапу соответствует собственная буквенная build-версия.
+Каждый Stage делится на логически завершённые подэтапы. Каждому соответствует отдельная буквенная build-версия.
 
 ```text
 новая буква = новая функциональная часть Stage
-fixN        = исправление текущего подэтапа
+fixN        = исправление текущего checkpoint
 версия без буквы = весь Stage завершён
 ```
-
-Буквенная версия — отдельный build checkpoint с собственной целью, checklist и тестами.
 
 Stage 2:
 
 ```text
 0.2a — Harmonic Engine foundation          [ACCEPTED]
 0.2a fix1 — Harmonic Engine diagnostics    [ACCEPTED]
-0.2b — Pattern Recognizer                  [ACTIVE]
-0.2c — Tritone Substitution
+0.2b — Pattern Recognizer                  [ACCEPTED]
+0.2c — Tritone Substitution                [ACTIVE]
 0.2d — Local Key Center
 0.2e — Ambiguity / Confidence
 0.2f — Integration / musical validation
 0.3  — Stage 2 complete
 ```
 
-Подробные правила: [`docs/VERSIONING.md`](docs/VERSIONING.md). Актуальная декомпозиция: [`docs/ROADMAP.md`](docs/ROADMAP.md).
+## Что уже умеет Harmonic Engine
 
-## Принятый checkpoint 0.2a
+К принятому `0.2b` реализованы:
 
-В `0.2a / 0.2a fix1` реализованы и подтверждены живым тестом:
-
-- отдельный host-neutral `HarmonicEngine`;
-- анализ current chord относительно global key;
-- previous/current/next context;
 - basic harmonic functions;
-- major `ii–V–I` для current V;
-- minor `iiø–V–i` для current V;
-- `V–I` fallback;
-- secondary dominant;
-- evidence-backed temporary local center;
-- Stage 2 diagnostic UI;
-- regression tests.
-
-## Stage 2 / 0.2b — Pattern Recognizer
-
-`0.2b` не расширяет Stage 1 ARA/context contract. Pattern Recognizer работает только на host-neutral окне:
-
-```text
-previous → current → next
-```
-
-Если полного оборота в окне нет, движок не выдумывает отсутствующие аккорды. Confidence отражает фактический объём evidence.
-
-Реализуется:
-
-- major `ii–V–I` для позиций `ii / V / I`;
-- minor `iiø–V–i` для позиций `iiø / V / i`;
+- major `ii–V–I` на позициях `ii / V / I`;
+- minor `iiø–V–i` на позициях `iiø / V / i`;
 - `I–VI–ii–V`;
-- dominant / secondary-dominant chains;
-- pattern role и position;
-- pattern evidence;
-- confidence для полного и boundary context;
-- boundary false-positive guards;
-- расширенные regression tests.
+- secondary dominants;
+- dominant chains;
+- pattern role / position;
+- evidence-aware confidence;
+- temporary local center для подтверждённого applied dominant;
+- live diagnostic UI.
 
-### Confidence policy
+## 0.2c — Tritone Substitution
 
-```text
-полный ii–V–I на current V        → confirmed
-boundary ii или I по сильной паре → high
-I–VI–ii–V, внутреннее окно        → high
-turnaround boundary pair          → medium
-```
+Рабочая версия добавляет:
 
-Примеры:
+- `HarmonicFunction::substituteDominant`;
+- distinction `V7` / `SubV7`;
+- major `ii–SubV–I`;
+- minor `iiø–SubV–i`;
+- boundary pattern positions;
+- applied SubV, например `Ab7 → G` в C major;
+- guide-tone resolution для SubV;
+- regression protection от ошибочной трактовки SubV как secondary dominant.
 
-```text
-Dm7 → G7 → Cmaj7, current G7
-Pattern: Major ii-V-I
-Position: Dominant | 2 / 3
-Confidence: confirmed
-```
+Основной тест:
 
 ```text
-Dm7 → G7, current Dm7
-Pattern: Major ii-V-I
-Position: Predominant | 1 / 3
-Confidence: high
+C major
+Dm7 → Db7 → Cmaj7
+
+Db7:
+Function = Substitute dominant
+Pattern = Tritone substitution
+Role = Substitute dominant | 2 / 3
+Resolution = Cmaj7 | CONFIRMED
 ```
 
+## Local Key Center — следующий шаг
+
+После принятия `0.2c` checkpoint `0.2d` должен научить движок автоматически определять локальные/субтональные центры **без необходимости менять project key в DAW**.
+
+Предполагаемая модель:
+
 ```text
-A7 → D7 → G7, current D7
-Pattern: Dominant chain
-Position: Dominant | 2 / 3
-Confidence: confirmed
+GLOBAL KEY
+F major
+    ↓
+LOCAL / TEMPORARY CENTER
+D minor
+    ↓
+CURRENT FUNCTION
+A7 = V of D minor
 ```
+
+Local-center engine должен различать candidate center, temporary tonicization, устойчивый local center и настоящую modulation. Evidence будут давать `ii–V`, `iiø–V`, secondary dominants, SubV и реальные resolution.
 
 ## Tension Engine
 
 Одна из главных идей проекта — три уровня напряжения:
 
 - **Tension 1 — Stable:** chord tones, guide tones, устойчивые extensions и ясное проведение гармонии.
-- **Tension 2 — Color:** хроматические подходы, enclosures, melodic minor applications, upper structures и контролируемые alterations.
-- **Tension 3 — Outside / Maximum:** altered, diminished language, substitutions, side slipping, superimposed harmony и delayed resolution.
+- **Tension 2 — Color:** chromatic approaches, enclosures, melodic-minor applications, upper structures и контролируемые alterations.
+- **Tension 3 — Outside / Maximum:** altered/diminished language, substitutions, side slipping, superimposed harmony и delayed resolution.
 
-В дальнейшем tension должен работать не только на уровне отдельного аккорда, но и как **Tension Curve** для нескольких тактов или целого chorus.
+В дальнейшем tension должен работать и как **Tension Curve** для нескольких тактов или chorus.
 
 ## Долгосрочное направление
 
 Smart Improviser должен объединить:
 
 - гармонический анализ;
+- local tonal-center detection;
 - три уровня tension;
 - target notes и resolution logic;
-- библиотеку jazz vocabulary;
+- jazz vocabulary;
 - семантическое хранение фраз;
 - functional transpose;
 - major ↔ minor adaptation;
 - V7 ↔ SubV7 adaptation;
 - approach notes и enclosures;
 - fretboard / notation / TAB;
-- пользовательскую библиотеку фраз;
+- пользовательскую Phrase Library;
 - Phrase Transformation Engine;
 - планирование драматургии импровизации.
 
 Цель проекта — не генерировать музыку вместо музыканта, а помогать **понимать гармонический контекст, управлять напряжением и превращать изученный vocabulary в собственный музыкальный язык**.
 
-## Версионирование
-
-```text
-Stage 0: 0.0a → ... → 0.1
-Stage 1: 0.1a → ... → 0.2
-Stage 2: 0.2a → 0.2a fix1 → 0.2b → 0.2c → ... → 0.3
-```
-
-`fixN` исправляет существующий подэтап и не используется вместо новой буквенной версии.
-
-Подробно: [`docs/VERSIONING.md`](docs/VERSIONING.md).
-
 ## Документация
 
-- [`docs/CURRENT_STATE.md`](docs/CURRENT_STATE.md) — текущая версия, активный Stage и следующий шаг.
-- [`docs/STAGE_1_TO_STAGE_2_CONTRACT.md`](docs/STAGE_1_TO_STAGE_2_CONTRACT.md) — граница ARA/context layer → Harmonic Engine.
+- [`docs/CURRENT_STATE.md`](docs/CURRENT_STATE.md) — текущий checkpoint и следующий шаг.
+- [`docs/STAGE_1_TO_STAGE_2_CONTRACT.md`](docs/STAGE_1_TO_STAGE_2_CONTRACT.md) — граница Stage 1 → Harmonic Engine.
 - [`docs/CORE_DATA_MODEL_0.0b.md`](docs/CORE_DATA_MODEL_0.0b.md) — host-neutral data model.
-- [`docs/PROJECT_CONTEXT.md`](docs/PROJECT_CONTEXT.md) — основной living document.
+- [`docs/PROJECT_CONTEXT.md`](docs/PROJECT_CONTEXT.md) — living document проекта.
 - [`docs/ROADMAP.md`](docs/ROADMAP.md) — Stage и build checkpoints.
 - [`docs/VERSIONING.md`](docs/VERSIONING.md) — схема версий и fix-сборок.
 - [`docs/ARCHITECTURAL_DECISIONS.md`](docs/ARCHITECTURAL_DECISIONS.md) — архитектурные решения.
-- [`docs/MIGRATION_FROM_SMART_VOICING.md`](docs/MIGRATION_FROM_SMART_VOICING.md) — границы переноса компонентов.
 
 ## Ближайший технический шаг
 
-Завершить CI и live-test `0.2b — Pattern Recognizer`, принять checkpoint и только после этого перейти к `0.2c — Tritone Substitution`.
+Дождаться CI PR #17, установить `Smart-Improviser-0.2c-Windows` и провести live-test tritone substitution перед переходом к `0.2d — Local Key Center`.

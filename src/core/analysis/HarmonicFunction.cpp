@@ -130,6 +130,7 @@ HarmonicAnalysis analyzeStatic(const NormalizedChord& chord,
 
     if (chord.quality == ChordQuality::dominant)
     {
+        // Ordinary dominant motion resolves down a fifth / up a fourth.
         const auto targetPitchClass = wrap12(chord.rootPitchClass + 5);
         const auto targetDegree = scaleDegreeForPitchClass(key, targetPitchClass);
         const auto isPrimaryDominant = result.rootScaleDegree == 5 && targetDegree == 1;
@@ -140,6 +141,25 @@ HarmonicAnalysis analyzeStatic(const NormalizedChord& chord,
             result.appliedTargetPitchClass = targetPitchClass;
             result.appliedTargetScaleDegree = targetDegree;
             result.effectiveFunction = HarmonicFunction::dominant;
+        }
+
+        // A tritone-substitute dominant resolves by semitone descent in the
+        // root: Db7 -> C, Ab7 -> G, Bb7 -> A, etc. We can identify a candidate
+        // from the global key without inventing a local key. Confirmation still
+        // requires the real next chord.
+        const auto substituteTargetPitchClass = wrap12(chord.rootPitchClass - 1);
+        const auto substituteTargetDegree = scaleDegreeForPitchClass(key, substituteTargetPitchClass);
+        if (substituteTargetDegree > 0)
+        {
+            result.substituteDominantCandidate = true;
+            result.substituteTargetPitchClass = substituteTargetPitchClass;
+            result.substituteTargetScaleDegree = substituteTargetDegree;
+
+            // If the chord has only a substitute-dominant interpretation in the
+            // current global key, expose that effective function immediately.
+            // Ambiguous dual candidates are intentionally left for Stage 2/0.2e.
+            if (! result.appliedDominantCandidate && ! isPrimaryDominant)
+                result.effectiveFunction = HarmonicFunction::substituteDominant;
         }
     }
 
@@ -171,6 +191,15 @@ HarmonicAnalysis analyzeHarmonicFunction(const NormalizedChord& chord,
         && nextChord.rootPitchClass == result.appliedTargetPitchClass)
     {
         result.appliedDominantConfirmed = true;
+        result.effectiveFunction = HarmonicFunction::dominant;
+    }
+
+    if (result.substituteDominantCandidate
+        && result.substituteTargetPitchClass >= 0
+        && nextChord.rootPitchClass == result.substituteTargetPitchClass)
+    {
+        result.substituteDominantConfirmed = true;
+        result.effectiveFunction = HarmonicFunction::substituteDominant;
     }
 
     if (chord.quality == ChordQuality::dominant)
@@ -194,6 +223,7 @@ const char* harmonicFunctionName(HarmonicFunction function) noexcept
         case HarmonicFunction::tonic: return "Tonic";
         case HarmonicFunction::predominant: return "Predominant";
         case HarmonicFunction::dominant: return "Dominant";
+        case HarmonicFunction::substituteDominant: return "Substitute dominant";
         case HarmonicFunction::other: return "Other";
         case HarmonicFunction::undefined:
         default: return "Undefined";
