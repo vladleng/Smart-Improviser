@@ -38,9 +38,9 @@ Stage 3 описывает допустимый материал и страте
 
 ### 0.3a — Strategy contract / foundation
 
-- [ ] Расширить существующий ImprovisationStrategy: идея, source material, роли нот, targets, explanation, условия применения и ссылка на harmonic interpretation.
-- [ ] Определить host-neutral вход/выход, deterministic ordering и missing-data semantics; confidence анализа отделить от приоритета рекомендации.
-- [ ] Провести минимальную chord-tone стратегию до диагностического отображения; подготовить API для Tension Engine и будущего поиска Phrase.
+- [x] Расширить существующий ImprovisationStrategy: идея, source material, роли нот, targets, explanation, условия применения и ссылка на harmonic interpretation.
+- [x] Определить host-neutral вход/выход, deterministic ordering и missing-data semantics; confidence анализа отделить от приоритета рекомендации.
+- [x] Провести минимальную chord-tone стратегию до диагностического отображения; подготовить API для Tension Engine и будущего поиска Phrase.
 
 **Gate:** проверяемый результат этих пунктов, соответствующие regression tests, отдельный build artifact и live-test, где применим; принятие пользователем перед следующей буквой.
 
