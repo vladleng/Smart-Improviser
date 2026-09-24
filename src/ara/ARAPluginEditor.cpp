@@ -193,7 +193,7 @@ juce::String centerKeyDisplayName(const smartimproviser::harmony::KeyCenter& cen
     if (! center.valid || ! center.key.valid)
         return "-";
 
-    return juce::String(pitchClassName(center.key.rootPitchClass))
+    return utf8String(fifthsName(center.key.rootFifths))
          + " "
          + smartimproviser::harmony::keyModeName(center.key.mode);
 }
