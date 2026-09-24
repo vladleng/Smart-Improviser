@@ -10,9 +10,9 @@
 - **Последний принятый checkpoint:** `0.2e / 0.2e fix1 — Ambiguity / Confidence`
 - **Следующий checkpoint:** `0.2f — Integration / musical validation`
 - **Stage 2 Issue:** #3 — Stage 2 — Harmonic Engine
-- **PR принятого checkpoint:** #19 — `0.2e fix1 — Ambiguity / Confidence + enharmonic spelling`
+- **Принятый PR:** #19 — `0.2e fix1 — Ambiguity / Confidence + enharmonic spelling`
 
-`0.2e / 0.2e fix1` принят после успешного Windows CI и полного live-test в Fender Studio Pro. Все заявленные проверки ambiguity/confidence пройдены; `0.2e fix1` дополнительно подтвердил корректное enharmonic spelling локальных центров (`F# major`, а не `Gb major`). PR #19 подготовлен к merge в `main` после финального CI документационных изменений.
+`0.2e / 0.2e fix1` принят после успешного Windows CI и полного live-test в Fender Studio Pro. Все заявленные проверки ambiguity/confidence пройдены; `0.2e fix1` дополнительно подтвердил корректное enharmonic spelling локальных центров (`F# major`, а не `Gb major`). PR #19 слит в `main`.
 
 ## Архитектурная граница
 
@@ -173,7 +173,8 @@ Build label: Smart Improviser 0.2e fix1
 CMake:      0.2.7
 Artifact:   Smart-Improviser-0.2e-fix1-Windows
 Package:    Smart Improviser.vst3
-Windows Build #199: SUCCESS
+Fix Build #199: SUCCESS
+Final PR HEAD Build #205: SUCCESS
 ```
 
 ## Линия Stage 2
@@ -212,4 +213,4 @@ Windows Build #199: SUCCESS
 6. `docs/ROADMAP.md`;
 7. `docs/VERSIONING.md`;
 8. Issue #3 — Stage 2 — Harmonic Engine;
-9. PR #19 — принятый `0.2e / 0.2e fix1`.
+9. PR #19 — принятый и слитый `0.2e / 0.2e fix1`.
