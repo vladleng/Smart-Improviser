@@ -10,9 +10,9 @@
 - **Последний принятый checkpoint:** `0.2e / 0.2e fix1 — Ambiguity / Confidence`
 - **Следующий checkpoint:** `0.2f — Integration / musical validation`
 - **Stage 2 Issue:** #3 — Stage 2 — Harmonic Engine
-- **Принятый PR:** #19 — `0.2e fix1 — Ambiguity / Confidence + enharmonic spelling`
+- **PR принятого checkpoint:** #19 — `0.2e fix1 — Ambiguity / Confidence + enharmonic spelling`
 
-`0.2e / 0.2e fix1` принят после успешного Windows CI и полного live-test в Fender Studio Pro. Все заявленные проверки ambiguity/confidence пройдены; `0.2e fix1` дополнительно подтвердил корректное enharmonic spelling локальных центров (`F# major`, а не `Gb major`).
+`0.2e / 0.2e fix1` принят после успешного Windows CI и полного live-test в Fender Studio Pro. Все заявленные проверки ambiguity/confidence пройдены; `0.2e fix1` дополнительно подтвердил корректное enharmonic spelling локальных центров (`F# major`, а не `Gb major`). PR #19 подготовлен к merge в `main` после финального CI документационных изменений.
 
 ## Архитектурная граница
 
