@@ -11,13 +11,12 @@
 **Активный Stage:** Stage 2 — Harmonic Engine.
 
 **Текущая стабильная версия:** `0.2`  
-**Последний принятый checkpoint:** `0.2d — Local Key Center`  
-**Текущая рабочая версия:** `0.2e — Ambiguity / Confidence`  
-**Активная ветка:** `stage-2-ambiguity-confidence`  
+**Последний принятый checkpoint:** `0.2e / 0.2e fix1 — Ambiguity / Confidence`  
+**Следующий checkpoint:** `0.2f — Integration / musical validation`  
 **Stage 2 Issue:** #3  
-**Stage 2 PR:** #19
+**Последний принятый PR:** #19
 
-`0.2d` принят после CI и полного live-test в Fender Studio Pro и слит в `main` через PR #18.
+`0.2e / 0.2e fix1` принят после успешного Windows CI и полного live-test в Fender Studio Pro. Fix1 подтвердил корректное enharmonic spelling локальных тональных центров.
 
 Первая целевая среда:
 
@@ -148,9 +147,11 @@ F major / Em7b5 → A7 → Dm
 → Local interpretation становится unique primary
 ```
 
+`0.2e fix1` исправляет только diagnostic spelling: KeyCenter display использует `rootFifths`, поэтому `F# major` больше не отображается как `Gb major`.
+
 ## Что уже умеет Harmonic Engine
 
-К принятому `0.2d`:
+К принятому `0.2e / fix1`:
 
 - basic harmonic functions;
 - major `ii–V–I` на `ii / V / I`;
@@ -166,17 +167,14 @@ F major / Em7b5 → A7 → Dm
 - remote local centers;
 - `localHarmonic` / `localPattern`;
 - cautious `modulationCandidate`;
-- Stage 2 diagnostic UI.
-
-Рабочий `0.2e` добавляет:
-
 - fixed-size `HarmonicInterpretation` candidates;
 - unique / ambiguous state;
 - unresolved primary (`primaryInterpretationIndex = -1`);
 - global/local conflict evidence;
 - borrowed/modal ambiguity;
 - confirmed local resolution of ambiguity;
-- diagnostic UI со списком candidates и primary.
+- diagnostic UI со списком candidates и primary;
+- enharmonic-aware KeyCenter display.
 
 ## Правило разработки Stage
 
@@ -196,8 +194,9 @@ Stage 2:
 0.2b — Pattern Recognizer                  [ACCEPTED]
 0.2c — Tritone Substitution                [ACCEPTED]
 0.2d — Local Key Center                    [ACCEPTED]
-0.2e — Ambiguity / Confidence              [ACTIVE]
-0.2f — Integration / musical validation
+0.2e — Ambiguity / Confidence              [ACCEPTED]
+0.2e fix1 — Enharmonic spelling            [ACCEPTED]
+0.2f — Integration / musical validation    [NEXT]
 0.3  — Stage 2 complete
 ```
 
@@ -244,4 +243,4 @@ Smart Improviser должен объединить:
 
 ## Ближайший технический шаг
 
-Довести CI PR #19 до зелёного состояния, получить `Smart-Improviser-0.2e-Windows` и провести live-test ambiguity/confidence в Fender Studio Pro.
+Начать `0.2f — Integration / musical validation`: комплексный regression Stage 2, live musical validation и подготовка стабильной `0.3`.
