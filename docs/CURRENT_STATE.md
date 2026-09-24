@@ -7,12 +7,12 @@
 - **Завершённый Stage:** Stage 1 — ARA Context Monitor
 - **Текущая стабильная версия:** `0.2`
 - **Активный Stage:** Stage 2 — Harmonic Engine
-- **Последний принятый checkpoint:** `0.2e / 0.2e fix1 — Ambiguity / Confidence`
-- **Следующий checkpoint:** `0.2f — Integration / musical validation`
+- **Последний принятый checkpoint:** `0.2f — Integration / musical validation`
+- **Следующий шаг:** стабильная `0.3 — Stage 2 complete`
 - **Stage 2 Issue:** #3 — Stage 2 — Harmonic Engine
-- **Принятый PR:** #19 — `0.2e fix1 — Ambiguity / Confidence + enharmonic spelling`
+- **PR:** #20 — `0.2f — Integration / musical validation`
 
-`0.2e / 0.2e fix1` принят после успешного Windows CI и полного live-test в Fender Studio Pro. Все заявленные проверки ambiguity/confidence пройдены; `0.2e fix1` дополнительно подтвердил корректное enharmonic spelling локальных центров (`F# major`, а не `Gb major`). PR #19 слит в `main`.
+`0.2f` принят после полного Windows CI и live musical validation в Fender Studio Pro. Это последний буквенный checkpoint Stage 2 перед стабильной `0.3`.
 
 ## Архитектурная граница
 
@@ -25,7 +25,7 @@ next chord
 global key
 ```
 
-Project key в DAW автоматически не меняется.
+Project key в DAW автоматически не меняется. Core остаётся независимым от JUCE / ARA / Fender Studio Pro.
 
 Цепочка Stage 2:
 
@@ -45,136 +45,110 @@ Ambiguity / Confidence Analyzer
 HarmonicSituation
 ```
 
-Core остаётся независимым от JUCE / ARA / Fender Studio Pro.
+## Принятые возможности Stage 2
 
-## Принятый checkpoint 0.2e — Ambiguity / Confidence
+К завершению `0.2f` приняты и live-tested:
 
-Главная задача: Harmonic Engine не должен выдавать единственную трактовку там, где данных ещё недостаточно.
+- basic harmonic functions;
+- major `ii–V–I` на `ii / V / I`;
+- minor `iiø–V–i` на `iiø / V / i`;
+- `V–I`;
+- `I–VI–ii–V`;
+- secondary dominants и dominant chains;
+- ordinary `V7` / `SubV7`;
+- major/minor `ii–SubV–I`;
+- applied SubV и guide-tone resolution;
+- candidate / tonicized / established / modulationCandidate local centers;
+- global/local harmonic interpretations;
+- borrowed/modal ambiguity;
+- `unique / ambiguous` state и explicit primary interpretation;
+- enharmonic-aware KeyCenter display через `rootFifths`;
+- integration false-positive guard для известного противоречащего `next` chord.
 
-`HarmonicSituation` хранит фиксированный набор interpretation candidates:
+## 0.2f — Integration / musical validation [ACCEPTED]
+
+Добавлен отдельный integration regression target:
 
 ```text
-Global interpretation
-Local-center interpretation
-Modal-interchange interpretation
+SmartImproviserIntegrationValidationTests
 ```
 
-Максимум — 4 candidates без dynamic allocation.
+Он перемещает окно `previous / current / next` по длинным progression cases и проверяет transitions между global/local/ambiguous состояниями.
 
-### Semantics
+### Принятые progression cases
+
+1. **Global turnaround + temporary tonicization + return**
 
 ```text
-UNIQUE
-→ evidence достаточно для primary interpretation
-
-AMBIGUOUS
-→ одновременно существуют несколько правдоподобных трактовок
-→ primaryInterpretationIndex = -1
+C major
+Cmaj7 → A7 → Dm7 → G7 → Cmaj7
 ```
 
-Подтверждённая локальная каденция или confirmed tonicization может разрешить конфликт и сделать local interpretation primary. Candidate local center и modulationCandidate намеренно не делают этого.
+Подтверждено:
+- `I–VI–ii–V`;
+- `A7 → Dm` как temporary D minor tonicization;
+- на `Dm` local center ещё сохраняется как подтверждённая тонизация;
+- на `G7 → Cmaj7` происходит возврат к `confirmed / unique / Global` без local center.
 
-### Реализовано и принято
-
-- `HarmonicInterpretation` model;
-- `interpretations[]`, `interpretationCount`, `primaryInterpretationIndex` в `HarmonicSituation`;
-- Global candidate;
-- Local-center candidate;
-- parallel-mode / modal-interchange candidate;
-- candidate local center → global/local ambiguity;
-- modulationCandidate → ambiguity;
-- established / tonicized local center с confirmed evidence → local primary;
-- borrowed chord → global chromatic + modal alternative;
-- evidence flags `alternativeInterpretation`, `globalLocalConflict`, `borrowedAmbiguity`;
-- отдельный `SmartImproviserAmbiguityConfidenceTests`;
-- diagnostic UI выводит interpretation state, primary и список candidates;
-- enharmonic spelling KeyCenter берётся из `rootFifths` и сохраняет `F#/Gb`, `C#/Db` и т. п.
-
-## Live-test 0.2e / fix1
-
-Проверено в Fender Studio Pro:
-
-### Plain unique
+2. **Borrowed/modal ambiguity → global resolution**
 
 ```text
-Global key: C major
-Current: Cmaj7
-
-Interpretation: unique
-Primary: Global
+C major
+Cmaj7 → Fm7 → G7 → Cmaj7
 ```
 
-### Borrowed/modal ambiguity
+Подтверждено:
+- `Fm7` = `AMBIGUOUS`, Global C major + Modal interchange C minor;
+- `G7 → Cmaj7` = `confirmed / unique / Global`.
+
+3. **Local iiø–SubV–i inside global context**
 
 ```text
-Global key: C major
-Current: Fm7
-
-Candidate 1: Global / chromatic
-Candidate 2: Modal interchange / C minor
-Interpretation: AMBIGUOUS
-Primary: UNRESOLVED
+C major
+Em7b5 → Eb7 → Dm → G7 → Cmaj7
 ```
 
-### Candidate local center
+Подтверждено:
+- local D minor candidate / tonicized context;
+- `iiø–SubV–i`;
+- Local primary на Dm;
+- последующий возврат в global C major на `G7 → Cmaj7`.
+
+4. **Remote tonicization → modulationCandidate**
 
 ```text
-Global key: F major
-Em7b5 → A7
-
-Local center candidate: D minor
-Interpretation: AMBIGUOUS
-Primary: UNRESOLVED
-```
-
-### Confirmed local cadence
-
-```text
-Global key: F major
-Em7b5 → A7 → Dm
-Current: A7
-
-Local center: D minor | established
-Interpretation: unique
-Primary: Local center
-```
-
-### Possible modulation
-
-```text
-Global key: C major
+C major
 C#7 → F#maj7 → Bmaj7
-Current: F#maj7
-
-Local center: F# major | modulation candidate
-Interpretation: AMBIGUOUS
-Primary: UNRESOLVED
 ```
 
-### 0.2e fix1 retest
+Подтверждено:
+- `C#7 → F#maj7` = confirmed F# tonicization;
+- на `F#maj7` local center = `F# major | local | modulation candidate`;
+- interpretation = `AMBIGUOUS / UNRESOLVED`;
+- explicit global key остаётся C major.
+
+5. **Boundary false-positive guard**
 
 ```text
-Global key: C major
-C#7 → F#maj7
-Current: C#7
-
-Resolution: F#maj7 | CONFIRMED
-Local center: F# major | temporary | tonicized
-Primary: Local center
-Candidate Local center: F# major
+C major
+Dm7 → G7 → Abmaj7
 ```
 
-Fix подтверждён: enharmonic spelling сохраняется корректно.
+Подтверждено: на G7 `Global pattern = None`, `Resolution = -`; ложный `I–VI–ii–V` не создаётся при известном противоречащем `next` chord.
+
+6. **Stage 1 contract safety**
+
+Missing position / missing key остаются штатными `NO ANALYSIS`, без invented pattern/local center.
 
 ## Версия принятого checkpoint
 
 ```text
-Build label: Smart Improviser 0.2e fix1
-CMake:      0.2.7
-Artifact:   Smart-Improviser-0.2e-fix1-Windows
+Build label: Smart Improviser 0.2f
+CMake:      0.2.8
+Artifact:   Smart-Improviser-0.2f-Windows
 Package:    Smart Improviser.vst3
-Fix Build #199: SUCCESS
-Final PR HEAD Build #205: SUCCESS
+Windows Build #217: SUCCESS
+Tests:      7 / 7 PASS
 ```
 
 ## Линия Stage 2
@@ -187,21 +161,26 @@ Final PR HEAD Build #205: SUCCESS
 0.2d — Local Key Center                    [ACCEPTED]
 0.2e — Ambiguity / Confidence              [ACCEPTED]
 0.2e fix1 — Enharmonic spelling            [ACCEPTED]
-0.2f — Integration / musical validation    [NEXT]
-0.3  — Stage 2 complete
+0.2f — Integration / musical validation    [ACCEPTED]
+0.3  — Stage 2 complete                    [NEXT]
 ```
 
-## Следующий checkpoint — 0.2f
+## Acceptance 0.2f
 
-Цель `0.2f`: проверить Stage 2 как единый Harmonic Engine на комплексных последовательностях перед стабильной `0.3`.
+- [x] все существующие Stage 2 regression tests зелёные;
+- [x] `SmartImproviserIntegrationValidationTests` зелёный;
+- [x] complex progression transitions соответствуют ожидаемой semantics;
+- [x] boundary false-positive guards зелёные;
+- [x] Windows CI зелёный;
+- [x] artifact `Smart-Improviser-0.2f-Windows` опубликован;
+- [x] live musical validation в Fender Studio Pro;
+- [x] Stage 1 regression отсутствует;
+- [x] checkpoint принят;
+- [ ] подготовлена стабильная `0.3`.
 
-Основные задачи:
+## Следующий шаг — стабильная 0.3
 
-1. комплексные harmonic sequences с global/local/borrowed/SubV контекстом;
-2. полный regression всех Stage 2 analyzers;
-3. проверка conflict/ambiguity transitions на границах паттернов;
-4. live musical validation в Fender Studio Pro;
-5. финальная подготовка стабильной версии `0.3`.
+`0.3` не должна добавлять новый музыкальный слой. Это релизное закрытие Stage 2: финальная версия, документация, artifact и проверка того, что все принятые checkpoints `0.2a…0.2f` представлены в `main` без новых изменений поведения.
 
 ## Что читать в новом чате Stage 2
 
@@ -213,4 +192,4 @@ Final PR HEAD Build #205: SUCCESS
 6. `docs/ROADMAP.md`;
 7. `docs/VERSIONING.md`;
 8. Issue #3 — Stage 2 — Harmonic Engine;
-9. PR #19 — принятый и слитый `0.2e / 0.2e fix1`.
+9. PR #20 — принятый `0.2f — Integration / musical validation`.

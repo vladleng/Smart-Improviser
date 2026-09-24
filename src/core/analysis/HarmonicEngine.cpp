@@ -359,8 +359,13 @@ HarmonicPattern recognizePattern(const HarmonicSituation& situation) noexcept
                            true);
     }
 
+    // The end-of-turnaround pair ii-V is only a boundary candidate when the
+    // future event is genuinely unavailable. If next is known, stronger full
+    // patterns above must validate it; a contradictory next suppresses the
+    // guess instead of inventing I-VI-ii-V from previous/current alone.
     if (key.mode == KeyMode::major
         && situation.previousChordAvailable
+        && ! situation.nextChordAvailable
         && isDegree(situation.previousChord, key, 2)
         && situation.previousChord.quality == ChordQuality::minor
         && isDegree(situation.currentChord, key, 5)
