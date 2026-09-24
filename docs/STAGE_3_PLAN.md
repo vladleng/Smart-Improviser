@@ -1,6 +1,6 @@
 # Stage 3 — Improvisation Engine: рабочий план
 
-> Обновлено 2026-09-24. База: stable 0.3, Stage 2 принят. 0.3a принят; начата реализация 0.3b. Stable остаётся 0.3.
+> Обновлено 2026-09-24. База: stable 0.3, Stage 2 принят. 0.3a и 0.3b приняты; начата реализация 0.3c. Stable остаётся 0.3.
 > Начальная методика и текстовая форма подсказки согласованы: [IMPROVISATION_METHOD.md](IMPROVISATION_METHOD.md). См. [PRODUCT_WORKFLOW.md](PRODUCT_WORKFLOW.md).
 
 ## Результат Stage
@@ -46,7 +46,9 @@ Windows Build #231 — success; живой тест принят Владом 20
 
 **Gate:** проверяемый результат этих пунктов, соответствующие regression tests, отдельный build artifact и live-test, где применим; принятие пользователем перед следующей буквой.
 
-### 0.3b — Structural tones / targets / resolution
+### 0.3b — Structural tones / targets / resolution [ACCEPTED]
+
+Windows Build #234 — success; живой тест принят Владом; PR #24 слит в main.
 
 - [x] Выдавать chord tones, доступные guide tones и characteristic tones с учётом explicit extensions/alterations; не придумывать отсутствующие 3/7 у sus/triads.
 - [x] Использовать ResolutionTarget Stage 2; отличать подтверждённое гармоническое разрешение от предлагаемого мелодического перехода.

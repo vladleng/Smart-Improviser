@@ -1,6 +1,6 @@
 # Smart Improviser — Current State
 
-> Планирование обновлено 2026-09-24: согласован workflow работы над песней, user content и постоянных tension-подсказок. 0.3a принят; начата рабочая версия 0.3b; последняя принятая stable — 0.3.
+> Планирование обновлено 2026-09-24: согласован workflow работы над песней, user content и постоянных tension-подсказок. 0.3a и 0.3b приняты; начата рабочая версия 0.3c; последняя принятая stable — 0.3.
 
 > Короткая точка входа для нового чата или рабочей сессии. Подробная архитектура — в `PROJECT_CONTEXT.md`, этапы — в `ROADMAP.md`, правила версий — в `VERSIONING.md`, фактический прогресс — в GitHub Issues.
 
@@ -13,7 +13,7 @@
 - **Рабочая линия:** `0.3a → 0.3x`
 - **Итог Stage 3:** `0.4`
 - **Stage 2 Issue:** #3 — закрыт стабильной `0.3`
-- **Stage 3 Issue:** #4 — обновлён рабочий план `0.3a–0.3h`; 0.3a принят; начат 0.3b
+- **Stage 3 Issue:** #4 — обновлён рабочий план `0.3a–0.3h`; 0.3a и 0.3b приняты; начат 0.3c
 
 `0.3` — релизное закрытие Stage 2. Новая музыкальная логика относительно принятого `0.2f` не добавлялась: stable release фиксирует уже проверенное состояние Harmonic Engine.
 
@@ -132,7 +132,7 @@ Stage 3 должен использовать готовый `HarmonicSituation`
 - resolution notes;
 - базовые improvisation strategies.
 
-Рабочая декомпозиция опубликована в [STAGE_3_PLAN.md](STAGE_3_PLAN.md) и Issue #4. Начальная методика согласована в [IMPROVISATION_METHOD.md](IMPROVISATION_METHOD.md); 0.3a принят, следующий checkpoint — 0.3b.
+Рабочая декомпозиция опубликована в [STAGE_3_PLAN.md](STAGE_3_PLAN.md) и Issue #4. Начальная методика согласована в [IMPROVISATION_METHOD.md](IMPROVISATION_METHOD.md); 0.3a и 0.3b приняты, следующий checkpoint — 0.3c.
 
 Согласованная продуктовая цель: [PRODUCT_WORKFLOW.md](PRODUCT_WORKFLOW.md). Общая/личная библиотеки — Stage 5; сохраняемый Song workspace — Stage 7; быстрый ввод нот/TAB и ручной конструктор — Stage 8; Planner — Stage 10. Смена tension не переписывает сохранённые идеи.
 
@@ -155,8 +155,8 @@ Stage 3 должен использовать готовый `HarmonicSituation`
 
 [Чек-лист живой проверки](STAGE_3_0.3a_LIVE_TEST.md). Гаммы, модели Бойко и выбор T1–T3 ещё не реализованы.
 
-## Рабочий checkpoint 0.3b
+## Принятый checkpoint 0.3b
 
 Подготовлены guide tones (только присутствующие 3/7), characteristic tones, реальные звуки следующего аккорда и показ движений ResolutionTarget Stage 2. Для неподтверждённого перехода предлагаются отдельные optional melodic connections к ближайшему root/guide следующего аккорда; они не подтверждают гармоническую функцию.
 
-8 локальных C++ test targets проходят. Windows CI — в PR текущего checkpoint; живой тест ещё не принят. [Чек-лист 0.3b](STAGE_3_0.3b_LIVE_TEST.md). Материал пока отображается как pitch classes. Stable остаётся 0.3.
+8 локальных C++ test targets проходят. Windows Build #234 — success; Влад принял живой тест, PR #24 слит в main. [Чек-лист 0.3b](STAGE_3_0.3b_LIVE_TEST.md). Материал пока отображается как pitch classes. Stable остаётся 0.3.

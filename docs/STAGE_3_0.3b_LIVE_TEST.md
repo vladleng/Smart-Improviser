@@ -1,6 +1,6 @@
 # Stage 3 / 0.3b — Structural tones / targets / resolution
 
-Статус: реализация подготовлена, живой тест ожидается. 0.3a принят Владом; Stage 3 Issue #4 остаётся открытым.
+Статус: **ACCEPTED** — Влад подтвердил живой тест. Windows Build #234 — success; PR #24 слит в main. 0.3a принят Владом; Stage 3 Issue #4 остаётся открытым.
 
 ## Новое
 
@@ -27,12 +27,12 @@
 | G7 → Abmaj7 | Targets Ab C Eb G; suggested connections B → C, F → G; нет confirmed resolution |
 | G7 без следующего аккорда | No next chord, нет движений и старых targets |
 
-- [ ] Мажорное и минорное разрешения различаются без смены глобальной тональности проекта.
-- [ ] Secondary/SubV cases соответствуют таблице.
-- [ ] Sus/triad/alteration cases не теряют и не добавляют звуки.
-- [ ] Confirmed и suggested явно различимы.
-- [ ] PLAY/STOP/seek, редактирование цели, исчезновение контекста и reopen обновляют карточку корректно.
-- [ ] Карточка читаема, Stage 1–2 diagnostics без регрессии.
+- [x] Мажорное и минорное разрешения различаются без смены глобальной тональности проекта.
+- [x] Secondary/SubV cases соответствуют таблице.
+- [x] Sus/triad/alteration cases не теряют и не добавляют звуки.
+- [x] Confirmed и suggested явно различимы.
+- [x] PLAY/STOP/seek, редактирование цели, исчезновение контекста и reopen обновляют карточку корректно.
+- [x] Карточка читаема, Stage 1–2 diagnostics без регрессии.
 
 Pitch-class spelling временно сохраняется из 0.3a (Db вместо C#, B вместо Cb). Это не смена функции нот. После принятия 0.3b — 0.3c.
 
