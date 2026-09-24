@@ -4,19 +4,19 @@
 
 ## Текущее состояние
 
-- **Завершённый Stage:** Stage 1 — ARA Context Monitor
-- **Текущая стабильная версия:** `0.2`
-- **Активный Stage:** Stage 2 — Harmonic Engine
-- **Последний принятый checkpoint:** `0.2f — Integration / musical validation`
-- **Следующий шаг:** стабильная `0.3 — Stage 2 complete`
-- **Stage 2 Issue:** #3 — Stage 2 — Harmonic Engine
-- **PR:** #20 — `0.2f — Integration / musical validation`
+- **Завершённые Stage:** Stage 0, Stage 1, Stage 2
+- **Текущая стабильная версия:** `0.3`
+- **Последний завершённый Stage:** Stage 2 — Harmonic Engine
+- **Следующий Stage:** Stage 3 — Improvisation Engine
+- **Следующая рабочая линия:** `0.3a → 0.3x`
+- **Итог Stage 3:** `0.4`
+- **Stage 2 Issue:** #3 — закрывается стабильной `0.3`
 
-`0.2f` принят после полного Windows CI и live musical validation в Fender Studio Pro. Это последний буквенный checkpoint Stage 2 перед стабильной `0.3`.
+`0.3` — релизное закрытие Stage 2. Новая музыкальная логика относительно принятого `0.2f` не добавлялась: stable release фиксирует уже проверенное состояние Harmonic Engine.
 
 ## Архитектурная граница
 
-Stage 1 остаётся закрытым. Harmonic Engine по-прежнему получает только host-neutral:
+Stage 1 contract остаётся закрытым. Harmonic Engine получает только host-neutral timeline context:
 
 ```text
 previous chord
@@ -25,9 +25,7 @@ next chord
 global key
 ```
 
-Project key в DAW автоматически не меняется. Core остаётся независимым от JUCE / ARA / Fender Studio Pro.
-
-Цепочка Stage 2:
+Project key в DAW автоматически не меняется. Core не зависит от JUCE / ARA / Fender Studio Pro.
 
 ```text
 TimelineHarmonicSnapshot
@@ -45,113 +43,9 @@ Ambiguity / Confidence Analyzer
 HarmonicSituation
 ```
 
-## Принятые возможности Stage 2
+## Stable 0.3 — Stage 2 complete
 
-К завершению `0.2f` приняты и live-tested:
-
-- basic harmonic functions;
-- major `ii–V–I` на `ii / V / I`;
-- minor `iiø–V–i` на `iiø / V / i`;
-- `V–I`;
-- `I–VI–ii–V`;
-- secondary dominants и dominant chains;
-- ordinary `V7` / `SubV7`;
-- major/minor `ii–SubV–I`;
-- applied SubV и guide-tone resolution;
-- candidate / tonicized / established / modulationCandidate local centers;
-- global/local harmonic interpretations;
-- borrowed/modal ambiguity;
-- `unique / ambiguous` state и explicit primary interpretation;
-- enharmonic-aware KeyCenter display через `rootFifths`;
-- integration false-positive guard для известного противоречащего `next` chord.
-
-## 0.2f — Integration / musical validation [ACCEPTED]
-
-Добавлен отдельный integration regression target:
-
-```text
-SmartImproviserIntegrationValidationTests
-```
-
-Он перемещает окно `previous / current / next` по длинным progression cases и проверяет transitions между global/local/ambiguous состояниями.
-
-### Принятые progression cases
-
-1. **Global turnaround + temporary tonicization + return**
-
-```text
-C major
-Cmaj7 → A7 → Dm7 → G7 → Cmaj7
-```
-
-Подтверждено:
-- `I–VI–ii–V`;
-- `A7 → Dm` как temporary D minor tonicization;
-- на `Dm` local center ещё сохраняется как подтверждённая тонизация;
-- на `G7 → Cmaj7` происходит возврат к `confirmed / unique / Global` без local center.
-
-2. **Borrowed/modal ambiguity → global resolution**
-
-```text
-C major
-Cmaj7 → Fm7 → G7 → Cmaj7
-```
-
-Подтверждено:
-- `Fm7` = `AMBIGUOUS`, Global C major + Modal interchange C minor;
-- `G7 → Cmaj7` = `confirmed / unique / Global`.
-
-3. **Local iiø–SubV–i inside global context**
-
-```text
-C major
-Em7b5 → Eb7 → Dm → G7 → Cmaj7
-```
-
-Подтверждено:
-- local D minor candidate / tonicized context;
-- `iiø–SubV–i`;
-- Local primary на Dm;
-- последующий возврат в global C major на `G7 → Cmaj7`.
-
-4. **Remote tonicization → modulationCandidate**
-
-```text
-C major
-C#7 → F#maj7 → Bmaj7
-```
-
-Подтверждено:
-- `C#7 → F#maj7` = confirmed F# tonicization;
-- на `F#maj7` local center = `F# major | local | modulation candidate`;
-- interpretation = `AMBIGUOUS / UNRESOLVED`;
-- explicit global key остаётся C major.
-
-5. **Boundary false-positive guard**
-
-```text
-C major
-Dm7 → G7 → Abmaj7
-```
-
-Подтверждено: на G7 `Global pattern = None`, `Resolution = -`; ложный `I–VI–ii–V` не создаётся при известном противоречащем `next` chord.
-
-6. **Stage 1 contract safety**
-
-Missing position / missing key остаются штатными `NO ANALYSIS`, без invented pattern/local center.
-
-## Версия принятого checkpoint
-
-```text
-Build label: Smart Improviser 0.2f
-CMake:      0.2.8
-Artifact:   Smart-Improviser-0.2f-Windows
-Package:    Smart Improviser.vst3
-Windows Build #217: SUCCESS
-Tests:      7 / 7 PASS
-```
-
-## Линия Stage 2
+В стабильную `0.3` входят все принятые checkpoints:
 
 ```text
 0.2a — Harmonic Engine foundation          [ACCEPTED]
@@ -162,34 +56,87 @@ Tests:      7 / 7 PASS
 0.2e — Ambiguity / Confidence              [ACCEPTED]
 0.2e fix1 — Enharmonic spelling            [ACCEPTED]
 0.2f — Integration / musical validation    [ACCEPTED]
-0.3  — Stage 2 complete                    [NEXT]
+0.3  — Stage 2 complete                    [STABLE]
 ```
 
-## Acceptance 0.2f
+### Возможности Harmonic Engine
 
-- [x] все существующие Stage 2 regression tests зелёные;
-- [x] `SmartImproviserIntegrationValidationTests` зелёный;
-- [x] complex progression transitions соответствуют ожидаемой semantics;
-- [x] boundary false-positive guards зелёные;
-- [x] Windows CI зелёный;
-- [x] artifact `Smart-Improviser-0.2f-Windows` опубликован;
-- [x] live musical validation в Fender Studio Pro;
-- [x] Stage 1 regression отсутствует;
-- [x] checkpoint принят;
-- [ ] подготовлена стабильная `0.3`.
+- basic harmonic functions;
+- major `ii–V–I` на `ii / V / I`;
+- minor `iiø–V–i` на `iiø / V / i`;
+- `V–I`;
+- `I–VI–ii–V`;
+- secondary dominants и dominant chains;
+- ordinary `V7` / `SubV7`;
+- major/minor `ii–SubV–I`;
+- applied SubV и guide-tone resolution;
+- local key center: `candidate / tonicized / established / modulationCandidate`;
+- remote local centers;
+- global/local harmonic interpretations;
+- borrowed/modal ambiguity;
+- `unique / ambiguous` semantics и explicit primary interpretation;
+- enharmonic-aware KeyCenter display через `rootFifths`;
+- boundary false-positive guards;
+- diagnostic UI для global/local/ambiguity/confidence.
 
-## Следующий шаг — стабильная 0.3
+### Integration validation
 
-`0.3` не должна добавлять новый музыкальный слой. Это релизное закрытие Stage 2: финальная версия, документация, artifact и проверка того, что все принятые checkpoints `0.2a…0.2f` представлены в `main` без новых изменений поведения.
+`0.2f` добавил отдельный regression target:
 
-## Что читать в новом чате Stage 2
+```text
+SmartImproviserIntegrationValidationTests
+```
+
+Live-tested в Fender Studio Pro:
+
+```text
+Cmaj7 → A7 → Dm7 → G7 → Cmaj7
+Cmaj7 → Fm7 → G7 → Cmaj7
+Em7b5 → Eb7 → Dm → G7 → Cmaj7
+C#7 → F#maj7 → Bmaj7
+Dm7 → G7 → Abmaj7
+```
+
+Подтверждены переходы:
+
+```text
+Global → Local primary → Global
+Unique → Ambiguous → Unique
+Tonicized → Modulation candidate
+```
+
+Stage 1 / ARA regression не обнаружен.
+
+## Версия 0.3
+
+```text
+Build label: Smart Improviser 0.3
+CMake:      0.3.0
+Artifact:   Smart-Improviser-0.3-Windows
+Package:    Smart Improviser.vst3
+Tests:      7 regression/integration targets
+```
+
+## Следующий этап — Stage 3 / Improvisation Engine
+
+Stage 3 должен использовать готовый `HarmonicSituation` и выдавать музыкально применимый материал для импровизации:
+
+- chord tones;
+- guide tones;
+- target notes;
+- scales;
+- harmonic concepts;
+- resolution notes;
+- базовые improvisation strategies.
+
+Перед началом реализации Stage 3 необходимо отдельно разложить его на буквенные checkpoints `0.3a`, `0.3b`, `0.3c`, ... .
+
+## Что читать при переходе к Stage 3
 
 1. `docs/CURRENT_STATE.md`;
-2. `docs/STAGE_1_TO_STAGE_2_CONTRACT.md`;
-3. `docs/CORE_DATA_MODEL_0.0b.md`;
+2. `docs/ROADMAP.md`;
+3. `docs/STAGE_1_TO_STAGE_2_CONTRACT.md`;
 4. `docs/PROJECT_CONTEXT.md`;
 5. `docs/ARCHITECTURAL_DECISIONS.md`;
-6. `docs/ROADMAP.md`;
-7. `docs/VERSIONING.md`;
-8. Issue #3 — Stage 2 — Harmonic Engine;
-9. PR #20 — принятый `0.2f — Integration / musical validation`.
+6. `docs/VERSIONING.md`;
+7. Issue #3 — история завершённого Stage 2.

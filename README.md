@@ -8,15 +8,14 @@
 
 **Stage 0 — Foundation / Specification завершён.**  
 **Stage 1 — ARA Context Monitor завершён.**  
-**Активный Stage:** Stage 2 — Harmonic Engine.
+**Stage 2 — Harmonic Engine завершён.**
 
-**Текущая стабильная версия:** `0.2`  
-**Последний принятый checkpoint:** `0.2f — Integration / musical validation`  
-**Следующий шаг:** стабильная `0.3 — Stage 2 complete`  
-**Stage 2 Issue:** #3  
-**PR #20:** `0.2f — Integration / musical validation`
+**Текущая стабильная версия:** `0.3`  
+**Следующий Stage:** Stage 3 — Improvisation Engine  
+**Следующая рабочая линия:** `0.3a → 0.3x`  
+**Итог Stage 3:** `0.4`
 
-`0.2f` принят после успешного Windows Build #217 и полного live musical validation в Fender Studio Pro. Это последний буквенный checkpoint Stage 2 перед стабильной `0.3`.
+Stable `0.3` фиксирует полностью принятый Stage 2. Новая музыкальная логика относительно `0.2f` в release не добавлялась.
 
 Первая целевая среда:
 
@@ -62,14 +61,30 @@ Harmonic Engine
         ↓
 HarmonicSituation
         ↓
-Tension / Strategy / Resolution / Phrase engines
+Improvisation / Tension / Phrase layers
         ↓
 UI / Fretboard / Notation / TAB
 ```
 
 Stage 1 contract закрыт: Harmonic Engine получает только host-neutral timeline context и не зависит от JUCE / ARA / Fender Studio Pro. Project key в DAW автоматически не меняется.
 
-## Что умеет Harmonic Engine к завершению 0.2f
+## Stable 0.3 — Harmonic Engine
+
+В `0.3` входят все принятые checkpoints Stage 2:
+
+```text
+0.2a — Harmonic Engine foundation          [ACCEPTED]
+0.2a fix1 — Harmonic Engine diagnostics    [ACCEPTED]
+0.2b — Pattern Recognizer                  [ACCEPTED]
+0.2c — Tritone Substitution                [ACCEPTED]
+0.2d — Local Key Center                    [ACCEPTED]
+0.2e — Ambiguity / Confidence              [ACCEPTED]
+0.2e fix1 — Enharmonic spelling            [ACCEPTED]
+0.2f — Integration / musical validation    [ACCEPTED]
+0.3  — Stage 2 complete                    [STABLE]
+```
+
+### Что умеет Harmonic Engine
 
 - basic harmonic functions;
 - major `ii–V–I` на `ii / V / I`;
@@ -92,24 +107,24 @@ Stage 1 contract закрыт: Harmonic Engine получает только hos
 - borrowed/modal ambiguity;
 - diagnostic UI со списком candidates и primary;
 - enharmonic-aware KeyCenter display;
-- integration false-positive guard для известного противоречащего `next` chord.
+- boundary false-positive guards для известных противоречащих событий.
 
-## 0.2f — Integration / musical validation [ACCEPTED]
+### Integration validation
 
-`0.2f` не добавляет новый крупный музыкальный слой. Он проверяет все принятые части Stage 2 **вместе** через отдельный regression target:
+Отдельный regression target:
 
 ```text
 SmartImproviserIntegrationValidationTests
 ```
 
-Проверенные progression cases:
+Live-tested progression cases:
 
 ```text
 Cmaj7 → A7 → Dm7 → G7 → Cmaj7
 Cmaj7 → Fm7 → G7 → Cmaj7
 Em7b5 → Eb7 → Dm → G7 → Cmaj7
 C#7 → F#maj7 → Bmaj7
-Dm7 → G7 → Abmaj7   // contradictory-next guard
+Dm7 → G7 → Abmaj7
 ```
 
 Подтверждены переходы:
@@ -120,56 +135,45 @@ Unique → Ambiguous → Unique
 Tonicized → Modulation candidate
 ```
 
-Также подтверждено, что при `Dm7 → G7 → Abmaj7` движок не придумывает ложное завершение `I–VI–ii–V`, если противоречащий `next` уже известен.
-
-Версия принятого checkpoint:
+## Release 0.3
 
 ```text
-Build label: Smart Improviser 0.2f
-CMake:      0.2.8
-Artifact:   Smart-Improviser-0.2f-Windows
+Build label: Smart Improviser 0.3
+CMake:      0.3.0
+Artifact:   Smart-Improviser-0.3-Windows
 Package:    Smart Improviser.vst3
-Windows Build #217: SUCCESS
-Tests:      7 / 7 PASS
+Tests:      7 regression/integration targets
 ```
 
-## Правило разработки Stage
+## Следующий Stage — Improvisation Engine
 
-```text
-новая буква = новая функциональная часть Stage
-fixN        = исправление текущего checkpoint
-версия без буквы = весь Stage завершён
-```
+Stage 3 использует готовый `HarmonicSituation` и должен выдавать:
 
-Stage 2:
+- chord tones;
+- guide tones;
+- target notes;
+- scales;
+- harmonic concepts;
+- resolution notes;
+- базовые improvisation strategies.
 
-```text
-0.2a — Harmonic Engine foundation          [ACCEPTED]
-0.2a fix1 — Harmonic Engine diagnostics    [ACCEPTED]
-0.2b — Pattern Recognizer                  [ACCEPTED]
-0.2c — Tritone Substitution                [ACCEPTED]
-0.2d — Local Key Center                    [ACCEPTED]
-0.2e — Ambiguity / Confidence              [ACCEPTED]
-0.2e fix1 — Enharmonic spelling            [ACCEPTED]
-0.2f — Integration / musical validation    [ACCEPTED]
-0.3  — Stage 2 complete                    [NEXT]
-```
+Перед реализацией Stage 3 задачи будут разложены на отдельные build checkpoints `0.3a`, `0.3b`, `0.3c`, ... .
 
-## Tension Engine
+## Дальнейшее направление
 
-Следующий крупный слой после Harmonic Engine — три уровня напряжения:
+После Improvisation Engine планируются:
 
-- **Tension 1 — Stable:** chord tones, guide tones, устойчивые extensions.
-- **Tension 2 — Color:** chromatic approaches, enclosures, melodic-minor applications, upper structures.
-- **Tension 3 — Outside / Maximum:** altered/diminished language, substitutions, side slipping, superimposed harmony и delayed resolution.
-
-## Ближайший технический шаг
-
-Подготовить стабильную `0.3 — Stage 2 complete` без добавления новой музыкальной логики: финальный version bump, документация, artifact и проверка принятого состояния `0.2a…0.2f`.
+- Tension Engine;
+- Phrase Library;
+- Phrase Transposition;
+- Fretboard / Notation / TAB Viewer;
+- Phrase Editor;
+- Phrase Transformation Engine;
+- Improvisation Planner.
 
 ## Документация
 
-- [`docs/CURRENT_STATE.md`](docs/CURRENT_STATE.md) — текущий checkpoint и следующий шаг.
+- [`docs/CURRENT_STATE.md`](docs/CURRENT_STATE.md) — текущее состояние и следующий Stage.
 - [`docs/STAGE_1_TO_STAGE_2_CONTRACT.md`](docs/STAGE_1_TO_STAGE_2_CONTRACT.md) — граница Stage 1 → Harmonic Engine.
 - [`docs/CORE_DATA_MODEL_0.0b.md`](docs/CORE_DATA_MODEL_0.0b.md) — host-neutral data model.
 - [`docs/PROJECT_CONTEXT.md`](docs/PROJECT_CONTEXT.md) — living document проекта.
