@@ -239,42 +239,15 @@ Side-slip outside phrase
 
 ## 8. Tension Engine
 
-Главная отличительная особенность — три уровня напряжения.
+Начальная классификация согласована 2026-09-24: степень гармонического преобразования в конкретном контексте.
 
-### Tension 1 — Stable
+- **T1 — базовое:** опорные звуки, основной материал данного контекста и обычные диатонические надстройки.
+- **T2 — окрашенное:** характерные надстройки, выбранные альтерации, окрашивающие модели замены.
+- **T3 — альтерированное:** выраженная альтерация/наложение с понятным направлением разрешения.
 
-- chord tones;
-- guide tones;
-- consonant extensions;
-- arpeggios;
-- diatonic passing tones;
-- простые approaches;
-- ясное проведение гармонии.
+Это не абсолютное свойство гаммы и не подсчёт альтераций. Ритмическая детализация, side-slip и дополнительные типы мышления — будущие расширения. Один основной вариант на доступный уровень; альтернативы добавляются позже. Stage 3 строит материал, Stage 4 выбирает по tension.
 
-### Tension 2 — Color
-
-- chromatic approaches;
-- enclosures;
-- melodic minor applications;
-- lydian dominant;
-- upper structures;
-- controlled alterations;
-- substitutions;
-- характерный jazz color.
-
-### Tension 3 — Outside / Maximum
-
-- altered dominant;
-- diminished language;
-- side slipping;
-- superimposed harmony;
-- tritone concepts;
-- symmetrical structures;
-- substitutions by minor thirds;
-- delayed resolution;
-- dense chromaticism.
-
-Важно: tension — не просто свойство отдельной ноты. Он зависит от гармонического контекста, метрической позиции, длительности, направления и разрешения.
+Основной источник: Игорь Бойко, «Мой метод», раздел 2. Контекст доминанты (major/minor target, secondary, SubV, цепь, unresolved) предшествует выбору материала. Реальная гармония, структура мышления, источник звуков и цель хранятся раздельно. Подробные правила и границы: [IMPROVISATION_METHOD.md](IMPROVISATION_METHOD.md).
 
 ## 9. Tension Curve и Tension Profile
 

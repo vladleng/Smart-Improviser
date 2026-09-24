@@ -11,7 +11,7 @@
 **Stage 2 — Harmonic Engine завершён.**
 
 **Текущая стабильная версия:** `0.3`  
-**Следующий Stage:** Stage 3 — Improvisation Engine  
+**Текущий Stage:** Stage 3 — Improvisation Engine<br>
 **Следующая рабочая линия:** `0.3a → 0.3x`  
 **Итог Stage 3:** `0.4`
 
@@ -165,7 +165,7 @@ Stage 3 использует готовый `HarmonicSituation` и должен 
 - resolution notes;
 - базовые improvisation strategies.
 
-Рабочий план Stage 3: [0.3a–0.3h → 0.4](docs/STAGE_3_PLAN.md). Реализация не начата; перед кодом уточняются музыкальный объём и UX.
+Рабочий план Stage 3: [0.3a–0.3h → 0.4](docs/STAGE_3_PLAN.md). Начат checkpoint **0.3a**. [Начальная методика](docs/IMPROVISATION_METHOD.md): материал Бойко, контекст доминанты перед выбором источника, простая расширяемая модель T1–T3.
 
 ## Дальнейшее направление
 
