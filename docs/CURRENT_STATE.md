@@ -7,17 +7,16 @@
 - **Завершённый Stage:** Stage 1 — ARA Context Monitor
 - **Текущая стабильная версия:** `0.2`
 - **Активный Stage:** Stage 2 — Harmonic Engine
-- **Последний принятый checkpoint:** `0.2d — Local Key Center`
-- **Текущая рабочая версия:** `0.2e — Ambiguity / Confidence`
+- **Последний принятый checkpoint:** `0.2e / 0.2e fix1 — Ambiguity / Confidence`
+- **Следующий checkpoint:** `0.2f — Integration / musical validation`
 - **Stage 2 Issue:** #3 — Stage 2 — Harmonic Engine
-- **Активная ветка:** `stage-2-ambiguity-confidence`
-- **Активный PR:** #19 — `0.2e — Ambiguity / Confidence`
+- **Принятый PR:** #19 — `0.2e fix1 — Ambiguity / Confidence + enharmonic spelling`
 
-`0.2d` принят после CI и полного live-test в Fender Studio Pro и слит в `main` через PR #18.
+`0.2e / 0.2e fix1` принят после успешного Windows CI и полного live-test в Fender Studio Pro. Все заявленные проверки ambiguity/confidence пройдены; `0.2e fix1` дополнительно подтвердил корректное enharmonic spelling локальных центров (`F# major`, а не `Gb major`).
 
 ## Архитектурная граница
 
-Stage 1 остаётся закрытым. `0.2e` по-прежнему получает только host-neutral:
+Stage 1 остаётся закрытым. Harmonic Engine по-прежнему получает только host-neutral:
 
 ```text
 previous chord
@@ -28,7 +27,7 @@ global key
 
 Project key в DAW автоматически не меняется.
 
-Цепочка Stage 2 теперь выглядит так:
+Цепочка Stage 2:
 
 ```text
 TimelineHarmonicSnapshot
@@ -36,6 +35,8 @@ TimelineHarmonicSnapshot
 Global harmonic analysis
         ↓
 Pattern Recognizer
+        ↓
+Tritone Substitution
         ↓
 Local Key Center Analyzer
         ↓
@@ -46,11 +47,11 @@ HarmonicSituation
 
 Core остаётся независимым от JUCE / ARA / Fender Studio Pro.
 
-## Рабочая 0.2e — Ambiguity / Confidence
+## Принятый checkpoint 0.2e — Ambiguity / Confidence
 
 Главная задача: Harmonic Engine не должен выдавать единственную трактовку там, где данных ещё недостаточно.
 
-`HarmonicSituation` теперь хранит фиксированный набор interpretation candidates:
+`HarmonicSituation` хранит фиксированный набор interpretation candidates:
 
 ```text
 Global interpretation
@@ -73,7 +74,7 @@ AMBIGUOUS
 
 Подтверждённая локальная каденция или confirmed tonicization может разрешить конфликт и сделать local interpretation primary. Candidate local center и modulationCandidate намеренно не делают этого.
 
-### Уже реализовано
+### Реализовано и принято
 
 - `HarmonicInterpretation` model;
 - `interpretations[]`, `interpretationCount`, `primaryInterpretationIndex` в `HarmonicSituation`;
@@ -86,9 +87,12 @@ AMBIGUOUS
 - borrowed chord → global chromatic + modal alternative;
 - evidence flags `alternativeInterpretation`, `globalLocalConflict`, `borrowedAmbiguity`;
 - отдельный `SmartImproviserAmbiguityConfidenceTests`;
-- diagnostic UI выводит interpretation state, primary и список candidates.
+- diagnostic UI выводит interpretation state, primary и список candidates;
+- enharmonic spelling KeyCenter берётся из `rootFifths` и сохраняет `F#/Gb`, `C#/Db` и т. п.
 
-## Основные regression cases 0.2e
+## Live-test 0.2e / fix1
+
+Проверено в Fender Studio Pro:
 
 ### Plain unique
 
@@ -117,9 +121,7 @@ Primary: UNRESOLVED
 ```text
 Global key: F major
 Em7b5 → A7
-Current: Em7b5
 
-Global interpretation
 Local center candidate: D minor
 Interpretation: AMBIGUOUS
 Primary: UNRESOLVED
@@ -149,13 +151,29 @@ Interpretation: AMBIGUOUS
 Primary: UNRESOLVED
 ```
 
-## Версия 0.2e
+### 0.2e fix1 retest
 
 ```text
-Build label: Smart Improviser 0.2e
-CMake:      0.2.6
-Artifact:   Smart-Improviser-0.2e-Windows
+Global key: C major
+C#7 → F#maj7
+Current: C#7
+
+Resolution: F#maj7 | CONFIRMED
+Local center: F# major | temporary | tonicized
+Primary: Local center
+Candidate Local center: F# major
+```
+
+Fix подтверждён: enharmonic spelling сохраняется корректно.
+
+## Версия принятого checkpoint
+
+```text
+Build label: Smart Improviser 0.2e fix1
+CMake:      0.2.7
+Artifact:   Smart-Improviser-0.2e-fix1-Windows
 Package:    Smart Improviser.vst3
+Windows Build #199: SUCCESS
 ```
 
 ## Линия Stage 2
@@ -166,20 +184,23 @@ Package:    Smart Improviser.vst3
 0.2b — Pattern Recognizer                  [ACCEPTED]
 0.2c — Tritone Substitution                [ACCEPTED]
 0.2d — Local Key Center                    [ACCEPTED]
-0.2e — Ambiguity / Confidence              [ACTIVE]
-0.2f — Integration / musical validation
+0.2e — Ambiguity / Confidence              [ACCEPTED]
+0.2e fix1 — Enharmonic spelling            [ACCEPTED]
+0.2f — Integration / musical validation    [NEXT]
 0.3  — Stage 2 complete
 ```
 
-## Что осталось для принятия 0.2e
+## Следующий checkpoint — 0.2f
 
-1. зелёный Windows CI PR #19;
-2. artifact `Smart-Improviser-0.2e-Windows`;
-3. live-test borrowed/modal ambiguity;
-4. live-test candidate local center;
-5. live-test confirmed local primary;
-6. live-test modulationCandidate ambiguity;
-7. Stage 1 regression.
+Цель `0.2f`: проверить Stage 2 как единый Harmonic Engine на комплексных последовательностях перед стабильной `0.3`.
+
+Основные задачи:
+
+1. комплексные harmonic sequences с global/local/borrowed/SubV контекстом;
+2. полный regression всех Stage 2 analyzers;
+3. проверка conflict/ambiguity transitions на границах паттернов;
+4. live musical validation в Fender Studio Pro;
+5. финальная подготовка стабильной версии `0.3`.
 
 ## Что читать в новом чате Stage 2
 
@@ -191,4 +212,4 @@ Package:    Smart Improviser.vst3
 6. `docs/ROADMAP.md`;
 7. `docs/VERSIONING.md`;
 8. Issue #3 — Stage 2 — Harmonic Engine;
-9. PR #19 — `0.2e — Ambiguity / Confidence`.
+9. PR #19 — принятый `0.2e / 0.2e fix1`.
