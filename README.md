@@ -11,13 +11,12 @@
 **Активный Stage:** Stage 2 — Harmonic Engine.
 
 **Текущая стабильная версия:** `0.2`  
-**Последний принятый checkpoint:** `0.2e / 0.2e fix1 — Ambiguity / Confidence`  
-**Текущая рабочая версия:** `0.2f — Integration / musical validation`  
-**Активная ветка:** `stage-2-integration-validation`  
+**Последний принятый checkpoint:** `0.2f — Integration / musical validation`  
+**Следующий шаг:** стабильная `0.3 — Stage 2 complete`  
 **Stage 2 Issue:** #3  
-**Активный PR:** #20
+**PR #20:** `0.2f — Integration / musical validation`
 
-`0.2e / 0.2e fix1` принят и слит в `main` через PR #19. `0.2f` — последний буквенный checkpoint Stage 2 перед стабильной `0.3`.
+`0.2f` принят после успешного Windows Build #217 и полного live musical validation в Fender Studio Pro. Это последний буквенный checkpoint Stage 2 перед стабильной `0.3`.
 
 Первая целевая среда:
 
@@ -70,76 +69,7 @@ UI / Fretboard / Notation / TAB
 
 Stage 1 contract закрыт: Harmonic Engine получает только host-neutral timeline context и не зависит от JUCE / ARA / Fender Studio Pro. Project key в DAW автоматически не меняется.
 
-## Global key и Local Key Center
-
-Project key и активный тональный центр — разные сущности:
-
-```text
-GLOBAL KEY
-F major
-    ↓
-LOCAL CENTER
-D minor
-    ↓
-CURRENT LOCAL FUNCTION
-A7 = V of D minor
-```
-
-Local-center states:
-
-```text
-candidate
-    ↓
-tonicized / temporary
-    ↓
-established local center
-    ↓
-modulationCandidate
-```
-
-`modulationCandidate` — гипотеза, а не автоматическая смена global key.
-
-## Ambiguity / Confidence
-
-`HarmonicSituation` может хранить несколько interpretations:
-
-```text
-Global interpretation
-Local-center interpretation
-Modal-interchange interpretation
-```
-
-Семантика:
-
-```text
-UNIQUE
-→ evidence достаточно для primary interpretation
-
-AMBIGUOUS
-→ несколько правдоподобных трактовок существуют параллельно
-→ primary остаётся unresolved
-```
-
-Примеры:
-
-```text
-C major / Fm7
-→ Global: chromatic
-→ Modal interchange: C minor
-→ AMBIGUOUS
-```
-
-```text
-F major / Em7b5 → A7 → Dm
-→ Local D minor established
-→ Local interpretation становится unique primary
-```
-
-`0.2e fix1` сохранил enharmonic spelling локальных центров через `rootFifths`, поэтому F# major и Gb major больше не схлопываются в одну diagnostic spelling.
-
-## Что уже умеет Harmonic Engine
-
-К началу `0.2f` приняты:
+## Что умеет Harmonic Engine к завершению 0.2f
 
 - basic harmonic functions;
 - major `ii–V–I` на `ii / V / I`;
@@ -161,19 +91,18 @@ F major / Em7b5 → A7 → Dm
 - global/local conflict evidence;
 - borrowed/modal ambiguity;
 - diagnostic UI со списком candidates и primary;
-- enharmonic-aware KeyCenter display.
+- enharmonic-aware KeyCenter display;
+- integration false-positive guard для известного противоречащего `next` chord.
 
-## 0.2f — Integration / musical validation
+## 0.2f — Integration / musical validation [ACCEPTED]
 
-`0.2f` не добавляет новый крупный музыкальный слой. Его задача — проверить все принятые части Stage 2 **вместе**.
-
-Добавлен отдельный regression target:
+`0.2f` не добавляет новый крупный музыкальный слой. Он проверяет все принятые части Stage 2 **вместе** через отдельный regression target:
 
 ```text
 SmartImproviserIntegrationValidationTests
 ```
 
-Он перемещает окно `previous/current/next` по длинным progression cases:
+Проверенные progression cases:
 
 ```text
 Cmaj7 → A7 → Dm7 → G7 → Cmaj7
@@ -183,7 +112,7 @@ C#7 → F#maj7 → Bmaj7
 Dm7 → G7 → Abmaj7   // contradictory-next guard
 ```
 
-Проверяются переходы:
+Подтверждены переходы:
 
 ```text
 Global → Local primary → Global
@@ -191,15 +120,17 @@ Unique → Ambiguous → Unique
 Tonicized → Modulation candidate
 ```
 
-Также `0.2f` закрыл integration false-positive: конец `I–VI–ii–V` по паре `ii→V` теперь считается boundary candidate только когда `next` действительно недоступен. Если `next` уже известен и противоречит ожидаемому разрешению, pattern не придумывается.
+Также подтверждено, что при `Dm7 → G7 → Abmaj7` движок не придумывает ложное завершение `I–VI–ii–V`, если противоречащий `next` уже известен.
 
-Версия checkpoint:
+Версия принятого checkpoint:
 
 ```text
 Build label: Smart Improviser 0.2f
 CMake:      0.2.8
 Artifact:   Smart-Improviser-0.2f-Windows
 Package:    Smart Improviser.vst3
+Windows Build #217: SUCCESS
+Tests:      7 / 7 PASS
 ```
 
 ## Правило разработки Stage
@@ -220,8 +151,8 @@ Stage 2:
 0.2d — Local Key Center                    [ACCEPTED]
 0.2e — Ambiguity / Confidence              [ACCEPTED]
 0.2e fix1 — Enharmonic spelling            [ACCEPTED]
-0.2f — Integration / musical validation    [ACTIVE]
-0.3  — Stage 2 complete
+0.2f — Integration / musical validation    [ACCEPTED]
+0.3  — Stage 2 complete                    [NEXT]
 ```
 
 ## Tension Engine
@@ -232,13 +163,9 @@ Stage 2:
 - **Tension 2 — Color:** chromatic approaches, enclosures, melodic-minor applications, upper structures.
 - **Tension 3 — Outside / Maximum:** altered/diminished language, substitutions, side slipping, superimposed harmony и delayed resolution.
 
-В дальнейшем tension должен работать и как **Tension Curve** для нескольких тактов или chorus.
+## Ближайший технический шаг
 
-## Долгосрочное направление
-
-Smart Improviser должен объединить harmonic analysis, local tonal centers, ambiguity/confidence, tension, target notes, jazz vocabulary, Phrase Library, functional transpose, fretboard/notation/TAB и драматургию импровизации.
-
-Цель проекта — не генерировать музыку вместо музыканта, а помогать **понимать гармонический контекст, управлять напряжением и превращать изученный vocabulary в собственный музыкальный язык**.
+Подготовить стабильную `0.3 — Stage 2 complete` без добавления новой музыкальной логики: финальный version bump, документация, artifact и проверка принятого состояния `0.2a…0.2f`.
 
 ## Документация
 
@@ -249,7 +176,3 @@ Smart Improviser должен объединить harmonic analysis, local tona
 - [`docs/ROADMAP.md`](docs/ROADMAP.md) — Stage и build checkpoints.
 - [`docs/VERSIONING.md`](docs/VERSIONING.md) — схема версий и fix-сборок.
 - [`docs/ARCHITECTURAL_DECISIONS.md`](docs/ARCHITECTURAL_DECISIONS.md) — архитектурные решения.
-
-## Ближайший технический шаг
-
-Довести CI PR #20 до зелёного состояния, затем провести live musical validation `0.2f` в Fender Studio Pro и подготовить стабильную `0.3`.
