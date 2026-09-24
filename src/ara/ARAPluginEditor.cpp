@@ -307,7 +307,7 @@ void SmartImproviserARAEditor::timerCallback()
     cachedSituation = smartimproviser::harmony::analyzeHarmonicSituation(
         smartimproviser::harmony::mapTimelineHarmonicSnapshot(cachedShared, ppq));
     const auto result = smartimproviser::harmony::analyzeImprovisation(cachedSituation);
-    improvisationText = "STAGE 3 / 0.3a\nImprovisation foundation\n\n";
+    improvisationText = "STAGE 3 / 0.3b\nStructural tones / targets\n\n";
     if (! result.valid)
         improvisationText += utf8String(result.unavailableReason);
     else
@@ -318,14 +318,42 @@ void SmartImproviserARAEditor::timerCallback()
         improvisationText += "\n\nMATERIAL\n";
         for (const auto& note : strategy.source.notes)
             improvisationText += juce::String(pitchClassName(note.pitchClass)) + " ";
-        improvisationText += "\n(pitch classes)\n\nTARGET\n";
-        improvisationText += strategy.resolution.available && strategy.resolution.confirmed
-            ? utf8String(smartimproviser::harmony::normalizedChordSymbol(strategy.resolution.targetChord))
-                + " (confirmed)"
-            : "No confirmed harmonic resolution";
-        improvisationText += "\n\n" + utf8String(strategy.idea)
-            + "\n\nWHY\n" + utf8String(strategy.explanation)
-            + "\n\n" + utf8String(strategy.conditions);
+        const auto notesText = [](const std::vector<smartimproviser::harmony::MaterialNote>& notes)
+        {
+            juce::String text;
+            for (const auto& note : notes) text += juce::String(pitchClassName(note.pitchClass)) + " ";
+            return text.isEmpty() ? juce::String("None") : text;
+        };
+        improvisationText += "\n(pitch classes)\n\nGUIDE TONES (3 / 7)\n" + notesText(strategy.guideNotes);
+        improvisationText += "\n\nCHARACTERISTIC TONES\n" + notesText(strategy.characteristicNotes);
+        improvisationText += "\n\nNEXT CHORD TARGETS\n";
+        if (strategy.nextChord.valid)
+            improvisationText += utf8String(smartimproviser::harmony::normalizedChordSymbol(strategy.nextChord))
+                + ": " + notesText(strategy.targetNotes);
+        else
+            improvisationText += "No next chord";
+        const bool confirmed = strategy.resolution.available && strategy.resolution.confirmed;
+        improvisationText += confirmed ? "\n\nCONFIRMED RESOLUTION\n" : "\n\nSUGGESTED CONNECTIONS\n";
+        const auto moveText = [](const smartimproviser::harmony::ResolutionMove& move)
+        {
+            return juce::String(pitchClassName(move.fromPitchClass)) + " -> "
+                + pitchClassName(move.toPitchClass) + "  ";
+        };
+        if (confirmed)
+        {
+            improvisationText += utf8String(smartimproviser::harmony::normalizedChordSymbol(strategy.resolution.targetChord)) + "\n";
+            for (std::size_t i = 0; i < strategy.resolution.moveCount; ++i)
+                improvisationText += moveText(strategy.resolution.moves[i]);
+            if (strategy.resolution.moveCount == 0) improvisationText += "No structural moves available";
+        }
+        else
+        {
+            for (const auto& move : strategy.suggestedTransitions) improvisationText += moveText(move);
+            if (strategy.suggestedTransitions.empty()) improvisationText += "None";
+            improvisationText += "\n(not a confirmed harmonic resolution)";
+        }
+        improvisationText += "\n\nWHY\n" + utf8String(strategy.explanation);
+
     }
     repaint();
 }

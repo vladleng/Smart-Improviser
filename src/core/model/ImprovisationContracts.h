@@ -55,6 +55,7 @@ struct MaterialNote
     int semitonesFromRoot = -1;
     int degree = 0;
     MaterialNoteRole role = MaterialNoteRole::chordTone;
+    bool characteristic = false; // Explicit extension/alteration or sus-defining tone.
 };
 
 struct SourceMaterial
@@ -80,7 +81,11 @@ struct ImprovisationStrategy
     NormalizedChord thinkingStructure;
     SourceMaterial source;
     ResolutionTarget resolution;
-    std::vector<MaterialNote> targetNotes;
+    std::vector<MaterialNote> guideNotes;
+    std::vector<MaterialNote> characteristicNotes;
+    NormalizedChord nextChord; // Actual next harmony, not necessarily a functional resolution.
+    std::vector<MaterialNote> targetNotes; // Explicit tones of nextChord, relative to its root.
+    std::vector<ResolutionMove> suggestedTransitions; // Melodic options, never harmonic evidence.
     std::string idea;
     std::string explanation;
     std::string conditions;

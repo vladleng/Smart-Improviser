@@ -167,5 +167,84 @@ int main()
     snapshot.positionAvailable = true;
     snapshot.currentChord.defined = false;
     expect(analyzeImprovisation(analyzeHarmonicSituation(snapshot)).strategies.empty(), "no chord clears suggestions");
+    // 0.3b: actual structural notes and target-relative material.
+    snapshot = makeCurrentNextSnapshot(key, g7, makeChord(0, {0, 4, 7, 11}));
+    auto structural = analyzeImprovisation(analyzeHarmonicSituation(snapshot)).strategies[0];
+    expect(structural.guideNotes.size() == 2 && structural.guideNotes[0].pitchClass == 11
+           && structural.guideNotes[1].pitchClass == 5, "G7 guides B F");
+    expect(structural.targetNotes.size() == 4 && structural.targetNotes[1].pitchClass == 4
+           && structural.targetNotes[1].semitonesFromRoot == 4, "target notes relative to C");
+    expect(structural.resolution.confirmed && structural.resolution.moveCount == 2
+           && structural.suggestedTransitions.empty(), "confirmed moves are separate from suggestions");
+    expect(structural.resolution.moves[0].fromPitchClass == 11
+           && structural.resolution.moves[0].toPitchClass == 0
+           && structural.resolution.moves[1].fromPitchClass == 5
+           && structural.resolution.moves[1].toPitchClass == 4, "B-C and F-E major resolution");
+    snapshot.nextChord = makeChord(0, {0, 3, 7});
+    structural = analyzeImprovisation(analyzeHarmonicSituation(snapshot)).strategies[0];
+    expect(structural.resolution.moves[1].toPitchClass == 3, "F-Eb minor resolution");
+    snapshot.currentChord = makeChord(-5, {0, 4, 7, 10});
+    snapshot.nextChord = makeChord(0, {0, 4, 7, 11});
+    structural = analyzeImprovisation(analyzeHarmonicSituation(snapshot)).strategies[0];
+    expect(structural.resolution.moves[0].fromPitchClass == 5
+           && structural.resolution.moves[0].toPitchClass == 4
+           && structural.resolution.moves[1].fromPitchClass == 11
+           && structural.resolution.moves[1].toPitchClass == 0, "SubV guide roles preserved");
+    snapshot.currentChord = makeChord(1, {0, 5, 7, 10});
+    structural = analyzeImprovisation(analyzeHarmonicSituation(snapshot)).strategies[0];
+    expect(structural.guideNotes.size() == 1 && structural.guideNotes[0].pitchClass == 5,
+           "sus has seventh only, no invented third");
+    expect(structural.characteristicNotes.size() == 1
+           && structural.characteristicNotes[0].pitchClass == 0, "sus4 characteristic tone");
+    snapshot.currentChord = makeChord(0, {0, 4, 7});
+    structural = analyzeImprovisation(analyzeHarmonicSituation(snapshot)).strategies[0];
+    expect(structural.guideNotes.size() == 1 && structural.guideNotes[0].pitchClass == 4,
+           "triad has third only");
+    snapshot.currentChord = makeChord(1, {0, 1, 3, 4, 6, 7, 8, 10});
+    snapshot.currentChord.intervals.values[1] = 9;
+    snapshot.currentChord.intervals.values[3] = 9;
+    snapshot.currentChord.intervals.values[6] = 11;
+    snapshot.currentChord.intervals.values[8] = 13;
+    structural = analyzeImprovisation(analyzeHarmonicSituation(snapshot)).strategies[0];
+    expect(structural.guideNotes.size() == 2 && structural.characteristicNotes.size() == 4,
+           "b9 #9 #11 b13 retained, #9 not a minor third guide");
+    snapshot.currentChord = makeChord(0, {0, 3, 6, 9});
+    snapshot.currentChord.intervals.values[9] = 7;
+    structural = analyzeImprovisation(analyzeHarmonicSituation(snapshot)).strategies[0];
+    expect(structural.guideNotes.size() == 2 && structural.guideNotes[1].pitchClass == 9,
+           "explicit diminished seventh is guide");
+    snapshot.currentChord = makeChord(0, {0, 3, 7, 9});
+    snapshot.currentChord.intervals.values[9] = 6;
+    structural = analyzeImprovisation(analyzeHarmonicSituation(snapshot)).strategies[0];
+    expect(structural.guideNotes.size() == 1 && structural.characteristicNotes.size() == 1,
+           "m6 sixth is characteristic, not seventh");
+    snapshot.currentChord = g7;
+    snapshot.nextChord = makeChord(-4, {0, 4, 7, 11});
+    auto nonCadence = analyzeHarmonicSituation(snapshot);
+    structural = analyzeImprovisation(nonCadence).strategies[0];
+    expect(! structural.resolution.confirmed && !structural.targetNotes.empty()
+           && ! structural.suggestedTransitions.empty(), "deceptive next gives optional melodic targets");
+    for (const auto& move : structural.suggestedTransitions)
+    {
+        expect(move.importance == ResolutionImportance::optional, "suggestion is not structural evidence");
+        bool present = false;
+        for (const auto& note : structural.targetNotes) present |= note.pitchClass == move.toPitchClass;
+        expect(present, "suggestion ends on a real next chord tone");
+    }
+    snapshot.nextChordAvailable = false;
+    structural = analyzeImprovisation(analyzeHarmonicSituation(snapshot)).strategies[0];
+    expect(structural.targetNotes.empty() && structural.suggestedTransitions.empty()
+           && ! structural.nextChord.valid, "unknown next clears target data");
+    for (int fifths = -5; fifths <= 6; ++fifths)
+    {
+        snapshot = makeCurrentNextSnapshot(makeKey(fifths, false),
+            makeChord(fifths + 1, {0,4,7,10}), makeChord(fifths, {0,4,7,11}));
+        structural = analyzeImprovisation(analyzeHarmonicSituation(snapshot)).strategies[0];
+        expect(structural.guideNotes.size() == 2 && structural.resolution.moveCount == 2,
+               "guides and resolution in twelve keys");
+        expect(structural.resolution.moves[0].toPitchClass == circleOfFifthsToPitchClass(fifths)
+               && structural.resolution.moves[1].toPitchClass == (circleOfFifthsToPitchClass(fifths)+4)%12,
+               "transposed target root and third");
+    }
     std::cout << "Improvisation foundation tests passed\n";
 }

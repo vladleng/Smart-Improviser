@@ -48,9 +48,9 @@ Windows Build #231 — success; живой тест принят Владом 20
 
 ### 0.3b — Structural tones / targets / resolution
 
-- [ ] Выдавать chord tones, доступные guide tones и characteristic tones с учётом explicit extensions/alterations; не придумывать отсутствующие 3/7 у sus/triads.
-- [ ] Использовать ResolutionTarget Stage 2; отличать подтверждённое гармоническое разрешение от предлагаемого мелодического перехода.
-- [ ] Предлагать target notes реального следующего аккорда; корректно обрабатывать неизвестный next chord.
+- [x] Выдавать chord tones, доступные guide tones и characteristic tones с учётом explicit extensions/alterations; не придумывать отсутствующие 3/7 у sus/triads.
+- [x] Использовать ResolutionTarget Stage 2; отличать подтверждённое гармоническое разрешение от предлагаемого мелодического перехода.
+- [x] Предлагать target notes реального следующего аккорда; корректно обрабатывать неизвестный next chord.
 
 **Gate:** проверяемый результат этих пунктов, соответствующие regression tests, отдельный build artifact и live-test, где применим; принятие пользователем перед следующей буквой.
 
