@@ -121,11 +121,13 @@ int main()
     const auto turnIi = analyzeHarmonicSituation(windowAt(cMajor, turnaround, 2));
     expect(turnIi.pattern.type == HarmonicPatternType::turnaroundIVIiiV
            && turnIi.pattern.role == PatternMemberRole::predominant,
-           "Dm returns to global turnaround predominant role");
-    expect(! turnIi.localKey.valid
-           && turnIi.evidence.interpretation == InterpretationStatus::unique
-           && primaryIs(turnIi, HarmonicInterpretationKind::globalContext),
-           "redundant C local center is rejected and global context resumes");
+           "Dm keeps global turnaround predominant role");
+    expect(turnIi.localKey.valid
+           && turnIi.localKey.key.rootPitchClass == 2
+           && turnIi.localKey.key.mode == KeyMode::minor
+           && turnIi.localKey.status == KeyCenterStatus::tonicized
+           && primaryIs(turnIi, HarmonicInterpretationKind::localCenter),
+           "A7-Dm resolution keeps temporary D minor primary on Dm");
 
     const auto turnV = analyzeHarmonicSituation(windowAt(cMajor, turnaround, 3));
     expect(turnV.pattern.type == HarmonicPatternType::majorIiVI
@@ -133,7 +135,7 @@ int main()
            && turnV.pattern.evidence.confidence == ConfidenceLevel::confirmed,
            "Dm-G7-C closes as confirmed major ii-V-I");
     expect(! turnV.localKey.valid && primaryIs(turnV, HarmonicInterpretationKind::globalContext),
-           "global cadence does not create redundant local center");
+           "G7-C returns cleanly to global C major");
 
     const auto turnResolution = analyzeHarmonicSituation(windowAt(cMajor, turnaround, 4));
     expect(turnResolution.pattern.type == HarmonicPatternType::majorIiVI
