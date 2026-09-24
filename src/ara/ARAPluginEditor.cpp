@@ -154,7 +154,7 @@ const char* interpretationName(smartimproviser::harmony::InterpretationStatus st
     switch (status)
     {
         case InterpretationStatus::unique: return "unique";
-        case InterpretationStatus::ambiguous: return "ambiguous";
+        case InterpretationStatus::ambiguous: return "AMBIGUOUS";
         case InterpretationStatus::unknown:
         default: return "unknown";
     }
@@ -188,14 +188,22 @@ const char* keyCenterStatusName(smartimproviser::harmony::KeyCenterStatus status
     }
 }
 
-juce::String localCenterDisplayName(const smartimproviser::harmony::KeyCenter& center)
+juce::String centerKeyDisplayName(const smartimproviser::harmony::KeyCenter& center)
 {
     if (! center.valid || ! center.key.valid)
         return "-";
 
     return juce::String(pitchClassName(center.key.rootPitchClass))
          + " "
-         + smartimproviser::harmony::keyModeName(center.key.mode)
+         + smartimproviser::harmony::keyModeName(center.key.mode);
+}
+
+juce::String localCenterDisplayName(const smartimproviser::harmony::KeyCenter& center)
+{
+    if (! center.valid || ! center.key.valid)
+        return "-";
+
+    return centerKeyDisplayName(center)
          + "  |  "
          + keyCenterScopeName(center.scope)
          + "  |  "
@@ -210,6 +218,17 @@ juce::String harmonicDisplay(const smartimproviser::harmony::HarmonicAnalysis& h
     return juce::String(smartimproviser::harmony::scaleDegreeName(harmonic.rootScaleDegree))
          + "  |  "
          + smartimproviser::harmony::harmonicFunctionName(harmonic.effectiveFunction);
+}
+
+juce::String interpretationDisplay(const smartimproviser::harmony::HarmonicInterpretation& interpretation)
+{
+    if (! interpretation.valid)
+        return "-";
+
+    return juce::String(smartimproviser::harmony::harmonicInterpretationKindName(interpretation.kind))
+         + "  |  " + centerKeyDisplayName(interpretation.center)
+         + "  |  " + harmonicDisplay(interpretation.harmonic)
+         + "  |  " + confidenceName(interpretation.evidence.confidence);
 }
 
 juce::String patternPositionDisplay(const smartimproviser::harmony::HarmonicPattern& pattern)
@@ -275,7 +294,7 @@ void drawRow(juce::Graphics& g,
 SmartImproviserARAEditor::SmartImproviserARAEditor(SmartImproviserARAProcessor& p)
     : juce::AudioProcessorEditor(p), processor(p)
 {
-    setSize(640, 875);
+    setSize(640, 1010);
     startTimerHz(10);
 }
 
@@ -389,7 +408,10 @@ void SmartImproviserARAEditor::paint(juce::Graphics& g)
         localConfidence += "  |  ";
         localConfidence += interpretationName(situation.localKey.evidence.interpretation);
     }
-    drawRow(g, y, "Local confidence", localConfidence); y += 24;
+    drawRow(g, y, "Local confidence", localConfidence); y += 28;
+
+    g.setColour(juce::Colour::fromRGB(77, 81, 89));
+    g.drawHorizontalLine(y, 24.0f, static_cast<float>(getWidth() - 24)); y += 10;
 
     juce::String confidence = "-";
     if (situation.valid)
@@ -397,8 +419,32 @@ void SmartImproviserARAEditor::paint(juce::Graphics& g)
         confidence = confidenceName(situation.evidence.confidence);
         confidence += "  |  ";
         confidence += interpretationName(situation.evidence.interpretation);
+        confidence += "  |  candidates " + juce::String(situation.interpretationCount);
     }
-    drawRow(g, y, "Confidence", confidence, true);
+    drawRow(g, y, "Interpretation", confidence, true); y += 24;
+
+    juce::String primary = "-";
+    if (situation.primaryInterpretationIndex >= 0
+        && situation.primaryInterpretationIndex < situation.interpretationCount)
+    {
+        primary = smartimproviser::harmony::harmonicInterpretationKindName(
+            situation.interpretations[static_cast<std::size_t>(situation.primaryInterpretationIndex)].kind);
+    }
+    else if (situation.valid
+             && situation.evidence.interpretation == smartimproviser::harmony::InterpretationStatus::ambiguous)
+    {
+        primary = "UNRESOLVED";
+    }
+    drawRow(g, y, "Primary", primary, true); y += 24;
+
+    for (std::uint8_t i = 0; i < situation.interpretationCount; ++i)
+    {
+        drawRow(g,
+                y,
+                "Candidate " + juce::String(static_cast<int>(i) + 1),
+                interpretationDisplay(situation.interpretations[i]));
+        y += 24;
+    }
 
     g.setColour(juce::Colour::fromRGB(105, 110, 120));
     g.setFont(12.5f);
