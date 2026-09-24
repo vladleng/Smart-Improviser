@@ -1,6 +1,6 @@
 # Stage 3 — Improvisation Engine: рабочий план
 
-> Обновлено 2026-09-24. База: stable 0.3, Stage 2 принят. Начата реализация 0.3a; stable остаётся 0.3.
+> Обновлено 2026-09-24. База: stable 0.3, Stage 2 принят. 0.3a принят; начата реализация 0.3b. Stable остаётся 0.3.
 > Начальная методика и текстовая форма подсказки согласованы: [IMPROVISATION_METHOD.md](IMPROVISATION_METHOD.md). См. [PRODUCT_WORKFLOW.md](PRODUCT_WORKFLOW.md).
 
 ## Результат Stage
@@ -36,7 +36,9 @@ Stage 3 описывает допустимый материал и страте
 0.4  — Stage 3 complete
 ```
 
-### 0.3a — Strategy contract / foundation
+### 0.3a — Strategy contract / foundation [ACCEPTED]
+
+Windows Build #231 — success; живой тест принят Владом 2026-09-24; PR #23 слит в main.
 
 - [x] Расширить существующий ImprovisationStrategy: идея, source material, роли нот, targets, explanation, условия применения и ссылка на harmonic interpretation.
 - [x] Определить host-neutral вход/выход, deterministic ordering и missing-data semantics; confidence анализа отделить от приоритета рекомендации.
