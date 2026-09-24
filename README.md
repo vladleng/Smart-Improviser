@@ -25,6 +25,14 @@ Stable `0.3` фиксирует полностью принятый Stage 2. Н�
 - **Платформа:** Windows
 - **Основной сценарий:** джазовая импровизация на гитаре
 
+## Работа над песней
+
+Центральный сценарий — сохранить идею на конкретном такте, доработать её при следующем открытии проекта и использовать удачные находки в других песнях. Материал можно записать самостоятельно или взять из общей/личной библиотеки. Подсказки предлагают логику мышления, замены, источники и разрешения с учётом выбранного tension.
+
+Библиотечный источник и редактируемый экземпляр в песне независимы. Смена tension обновляет подсказки без автоматического переписывания нот.
+
+Это целевой workflow будущих Stage: stable 0.3 пока реализует Harmonic Engine. План: [PRODUCT_WORKFLOW.md](docs/PRODUCT_WORKFLOW.md).
+
 ## Ключевая идея
 
 Smart Improviser строится не вокруг простой схемы `Chord → Scale`, а вокруг цепочки:
@@ -157,7 +165,7 @@ Stage 3 использует готовый `HarmonicSituation` и должен 
 - resolution notes;
 - базовые improvisation strategies.
 
-Перед реализацией Stage 3 задачи будут разложены на отдельные build checkpoints `0.3a`, `0.3b`, `0.3c`, ... .
+Рабочий план Stage 3: [0.3a–0.3h → 0.4](docs/STAGE_3_PLAN.md). Реализация не начата; перед кодом уточняются музыкальный объём и UX.
 
 ## Дальнейшее направление
 
@@ -180,3 +188,6 @@ Stage 3 использует готовый `HarmonicSituation` и должен 
 - [`docs/ROADMAP.md`](docs/ROADMAP.md) — Stage и build checkpoints.
 - [`docs/VERSIONING.md`](docs/VERSIONING.md) — схема версий и fix-сборок.
 - [`docs/ARCHITECTURAL_DECISIONS.md`](docs/ARCHITECTURAL_DECISIONS.md) — архитектурные решения.
+
+- [`docs/PRODUCT_WORKFLOW.md`](docs/PRODUCT_WORKFLOW.md) — работа над песней, общая/личная библиотеки и user content.
+- [`docs/STAGE_3_PLAN.md`](docs/STAGE_3_PLAN.md) — checkpoints Improvisation Engine и открытые решения.

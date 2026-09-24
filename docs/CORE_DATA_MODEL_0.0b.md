@@ -1,5 +1,7 @@
 # Smart Improviser Core Data Model — 0.0b
 
+> Историческая спецификация принятого Stage 0. Существующие типы не означают реализацию будущих движков. Целевые дополнения для user content, экземпляров в песнях и persistence описаны в [PRODUCT_WORKFLOW.md](PRODUCT_WORKFLOW.md); в код Stage 0 они этой правкой не добавляются.
+
 ## Назначение
 
 `0.0b` фиксирует host-neutral data model Smart Improviser. Этот слой описывает **результат музыкального анализа**, но не должен сам выполнять преждевременное распознавание сложных harmonic patterns или local key centers.

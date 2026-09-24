@@ -1,5 +1,7 @@
 # Smart Improviser — Current State
 
+> Планирование обновлено 2026-09-24: согласован workflow работы над песней, user content и постоянных tension-подсказок. Код остаётся stable 0.3.
+
 > Короткая точка входа для нового чата или рабочей сессии. Подробная архитектура — в `PROJECT_CONTEXT.md`, этапы — в `ROADMAP.md`, правила версий — в `VERSIONING.md`, фактический прогресс — в GitHub Issues.
 
 ## Текущее состояние
@@ -10,7 +12,8 @@
 - **Следующий Stage:** Stage 3 — Improvisation Engine
 - **Следующая рабочая линия:** `0.3a → 0.3x`
 - **Итог Stage 3:** `0.4`
-- **Stage 2 Issue:** #3 — закрывается стабильной `0.3`
+- **Stage 2 Issue:** #3 — закрыт стабильной `0.3`
+- **Stage 3 Issue:** #4 — обновлён рабочий план `0.3a–0.3h`; реализация не начата
 
 `0.3` — релизное закрытие Stage 2. Новая музыкальная логика относительно принятого `0.2f` не добавлялась: stable release фиксирует уже проверенное состояние Harmonic Engine.
 
@@ -129,7 +132,9 @@ Stage 3 должен использовать готовый `HarmonicSituation`
 - resolution notes;
 - базовые improvisation strategies.
 
-Перед началом реализации Stage 3 необходимо отдельно разложить его на буквенные checkpoints `0.3a`, `0.3b`, `0.3c`, ... .
+Рабочая декомпозиция опубликована в [STAGE_3_PLAN.md](STAGE_3_PLAN.md) и Issue #4. До кода необходимо согласовать конкретный музыкальный vocabulary и UX; это не принятые build checkpoints.
+
+Согласованная продуктовая цель: [PRODUCT_WORKFLOW.md](PRODUCT_WORKFLOW.md). Общая/личная библиотеки — Stage 5; сохраняемый Song workspace — Stage 7; быстрый ввод нот/TAB и ручной конструктор — Stage 8; Planner — Stage 10. Смена tension не переписывает сохранённые идеи.
 
 ## Что читать при переходе к Stage 3
 
@@ -140,3 +145,6 @@ Stage 3 должен использовать готовый `HarmonicSituation`
 5. `docs/ARCHITECTURAL_DECISIONS.md`;
 6. `docs/VERSIONING.md`;
 7. Issue #3 — история завершённого Stage 2.
+
+8. `docs/PRODUCT_WORKFLOW.md` — согласованный пользовательский сценарий;
+9. `docs/STAGE_3_PLAN.md` — рабочий план следующего этапа и открытые решения.
