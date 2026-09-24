@@ -58,9 +58,11 @@ Windows Build #234 — success; живой тест принят Владом; P
 
 ### 0.3c — Diatonic / modal sources
 
-- [ ] Добавить согласованные diatonic/modal sources и базовые dominant sources с учётом функции, центра и аккорда.
-- [ ] Различать major/minor target; начальный каталог следует разделу 2 Бойко. Harmonic-minor source — последующее расширение, не обязательный пункт первой версии.
-- [ ] Сохранять relative degrees и enharmonic spelling; Scale остаётся частью Strategy.
+Каталог и ограничения: [STAGE_3_0.3c_LIVE_TEST.md](STAGE_3_0.3c_LIVE_TEST.md). Один дополнительный scale source к chord-tone foundation; minor-target dominant/SubV/altered источники остаются 0.3d.
+
+- [x] Добавить согласованные diatonic/modal sources и базовые dominant sources с учётом функции, центра и аккорда.
+- [x] Различать major/minor target; начальный каталог следует разделу 2 Бойко. Harmonic-minor source — последующее расширение, не обязательный пункт первой версии.
+- [x] Сохранять relative degrees и enharmonic spelling; Scale остаётся частью Strategy.
 
 **Gate:** проверяемый результат этих пунктов, соответствующие regression tests, отдельный build artifact и live-test, где применим; принятие пользователем перед следующей буквой.
 

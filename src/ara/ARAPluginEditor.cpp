@@ -307,15 +307,28 @@ void SmartImproviserARAEditor::timerCallback()
     cachedSituation = smartimproviser::harmony::analyzeHarmonicSituation(
         smartimproviser::harmony::mapTimelineHarmonicSnapshot(cachedShared, ppq));
     const auto result = smartimproviser::harmony::analyzeImprovisation(cachedSituation);
-    improvisationText = "STAGE 3 / 0.3b\nStructural tones / targets\n\n";
+    improvisationText = "STAGE 3 / 0.3c\nDiatonic sources / targets\n\n";
     if (! result.valid)
         improvisationText += utf8String(result.unavailableReason);
     else
     {
         const auto& strategy = result.strategies.front();
         improvisationText += "CONTEXT\n" + utf8String(result.contextDescription);
-        improvisationText += "\n\nTHINKING\n" + utf8String(strategy.source.name) + " chord tones";
-        improvisationText += "\n\nMATERIAL\n";
+        improvisationText += "\n\nSCALE SOURCE\n";
+        const auto scalar = std::find_if(result.strategies.begin(), result.strategies.end(), [](const auto& candidate)
+        { return candidate.source.kind == smartimproviser::harmony::MaterialKind::scale; });
+        if (scalar != result.strategies.end())
+        {
+            improvisationText += utf8String(scalar->source.name) + "\n";
+            for (const auto& note : scalar->source.notes) improvisationText += utf8String(note.spelling) + " ";
+            improvisationText += "\nUse chord anchors and targets.";
+            if (scalar->actualChord.hasTone(4)
+                && std::any_of(scalar->source.notes.begin(), scalar->source.notes.end(),
+                    [](const auto& note) { return note.semitonesFromRoot == 5; }))
+                improvisationText += "\nNatural 4th: passing against major 3rd.";
+        }
+        else improvisationText += utf8String(result.scaleUnavailableReason);
+        improvisationText += "\n\nCHORD ANCHORS\n";
         for (const auto& note : strategy.source.notes)
             improvisationText += juce::String(pitchClassName(note.pitchClass)) + " ";
         const auto notesText = [](const std::vector<smartimproviser::harmony::MaterialNote>& notes)
@@ -352,7 +365,7 @@ void SmartImproviserARAEditor::timerCallback()
             if (strategy.suggestedTransitions.empty()) improvisationText += "None";
             improvisationText += "\n(not a confirmed harmonic resolution)";
         }
-        improvisationText += "\n\nWHY\n" + utf8String(strategy.explanation);
+
 
     }
     repaint();
@@ -382,9 +395,9 @@ void SmartImproviserARAEditor::paint(juce::Graphics& g)
     g.setColour(juce::Colour::fromRGB(42, 46, 53));
     g.fillRoundedRectangle(640.0f, 84.0f, 356.0f, 860.0f, 8.0f);
     g.setColour(juce::Colour::fromRGB(225, 230, 238));
-    g.setFont(16.0f);
+    g.setFont(15.0f);
     g.drawFittedText(improvisationText, 656, 100, 324, 828,
-                     juce::Justification::topLeft, 48, 1.0f);
+                     juce::Justification::topLeft, 54, 1.0f);
 
     int y = 84;
     drawRow(g, y, "ARA binding", processor.isAraBound() ? "BOUND" : "NOT BOUND", true); y += 25;

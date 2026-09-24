@@ -102,7 +102,7 @@ int main()
     const auto g7 = makeChord(1, {0, 4, 7, 10});
     auto snapshot = makeCurrentNextSnapshot(key, g7, makeChord(0, {0, 4, 7, 11}));
     const auto major = analyzeImprovisation(analyzeHarmonicSituation(snapshot));
-    expect(major.valid && major.strategies.size() == 1, "one foundation recommendation");
+    expect(major.valid && !major.strategies.empty(), "one foundation recommendation");
     expect(major.dominantContext == DominantContext::toMajor, "G7 to major");
     const auto& notes = major.strategies[0].source.notes;
     expect(notes.size() == 4 && notes[0].pitchClass == 7 && notes[1].pitchClass == 11

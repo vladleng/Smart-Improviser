@@ -31,6 +31,8 @@ add_library(SmartImproviserCore STATIC
     src/core/model/ResolutionTarget.h
     src/core/analysis/AmbiguityAnalyzer.cpp
     src/core/analysis/AmbiguityAnalyzer.h
+    src/core/analysis/DiatonicSources.cpp
+    src/core/analysis/DiatonicSources.h
     src/core/analysis/ImprovisationEngine.cpp
     src/core/analysis/ImprovisationEngine.h
     src/core/analysis/HarmonicEngine.cpp
@@ -151,7 +153,7 @@ target_compile_definitions(SmartImproviserARA
         JUCE_WEB_BROWSER=0
         JUCE_USE_CURL=0
         JUCE_VST3_CAN_REPLACE_VST2=0
-        SMART_IMPROVISER_BUILD_VERSION="0.3b"
+        SMART_IMPROVISER_BUILD_VERSION="0.3c"
 )
 
 target_link_libraries(SmartImproviserARA
@@ -245,3 +247,10 @@ if(MSVC)
     target_compile_options(SmartImproviserImprovisationTests PRIVATE /utf-8)
 endif()
 add_test(NAME SmartImproviserImprovisationTests COMMAND SmartImproviserImprovisationTests)
+
+add_executable(SmartImproviserDiatonicSourcesTests tests/DiatonicSourcesTests.cpp)
+target_link_libraries(SmartImproviserDiatonicSourcesTests PRIVATE SmartImproviserCore)
+if(MSVC)
+    target_compile_options(SmartImproviserDiatonicSourcesTests PRIVATE /utf-8)
+endif()
+add_test(NAME SmartImproviserDiatonicSourcesTests COMMAND SmartImproviserDiatonicSourcesTests)

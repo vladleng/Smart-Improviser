@@ -160,3 +160,11 @@ Stage 3 должен использовать готовый `HarmonicSituation`
 Подготовлены guide tones (только присутствующие 3/7), characteristic tones, реальные звуки следующего аккорда и показ движений ResolutionTarget Stage 2. Для неподтверждённого перехода предлагаются отдельные optional melodic connections к ближайшему root/guide следующего аккорда; они не подтверждают гармоническую функцию.
 
 8 локальных C++ test targets проходят. Windows Build #234 — success; Влад принял живой тест, PR #24 слит в main. [Чек-лист 0.3b](STAGE_3_0.3b_LIVE_TEST.md). Материал пока отображается как pitch classes. Stable остаётся 0.3.
+
+## Рабочий checkpoint 0.3c
+
+Добавлен ограниченный диатонический каталог: режимы принятого major/minor center и Mixolydian для ordinary dominant seventh с подтверждённой major target. Сначала проверяется совместимость со всеми explicit chord tones/degrees. Unresolved primary, minor-target dominant, SubV, цепи и неподдерживаемые случаи сохраняют chord-tone foundation с объяснением отсутствия гаммы.
+
+Scale source хранит ступени, root/spelling и ссылку на interpretation; source не меняет tonal center. Опоры, characteristic tones и resolution 0.3b сохраняются. Новая гамма выводится с корректным enharmonic spelling; прежние списки опор пока pitch classes. Tension policy не реализуется.
+
+9 локальных C++ test targets проходят; Windows CI отслеживается в PR. Живой тест 0.3c ещё не принят. [Чек-лист](STAGE_3_0.3c_LIVE_TEST.md).
