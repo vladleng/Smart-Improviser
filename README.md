@@ -12,11 +12,12 @@
 
 **Текущая стабильная версия:** `0.2`  
 **Последний принятый checkpoint:** `0.2e / 0.2e fix1 — Ambiguity / Confidence`  
-**Следующий checkpoint:** `0.2f — Integration / musical validation`  
+**Текущая рабочая версия:** `0.2f — Integration / musical validation`  
+**Активная ветка:** `stage-2-integration-validation`  
 **Stage 2 Issue:** #3  
-**Последний принятый PR:** #19
+**Активный PR:** #20
 
-`0.2e / 0.2e fix1` принят после успешного Windows CI и полного live-test в Fender Studio Pro. Fix1 подтвердил корректное enharmonic spelling локальных тональных центров.
+`0.2e / 0.2e fix1` принят и слит в `main` через PR #19. `0.2f` — последний буквенный checkpoint Stage 2 перед стабильной `0.3`.
 
 Первая целевая среда:
 
@@ -46,8 +47,6 @@ Harmony
 
 ## Архитектура
 
-Музыкальное ядро отделено от DAW, ARA, VST3 и UI:
-
 ```text
 Fender Studio Pro
         ↓
@@ -69,11 +68,11 @@ Tension / Strategy / Resolution / Phrase engines
 UI / Fretboard / Notation / TAB
 ```
 
-Stage 1 contract закрыт: Harmonic Engine получает только host-neutral timeline context и не зависит от JUCE/ARA/Fender Studio Pro.
+Stage 1 contract закрыт: Harmonic Engine получает только host-neutral timeline context и не зависит от JUCE / ARA / Fender Studio Pro. Project key в DAW автоматически не меняется.
 
 ## Global key и Local Key Center
 
-Начиная с `0.2d`, project key и активный тональный центр — разные сущности.
+Project key и активный тональный центр — разные сущности:
 
 ```text
 GLOBAL KEY
@@ -85,8 +84,6 @@ D minor
 CURRENT LOCAL FUNCTION
 A7 = V of D minor
 ```
-
-Project key в DAW не требуется менять при каждом временном отклонении.
 
 Local-center states:
 
@@ -100,13 +97,11 @@ established local center
 modulationCandidate
 ```
 
-`modulationCandidate` — только гипотеза, а не автоматическая смена global key.
+`modulationCandidate` — гипотеза, а не автоматическая смена global key.
 
 ## Ambiguity / Confidence
 
-`0.2e` добавляет слой интерпретаций поверх global/local harmonic facts.
-
-Вместо принудительной единственной трактовки `HarmonicSituation` может хранить несколько candidates:
+`HarmonicSituation` может хранить несколько interpretations:
 
 ```text
 Global interpretation
@@ -135,27 +130,21 @@ C major / Fm7
 ```
 
 ```text
-F major / Em7b5 → A7
-→ Global interpretation
-→ Candidate D minor
-→ AMBIGUOUS
-```
-
-```text
 F major / Em7b5 → A7 → Dm
 → Local D minor established
 → Local interpretation становится unique primary
 ```
 
-`0.2e fix1` исправляет только diagnostic spelling: KeyCenter display использует `rootFifths`, поэтому `F# major` больше не отображается как `Gb major`.
+`0.2e fix1` сохранил enharmonic spelling локальных центров через `rootFifths`, поэтому F# major и Gb major больше не схлопываются в одну diagnostic spelling.
 
 ## Что уже умеет Harmonic Engine
 
-К принятому `0.2e / fix1`:
+К началу `0.2f` приняты:
 
 - basic harmonic functions;
 - major `ii–V–I` на `ii / V / I`;
 - minor `iiø–V–i` на `iiø / V / i`;
+- `V–I`;
 - `I–VI–ii–V`;
 - secondary dominants;
 - dominant chains;
@@ -163,22 +152,57 @@ F major / Em7b5 → A7 → Dm
 - major/minor `ii–SubV–I`;
 - applied SubV;
 - guide-tone resolution;
-- candidate/temporary/established local centers;
+- candidate / tonicized / established local centers;
 - remote local centers;
 - `localHarmonic` / `localPattern`;
 - cautious `modulationCandidate`;
 - fixed-size `HarmonicInterpretation` candidates;
 - unique / ambiguous state;
-- unresolved primary (`primaryInterpretationIndex = -1`);
 - global/local conflict evidence;
 - borrowed/modal ambiguity;
-- confirmed local resolution of ambiguity;
 - diagnostic UI со списком candidates и primary;
 - enharmonic-aware KeyCenter display.
 
-## Правило разработки Stage
+## 0.2f — Integration / musical validation
 
-Каждый Stage делится на логически завершённые build checkpoints:
+`0.2f` не добавляет новый крупный музыкальный слой. Его задача — проверить все принятые части Stage 2 **вместе**.
+
+Добавлен отдельный regression target:
+
+```text
+SmartImproviserIntegrationValidationTests
+```
+
+Он перемещает окно `previous/current/next` по длинным progression cases:
+
+```text
+Cmaj7 → A7 → Dm7 → G7 → Cmaj7
+Cmaj7 → Fm7 → G7 → Cmaj7
+Em7b5 → Eb7 → Dm → G7 → Cmaj7
+C#7 → F#maj7 → Bmaj7
+Dm7 → G7 → Abmaj7   // contradictory-next guard
+```
+
+Проверяются переходы:
+
+```text
+Global → Local primary → Global
+Unique → Ambiguous → Unique
+Tonicized → Modulation candidate
+```
+
+Также `0.2f` закрыл integration false-positive: конец `I–VI–ii–V` по паре `ii→V` теперь считается boundary candidate только когда `next` действительно недоступен. Если `next` уже известен и противоречит ожидаемому разрешению, pattern не придумывается.
+
+Версия checkpoint:
+
+```text
+Build label: Smart Improviser 0.2f
+CMake:      0.2.8
+Artifact:   Smart-Improviser-0.2f-Windows
+Package:    Smart Improviser.vst3
+```
+
+## Правило разработки Stage
 
 ```text
 новая буква = новая функциональная часть Stage
@@ -196,7 +220,7 @@ Stage 2:
 0.2d — Local Key Center                    [ACCEPTED]
 0.2e — Ambiguity / Confidence              [ACCEPTED]
 0.2e fix1 — Enharmonic spelling            [ACCEPTED]
-0.2f — Integration / musical validation    [NEXT]
+0.2f — Integration / musical validation    [ACTIVE]
 0.3  — Stage 2 complete
 ```
 
@@ -212,22 +236,7 @@ Stage 2:
 
 ## Долгосрочное направление
 
-Smart Improviser должен объединить:
-
-- harmonic analysis;
-- local tonal-center detection;
-- ambiguity / confidence;
-- tension levels и tension curve;
-- target notes и resolution logic;
-- jazz vocabulary;
-- semantic Phrase Library;
-- functional transpose;
-- major ↔ minor adaptation;
-- V7 ↔ SubV7 adaptation;
-- approach notes / enclosures;
-- fretboard / notation / TAB;
-- Phrase Transformation Engine;
-- драматургию импровизации.
+Smart Improviser должен объединить harmonic analysis, local tonal centers, ambiguity/confidence, tension, target notes, jazz vocabulary, Phrase Library, functional transpose, fretboard/notation/TAB и драматургию импровизации.
 
 Цель проекта — не генерировать музыку вместо музыканта, а помогать **понимать гармонический контекст, управлять напряжением и превращать изученный vocabulary в собственный музыкальный язык**.
 
@@ -243,4 +252,4 @@ Smart Improviser должен объединить:
 
 ## Ближайший технический шаг
 
-Начать `0.2f — Integration / musical validation`: комплексный regression Stage 2, live musical validation и подготовка стабильной `0.3`.
+Довести CI PR #20 до зелёного состояния, затем провести live musical validation `0.2f` в Fender Studio Pro и подготовить стабильную `0.3`.
