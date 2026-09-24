@@ -154,3 +154,9 @@ Stage 3 должен использовать готовый `HarmonicSituation`
 Реализована основа Improvisation Engine: одна стратегия по explicit chord tones, сохранение гармонического контекста и target, отдельные source/thinking/resolution поля, deterministic rule ID/version и priority. Диагностика справа; анализ вне paint. Локально 8 C++ test targets проходят. Windows Build #231 — success. Влад принял живой тест 2026-09-24, PR #23 слит в main.
 
 [Чек-лист живой проверки](STAGE_3_0.3a_LIVE_TEST.md). Гаммы, модели Бойко и выбор T1–T3 ещё не реализованы.
+
+## Рабочий checkpoint 0.3b
+
+Подготовлены guide tones (только присутствующие 3/7), characteristic tones, реальные звуки следующего аккорда и показ движений ResolutionTarget Stage 2. Для неподтверждённого перехода предлагаются отдельные optional melodic connections к ближайшему root/guide следующего аккорда; они не подтверждают гармоническую функцию.
+
+8 локальных C++ test targets проходят. Windows CI — в PR текущего checkpoint; живой тест ещё не принят. [Чек-лист 0.3b](STAGE_3_0.3b_LIVE_TEST.md). Материал пока отображается как pitch classes. Stable остаётся 0.3.
