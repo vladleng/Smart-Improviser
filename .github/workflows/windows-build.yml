@@ -9,6 +9,7 @@ on:
       - stage-2-pattern-recognizer
       - stage-2-tritone-substitution
       - stage-2-local-key-center
+      - stage-2-ambiguity-confidence
   pull_request:
   workflow_dispatch:
 
@@ -47,9 +48,9 @@ jobs:
           New-Item -ItemType Directory -Path $packageRoot | Out-Null
           Copy-Item $source $destination -Recurse
 
-      - name: Upload Smart Improviser 0.2d VST3
+      - name: Upload Smart Improviser 0.2e fix1 VST3
         uses: actions/upload-artifact@v4
         with:
-          name: Smart-Improviser-0.2d-Windows
+          name: Smart-Improviser-0.2e-fix1-Windows
           path: package
           if-no-files-found: error

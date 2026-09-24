@@ -1,4 +1,5 @@
 #include "core/analysis/LocalKeyCenterAnalyzer.h"
+#include "core/analysis/AmbiguityAnalyzer.h"
 
 namespace smartimproviser::harmony
 {
@@ -14,18 +15,18 @@ std::int32_t preferredFifthsForPitchClass(int pitchClass) noexcept
 {
     switch (wrap12(pitchClass))
     {
-        case 0: return 0;   // C
-        case 1: return -5;  // Db
-        case 2: return 2;   // D
-        case 3: return -3;  // Eb
-        case 4: return 4;   // E
-        case 5: return -1;  // F
-        case 6: return 6;   // F#
-        case 7: return 1;   // G
-        case 8: return -4;  // Ab
-        case 9: return 3;   // A
-        case 10: return -2; // Bb
-        case 11: return 5;  // B
+        case 0: return 0;
+        case 1: return -5;
+        case 2: return 2;
+        case 3: return -3;
+        case 4: return 4;
+        case 5: return -1;
+        case 6: return 6;
+        case 7: return 1;
+        case 8: return -4;
+        case 9: return 3;
+        case 10: return -2;
+        case 11: return 5;
         default: return 0;
     }
 }
@@ -185,6 +186,7 @@ void applyCenter(HarmonicSituation& situation,
         situation.localKey = {};
         situation.localHarmonic = {};
         situation.localPattern = {};
+        analyzeAmbiguityAndConfidence(situation);
         return;
     }
 
@@ -208,6 +210,8 @@ void applyCenter(HarmonicSituation& situation,
         situation.evidence.add(EvidenceFlag::localCadence);
     if (center.evidence.has(EvidenceFlag::modulationEvidence))
         situation.evidence.add(EvidenceFlag::modulationEvidence);
+
+    analyzeAmbiguityAndConfidence(situation);
 }
 
 bool isDiatonicTo(const NormalizedChord& chord, const NormalizedKey& key) noexcept
@@ -222,11 +226,14 @@ void analyzeLocalKeyCenter(HarmonicSituation& situation) noexcept
     situation.localHarmonic = {};
     situation.localPattern = {};
 
+    // Seed the ambiguity layer after global pattern recognition even when no
+    // local center is eventually found. applyCenter() refreshes it whenever a
+    // local interpretation is added or deliberately rejected as redundant.
+    analyzeAmbiguityAndConfidence(situation);
+
     if (! situation.valid || ! situation.globalKey.valid)
         return;
 
-    // Strongest evidence: a complete local ii-V-I / iiø-V-i / ii-SubV-I
-    // is visible inside the immutable previous-current-next window.
     if (situation.previousChordAvailable
         && situation.nextChordAvailable
         && situation.currentChord.quality == ChordQuality::dominant)
@@ -270,7 +277,6 @@ void analyzeLocalKeyCenter(HarmonicSituation& situation) noexcept
         }
     }
 
-    // Candidate center from the visible predominant -> dominant pair.
     if (situation.nextChordAvailable)
     {
         const auto mode = modeFromPredominant(situation.currentChord);
@@ -310,8 +316,6 @@ void analyzeLocalKeyCenter(HarmonicSituation& situation) noexcept
         }
     }
 
-    // Candidate center from previous predominant -> current dominant when the
-    // resolution chord is not yet available or does not confirm the target.
     if (situation.previousChordAvailable
         && situation.currentChord.quality == ChordQuality::dominant)
     {
@@ -355,7 +359,6 @@ void analyzeLocalKeyCenter(HarmonicSituation& situation) noexcept
         }
     }
 
-    // Confirmed one-chord tonicization: V -> target or SubV -> target.
     if (situation.nextChordAvailable
         && situation.currentChord.quality == ChordQuality::dominant)
     {
@@ -392,9 +395,6 @@ void analyzeLocalKeyCenter(HarmonicSituation& situation) noexcept
         }
     }
 
-    // Resolution-side view: previous V/SubV -> current tonic. If the following
-    // chord is diatonic to the candidate local key but chromatic to the global
-    // key, expose a modulation candidate rather than declaring a modulation.
     if (situation.previousChordAvailable)
     {
         const auto mode = modeFromTargetChord(situation.currentChord);

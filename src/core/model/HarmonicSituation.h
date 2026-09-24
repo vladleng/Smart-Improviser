@@ -3,12 +3,18 @@
 #include "core/analysis/HarmonicFunction.h"
 #include "core/context/HarmonicContext.h"
 #include "core/model/AnalysisEvidence.h"
+#include "core/model/HarmonicInterpretation.h"
 #include "core/model/HarmonicPattern.h"
 #include "core/model/KeyCenter.h"
 #include "core/model/ResolutionTarget.h"
 
+#include <array>
+#include <cstdint>
+
 namespace smartimproviser::harmony
 {
+constexpr std::size_t kMaxHarmonicInterpretations = 4;
+
 struct TimelineHarmonicSnapshot
 {
     bool positionAvailable = false;
@@ -47,6 +53,10 @@ struct HarmonicSituation
     HarmonicPattern localPattern;
     ResolutionTarget resolution;
     AnalysisEvidence evidence;
+
+    std::array<HarmonicInterpretation, kMaxHarmonicInterpretations> interpretations {};
+    std::uint8_t interpretationCount = 0;
+    int primaryInterpretationIndex = -1;
 };
 
 HarmonicSituation buildHarmonicSituation(const TimelineHarmonicSnapshot& snapshot) noexcept;
@@ -54,4 +64,8 @@ HarmonicSituation buildHarmonicSituation(const TimelineHarmonicSnapshot& snapsho
 // Stage 2/0.2d host-neutral local-center analyzer. It enriches an already
 // normalized HarmonicSituation without consulting JUCE, ARA or DAW state.
 void analyzeLocalKeyCenter(HarmonicSituation& situation) noexcept;
+
+// Stage 2/0.2e host-neutral ambiguity layer. It keeps multiple plausible
+// interpretations when evidence is insufficient for a single musical reading.
+void analyzeAmbiguityAndConfidence(HarmonicSituation& situation) noexcept;
 }
