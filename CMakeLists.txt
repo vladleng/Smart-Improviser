@@ -31,6 +31,8 @@ add_library(SmartImproviserCore STATIC
     src/core/model/ResolutionTarget.h
     src/core/analysis/AmbiguityAnalyzer.cpp
     src/core/analysis/AmbiguityAnalyzer.h
+    src/core/analysis/ImprovisationEngine.cpp
+    src/core/analysis/ImprovisationEngine.h
     src/core/analysis/HarmonicEngine.cpp
     src/core/analysis/HarmonicEngine.h
     src/core/analysis/HarmonicFunction.cpp
@@ -73,6 +75,8 @@ if(MSVC)
 endif()
 
 # -----------------------------------------------------------------------------
+option(SMART_IMPROVISER_BUILD_PLUGIN "Build JUCE/ARA plugin" ON)
+if(SMART_IMPROVISER_BUILD_PLUGIN)
 # JUCE / ARA infrastructure reused from Smart Voicing, with a new isolated ABI.
 FetchContent_Declare(
     JUCE
@@ -147,7 +151,7 @@ target_compile_definitions(SmartImproviserARA
         JUCE_WEB_BROWSER=0
         JUCE_USE_CURL=0
         JUCE_VST3_CAN_REPLACE_VST2=0
-        SMART_IMPROVISER_BUILD_VERSION="0.3"
+        SMART_IMPROVISER_BUILD_VERSION="0.3a"
 )
 
 target_link_libraries(SmartImproviserARA
@@ -165,6 +169,8 @@ if(MSVC)
 endif()
 
 # -----------------------------------------------------------------------------
+endif() # SMART_IMPROVISER_BUILD_PLUGIN
+
 # Regression tests.
 add_executable(SmartImproviserCoreTests
     tests/CoreHarmonyTests.cpp
@@ -232,3 +238,10 @@ add_test(NAME SmartImproviserLocalKeyCenterTests COMMAND SmartImproviserLocalKey
 add_test(NAME SmartImproviserAmbiguityConfidenceTests COMMAND SmartImproviserAmbiguityConfidenceTests)
 add_test(NAME SmartImproviserIntegrationValidationTests COMMAND SmartImproviserIntegrationValidationTests)
 add_test(NAME SmartImproviserTimelineContextTests COMMAND SmartImproviserTimelineContextTests)
+
+add_executable(SmartImproviserImprovisationTests tests/ImprovisationEngineTests.cpp)
+target_link_libraries(SmartImproviserImprovisationTests PRIVATE SmartImproviserCore)
+if(MSVC)
+    target_compile_options(SmartImproviserImprovisationTests PRIVATE /utf-8)
+endif()
+add_test(NAME SmartImproviserImprovisationTests COMMAND SmartImproviserImprovisationTests)

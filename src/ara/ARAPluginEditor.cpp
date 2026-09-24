@@ -4,6 +4,7 @@
 #include "context/SharedHarmonicContext.h"
 #include "context/TimelineContextMapper.h"
 #include "core/analysis/HarmonicEngine.h"
+#include "core/analysis/ImprovisationEngine.h"
 #include "core/model/ChordModel.h"
 #include "core/model/KeyModel.h"
 
@@ -294,12 +295,38 @@ void drawRow(juce::Graphics& g,
 SmartImproviserARAEditor::SmartImproviserARAEditor(SmartImproviserARAProcessor& p)
     : juce::AudioProcessorEditor(p), processor(p)
 {
-    setSize(640, 1010);
+    setSize(1020, 1010);
+    timerCallback();
     startTimerHz(10);
 }
 
 void SmartImproviserARAEditor::timerCallback()
 {
+    cachedShared = SharedHarmonicContextBridge::instance().read();
+    const auto ppq = cachedShared.transportAvailable ? cachedShared.transportPpq : -1.0;
+    cachedSituation = smartimproviser::harmony::analyzeHarmonicSituation(
+        smartimproviser::harmony::mapTimelineHarmonicSnapshot(cachedShared, ppq));
+    const auto result = smartimproviser::harmony::analyzeImprovisation(cachedSituation);
+    improvisationText = "STAGE 3 / 0.3a\nImprovisation foundation\n\n";
+    if (! result.valid)
+        improvisationText += utf8String(result.unavailableReason);
+    else
+    {
+        const auto& strategy = result.strategies.front();
+        improvisationText += "CONTEXT\n" + utf8String(result.contextDescription);
+        improvisationText += "\n\nTHINKING\n" + utf8String(strategy.source.name) + " chord tones";
+        improvisationText += "\n\nMATERIAL\n";
+        for (const auto& note : strategy.source.notes)
+            improvisationText += juce::String(pitchClassName(note.pitchClass)) + " ";
+        improvisationText += "\n(pitch classes)\n\nTARGET\n";
+        improvisationText += strategy.resolution.available && strategy.resolution.confirmed
+            ? utf8String(smartimproviser::harmony::normalizedChordSymbol(strategy.resolution.targetChord))
+                + " (confirmed)"
+            : "No confirmed harmonic resolution";
+        improvisationText += "\n\n" + utf8String(strategy.idea)
+            + "\n\nWHY\n" + utf8String(strategy.explanation)
+            + "\n\n" + utf8String(strategy.conditions);
+    }
     repaint();
 }
 
@@ -318,11 +345,18 @@ void SmartImproviserARAEditor::paint(juce::Graphics& g)
                24, 48, 590, 22, juce::Justification::centredLeft);
 
     const auto debug = ARAContextDebugState::instance().getSnapshot();
-    const auto shared = SharedHarmonicContextBridge::instance().read();
+    const auto& shared = cachedShared;
     const auto ppq = shared.transportAvailable ? shared.transportPpq : -1.0;
     const auto timeline = smartimproviser::harmony::mapTimelineHarmonicSnapshot(shared, ppq);
     const auto context = smartimproviser::harmony::mapHarmonicContext(shared, ppq);
-    const auto situation = smartimproviser::harmony::analyzeHarmonicSituation(timeline);
+    const auto& situation = cachedSituation;
+
+    g.setColour(juce::Colour::fromRGB(42, 46, 53));
+    g.fillRoundedRectangle(640.0f, 84.0f, 356.0f, 860.0f, 8.0f);
+    g.setColour(juce::Colour::fromRGB(225, 230, 238));
+    g.setFont(16.0f);
+    g.drawFittedText(improvisationText, 656, 100, 324, 828,
+                     juce::Justification::topLeft, 48, 1.0f);
 
     int y = 84;
     drawRow(g, y, "ARA binding", processor.isAraBound() ? "BOUND" : "NOT BOUND", true); y += 25;
@@ -371,7 +405,7 @@ void SmartImproviserARAEditor::paint(juce::Graphics& g)
             + "  |  transport " + juce::String(static_cast<juce::int64>(shared.transportRevision))); y += 36;
 
     g.setColour(juce::Colour::fromRGB(77, 81, 89));
-    g.drawHorizontalLine(y, 24.0f, static_cast<float>(getWidth() - 24)); y += 12;
+    g.drawHorizontalLine(y, 24.0f, 616.0f); y += 12;
 
     g.setColour(juce::Colour::fromRGB(190, 195, 205));
     g.setFont(juce::FontOptions(15.0f, juce::Font::bold));
@@ -391,7 +425,7 @@ void SmartImproviserARAEditor::paint(juce::Graphics& g)
     drawRow(g, y, "Resolution", resolutionDisplay(situation)); y += 24;
 
     g.setColour(juce::Colour::fromRGB(77, 81, 89));
-    g.drawHorizontalLine(y, 24.0f, static_cast<float>(getWidth() - 24)); y += 10;
+    g.drawHorizontalLine(y, 24.0f, 616.0f); y += 10;
 
     drawRow(g, y, "Local center", localCenterDisplayName(situation.localKey), true); y += 24;
     drawRow(g, y, "Local function", harmonicDisplay(situation.localHarmonic), true); y += 24;
@@ -411,7 +445,7 @@ void SmartImproviserARAEditor::paint(juce::Graphics& g)
     drawRow(g, y, "Local confidence", localConfidence); y += 28;
 
     g.setColour(juce::Colour::fromRGB(77, 81, 89));
-    g.drawHorizontalLine(y, 24.0f, static_cast<float>(getWidth() - 24)); y += 10;
+    g.drawHorizontalLine(y, 24.0f, 616.0f); y += 10;
 
     juce::String confidence = "-";
     if (situation.valid)
@@ -448,7 +482,7 @@ void SmartImproviserARAEditor::paint(juce::Graphics& g)
 
     g.setColour(juce::Colour::fromRGB(105, 110, 120));
     g.setFont(12.5f);
-    g.drawText("Diagnostic UI for Stage 1/2 validation. Product interface will be developed later.",
+    g.drawText("Diagnostic UI for Stage 1/2/3 validation. Product interface will be developed later.",
                24, getHeight() - 28, getWidth() - 48, 20,
                juce::Justification::centredLeft);
 }

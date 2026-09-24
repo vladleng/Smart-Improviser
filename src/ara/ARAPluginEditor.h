@@ -1,6 +1,8 @@
 #pragma once
 
 #include <JuceHeader.h>
+#include "context/SharedHarmonicContextData.h"
+#include "core/model/HarmonicSituation.h"
 
 class SmartImproviserARAProcessor;
 
@@ -18,6 +20,9 @@ private:
     void timerCallback() override;
 
     SmartImproviserARAProcessor& processor;
+    SharedHarmonicContextSnapshot cachedShared;
+    smartimproviser::harmony::HarmonicSituation cachedSituation;
+    juce::String improvisationText;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(SmartImproviserARAEditor)
 };

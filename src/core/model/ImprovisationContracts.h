@@ -1,6 +1,9 @@
 #pragma once
 
 #include "core/model/AnalysisEvidence.h"
+#include "core/model/HarmonicSituation.h"
+#include <string>
+#include <vector>
 
 #include <cstdint>
 
@@ -39,10 +42,59 @@ enum class PhraseRole : std::uint8_t
     release
 };
 
+enum class MaterialKind : std::uint8_t { undefined, chordTones, scale };
+enum class MaterialNoteRole : std::uint8_t { chordTone, guideTone, colorTone, passingTone };
+enum class DominantContext : std::uint8_t
+{
+    notDominant, unresolved, toMajor, toMinor, toDominant, toOther
+};
+
+struct MaterialNote
+{
+    int pitchClass = -1;
+    int semitonesFromRoot = -1;
+    int degree = 0;
+    MaterialNoteRole role = MaterialNoteRole::chordTone;
+};
+
+struct SourceMaterial
+{
+    MaterialKind kind = MaterialKind::undefined;
+    int rootPitchClass = -1; // Source root, never an inferred song key.
+    std::string name;
+    std::vector<MaterialNote> notes; // Deterministic ascending relative intervals.
+};
+
 struct ImprovisationStrategy
 {
     ImprovisationStrategyKind kind = ImprovisationStrategyKind::undefined;
     TensionLevel tension = TensionLevel::stable;
-    AnalysisEvidence evidence;
+    AnalysisEvidence evidence; // Harmonic evidence, not recommendation priority.
+    std::string ruleId;
+    int ruleVersion = 1;
+    int priority = 0; // Higher first; ties resolved by ruleId.
+    int interpretationIndex = -1; // -1: no selected interpretation.
+    bool interpretationIndependent = false;
+    bool tensionClassified = false; // Stage 4 policy; default enum is not a claim.
+    NormalizedChord actualChord;
+    NormalizedChord thinkingStructure;
+    SourceMaterial source;
+    ResolutionTarget resolution;
+    std::vector<MaterialNote> targetNotes;
+    std::string idea;
+    std::string explanation;
+    std::string conditions;
+};
+
+struct ImprovisationResult
+{
+    bool valid = false;
+    DominantContext dominantContext = DominantContext::notDominant;
+    bool secondaryDominant = false;
+    bool substituteDominant = false;
+    HarmonicSituation context; // Preserve all interpretations, including unresolved primary.
+    std::vector<ImprovisationStrategy> strategies;
+    std::string contextDescription;
+    std::string unavailableReason;
 };
 }

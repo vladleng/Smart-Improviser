@@ -50,9 +50,9 @@ jobs:
           New-Item -ItemType Directory -Path $packageRoot | Out-Null
           Copy-Item $source $destination -Recurse
 
-      - name: Upload Smart Improviser 0.3 VST3
+      - name: Upload Smart Improviser 0.3a VST3
         uses: actions/upload-artifact@v4
         with:
-          name: Smart-Improviser-0.3-Windows
+          name: Smart-Improviser-0.3a-Windows
           path: package
           if-no-files-found: error

@@ -148,3 +148,9 @@ Stage 3 должен использовать готовый `HarmonicSituation`
 
 8. `docs/PRODUCT_WORKFLOW.md` — согласованный пользовательский сценарий;
 9. `docs/STAGE_3_PLAN.md` — рабочий план следующего этапа и открытые решения.
+
+## Рабочий checkpoint 0.3a
+
+Реализована основа Improvisation Engine: одна стратегия по explicit chord tones, сохранение гармонического контекста и target, отдельные source/thinking/resolution поля, deterministic rule ID/version и priority. Диагностика справа; анализ вне paint. Локально 8 C++ test targets проходят. Windows CI и live acceptance отслеживаются в Issue #4 / PR; checkpoint пока не принят.
+
+[Чек-лист живой проверки](STAGE_3_0.3a_LIVE_TEST.md). Гаммы, модели Бойко и выбор T1–T3 ещё не реализованы.
