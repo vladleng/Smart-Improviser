@@ -25,10 +25,10 @@ enum class PatternContextStatus : std::uint8_t
     completed
 };
 
-// 0.3f fix1 keeps the Stage 1 current/previous/next fields intact and adds a
-// separate, bounded reconstruction window used only by PatternContext. The
-// window is rebuilt from the host timeline on every analysis pass, so seek,
-// reopen and chord edits never depend on stale runtime history.
+// Stage 3-only bounded reconstruction input. It is deliberately separate from
+// TimelineHarmonicSnapshot so the accepted Stage 1 previous/current/next
+// contract remains unchanged. The adapter rebuilds it from the host timeline
+// on every analysis pass, preventing stale seek/edit/reopen state.
 struct PatternTimelineWindow
 {
     std::array<ChordContext, kMaxPatternWindowChords> chords {};
@@ -48,6 +48,8 @@ struct PatternContext
     std::uint8_t nestedPatternCount = 0;
 };
 
+// Accepted Stage 1 -> Stage 2 contract. Do not add arbitrary timeline history
+// here: PatternTimelineWindow is a separate Stage 3 analysis input.
 struct TimelineHarmonicSnapshot
 {
     bool positionAvailable = false;
@@ -62,10 +64,6 @@ struct TimelineHarmonicSnapshot
     ChordContext nextChord;
 
     KeyContext globalKey;
-
-    // Optional Stage 3 pattern-reconstruction metadata. It is deliberately
-    // bounded and does not replace the Stage 1 previous/current/next contract.
-    PatternTimelineWindow patternWindow;
 };
 
 struct HarmonicSituation
