@@ -101,6 +101,45 @@ int main()
     expect(editedD.quality == ChordQuality::minor,
            "pattern window is rebuilt from edited timeline content");
 
+    // Studio Pro can expose a stopped playhead on a visible grid boundary a
+    // few thousandths of PPQ before the ARA chord event drawn at that same
+    // boundary. STOP may snap to the right-hand chord; PLAY must stay strict.
+    SharedHarmonicContextSnapshot boundary;
+    boundary.sheetChordsAvailable = true;
+    boundary.sheetChordEventCount = 2;
+    boundary.sheetChordStoredCount = 2;
+    boundary.sheetChords[0].position = 0.0;
+    boundary.sheetChords[0].root = 3; // Am7
+    boundary.sheetChords[0].bass = 3;
+    setMinorSeventh(boundary.sheetChords[0].intervals);
+    boundary.sheetChords[1].position = 4.005;
+    boundary.sheetChords[1].root = 2; // D7
+    boundary.sheetChords[1].bass = 2;
+    setDominantSeventh(boundary.sheetChords[1].intervals);
+
+    boundary.transportPlaying = false;
+    const auto stoppedTimeline = mapTimelineHarmonicSnapshot(boundary, 4.0);
+    const auto stoppedContext = mapHarmonicContext(boundary, 4.0);
+    const auto stoppedWindow = mapPatternTimelineWindow(boundary, 4.0);
+    expect(stoppedTimeline.currentChord.startPpq == 4.005,
+           "STOP snaps near visible boundary to right-hand chord");
+    expect(stoppedContext.chord.startPpq == 4.005,
+           "STOP HarmonicContext uses the same snapped chord resolver");
+    expect(stoppedWindow.currentIndex == 1,
+           "STOP PatternTimelineWindow uses the same snapped chord resolver");
+
+    const auto clearlyBeforeBoundary = mapTimelineHarmonicSnapshot(boundary, 3.98);
+    expect(clearlyBeforeBoundary.currentChord.startPpq == 0.0,
+           "STOP does not snap when cursor is clearly before the boundary");
+
+    boundary.transportPlaying = true;
+    const auto playingTimeline = mapTimelineHarmonicSnapshot(boundary, 4.0);
+    const auto playingWindow = mapPatternTimelineWindow(boundary, 4.0);
+    expect(playingTimeline.currentChord.startPpq == 0.0,
+           "PLAY remains strict before the actual ARA chord event");
+    expect(playingWindow.currentIndex == 0,
+           "PLAY pattern window remains on left chord before actual event");
+
     const auto invalidWindow = mapPatternTimelineWindow(shared, -1.0);
     expect(invalidWindow.chordCount == 0 && invalidWindow.currentIndex < 0,
            "missing position yields empty safe pattern window");
