@@ -1,6 +1,6 @@
 # Stage 3 — Improvisation Engine: рабочий план
 
-> Обновлено 2026-09-25. База: stable 0.3, Stage 2 принят. 0.3a–0.3d приняты; реализован 0.3e, ожидается CI / live-test. Stable остаётся 0.3.
+> Обновлено 2026-09-25. База: stable 0.3, Stage 2 принят. 0.3a–0.3e приняты; текущий checkpoint — **0.3f Context-aware ranking / ambiguity**. Stable остаётся 0.3.
 > Начальная методика и текстовая форма подсказки согласованы: [IMPROVISATION_METHOD.md](IMPROVISATION_METHOD.md). См. [PRODUCT_WORKFLOW.md](PRODUCT_WORKFLOW.md).
 
 ## Результат Stage
@@ -78,23 +78,32 @@ Windows Build #246 — success; живой тест 0.3d fix2 принят Вл�
 
 **Gate:** проверяемый результат этих пунктов, соответствующие regression tests, отдельный build artifact и live-test, где применим; принятие пользователем перед следующей буквой.
 
-### 0.3e — Harmonic concepts
+### 0.3e — Harmonic concepts [ACCEPTED]
 
-[Границы и чек-лист 0.3e](STAGE_3_0.3e_LIVE_TEST.md). 11 локальных тестовых наборов проходят; живой тест ещё не принят.
+Музыкальная часть и структурный UI приняты Владом 2026-09-25. Windows Build #274 — success; PR #28 слит в main. UI-checkpoint `0.3e-ui` оставляет сверху компактный текущий контекст и переносит детали в разделы **Материал / Источники / Гармонический анализ / ARA**. Дальнейшая визуальная полировка отложена до более поздних Stage.
 
 - [x] Реализовать chord-tone playing, guide-tone targeting и diatonic extensions как конкретные идеи.
 - [x] Добавить chromatic approach / enclosure concepts с целью как символические схемы; генерация коротких нотных примеров/Phrase не вводится и остаётся отдельным будущим решением.
 - [x] Оформить ограниченные модели мышления из начальной методики; широкий каталог upper structures, замен и альтернатив отложить. Подготовить расширение для Stage 4.
+- [x] Русский UTF-8 UI и компактная contextual summary, включая формат `D Dorian • Dm6`.
 
-**Gate:** проверяемый результат этих пунктов, соответствующие regression tests, отдельный build artifact и live-test, где применим; принятие пользователем перед следующей буквой.
+[Музыкальный чек-лист](STAGE_3_0.3e_LIVE_TEST.md) · [UI-checkpoint](STAGE_3_0.3e_UI.md).
 
-### 0.3f — Context-aware ranking / ambiguity
+### 0.3f — Context-aware ranking / ambiguity [IN PROGRESS]
 
-- [ ] Упорядочить стратегии и сохранить музыкально разные альтернативы.
-- [ ] Привязать рекомендации к global/local/modal interpretation; обработать primaryInterpretationIndex = -1 без скрытого выбора трактовки.
-- [ ] Проверить local-center transitions, unresolved dominants, неполные данные; не смешивать разные интерпретации в одну уверенную рекомендацию.
+Рабочая ветка: `stage-3-context-ranking`. PR #30. Полный scope и live-test: [STAGE_3_0.3f_LIVE_TEST.md](STAGE_3_0.3f_LIVE_TEST.md).
 
-**Gate:** проверяемый результат этих пунктов, соответствующие regression tests, отдельный build artifact и live-test, где применим; принятие пользователем перед следующей буквой.
+- [x] Собирать context-dependent diatonic/special strategies для всех валидных global/local/modal interpretations, не только для primary.
+- [x] Обрабатывать `primaryInterpretationIndex = -1` без скрытого выбора трактовки; каждая strategy хранит provenance через `interpretationIndex` и evidence.
+- [x] Ввести deterministic presentation ranking, сохранив harmonic confidence отдельно от recommendation priority.
+- [x] Включить Issue #29: отдельный minor `iv–V–i`, boundary `iv→V`, full cadence и local-minor candidate/established semantics.
+- [x] На финальном `V→I/i` без более глубокой истории не выдумывать конкретный predominant; показывать общий двухаккордовый resolution.
+- [x] Сохранить Stage 1 contract `previous/current/next` без расширения истории.
+- [x] Диагностический UI не склеивает unresolved alternatives в одну строку «Мышление» и подписывает context каждого source.
+- [ ] Все regression tests и Windows artifact зелёные.
+- [ ] Live-test принят пользователем.
+
+**Gate:** автоматические regression tests + отдельный `Smart-Improviser-0.3f-Windows` + live-test в Studio Pro. Issue #29 закрывается только после принятия 0.3f.
 
 ### 0.3g — Explanation / usable output
 
@@ -126,4 +135,6 @@ Windows Build #246 — success; живой тест 0.3d fix2 принят Вл�
 
 ## Открытые решения
 
-Для 0.3a согласованы: текстовая подсказка, контекст перед материалом, ограниченный каталог Бойко и одна основная рекомендация на доступный уровень после Stage 4. Нотные примеры/прослушивание, ручная трактовка и дополнительные альтернативы отложены. Следующий checkpoint после принятого 0.3d — 0.3e.
+Для 0.3a согласованы: текстовая подсказка, контекст перед материалом, ограниченный каталог Бойко и одна основная рекомендация на доступный уровень после Stage 4. Нотные примеры/прослушивание, ручная трактовка и дополнительные альтернативы отложены.
+
+После 0.3e обнаруженный пробел `iv–V–i` зафиксирован в Issue #29 и сознательно включён в 0.3f, потому что он напрямую связан с ambiguity: на финальном `V→i` текущий Stage 1 window уже не позволяет узнать, был earlier predominant `iiø` или `iv`.
