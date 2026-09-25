@@ -597,7 +597,9 @@ void SmartImproviserARAEditor::timerCallback()
     if (activePattern->recognized())
     {
         summaryPattern += patternName(activePattern->type);
-        summaryPattern += ru("   •   Роль: ") + patternPositionDisplay(*activePattern);
+        if (activePattern->positionIndex >= 0 && activePattern->length > 0)
+            summaryPattern += ru("   •   ") + juce::String(activePattern->positionIndex + 1)
+                + " / " + juce::String(activePattern->length);
     }
     else
     {
@@ -618,10 +620,12 @@ void SmartImproviserARAEditor::timerCallback()
                 continue;
 
             juce::String item;
-            if (strategy.thinkingStructure.valid)
+            if (strategy.source.mode != smartimproviser::harmony::DiatonicMode::none)
+                item = utf8String(strategy.source.name);
+            else if (strategy.thinkingStructure.valid)
                 item = utf8String(smartimproviser::harmony::normalizedChordSymbol(strategy.thinkingStructure));
             else
-                item = localizeGeneratedText(utf8String(strategy.source.name));
+                item = utf8String(strategy.source.name);
 
             if (item.isNotEmpty())
                 thoughts.addIfNotAlreadyThere(item);
