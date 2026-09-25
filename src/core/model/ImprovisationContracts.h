@@ -102,6 +102,45 @@ struct ImprovisationStrategy
     std::vector<ResolutionMove> sourceTransitions; // Optional color-to-target moves; never harmonic evidence.
 };
 
+enum class HarmonicConceptKind : std::uint8_t
+{
+    chordAnchors, guideTargeting, diatonicExtensions, thinkingArpeggio,
+    chromaticApproach, enclosure
+};
+enum class ConceptTargetScope : std::uint8_t { none, currentChord, nextChord };
+
+struct ApproachStep
+{
+    int semitonesFromTarget = 0; // Symbolic offset, not register, timing or MIDI.
+    bool isTarget = false;
+    int semitonesFromCurrentRoot = -1;
+    bool belongsToCurrentChord = false; // Membership only, not stability/tension.
+};
+
+struct HarmonicConcept
+{
+    HarmonicConceptKind kind = HarmonicConceptKind::chordAnchors;
+    std::string ruleId;
+    int ruleVersion = 1;
+    std::string sourceRuleId; // Exact originating strategy; no mixed interpretations.
+    int interpretationIndex = -1;
+    bool interpretationIndependent = false;
+    AnalysisEvidence evidence;
+    std::string title;
+    std::string instruction;
+    std::string conditions;
+    std::string sourceReference;
+    NormalizedChord actualChord;
+    std::vector<MaterialNote> material; // Degrees relative to actualChord.
+    std::vector<ResolutionMove> moves;
+    bool movesAreConfirmed = false;
+    ConceptTargetScope targetScope = ConceptTargetScope::none;
+    NormalizedChord targetChord;
+    MaterialNote target; // Relative to targetChord, never implicitly actualChord.
+    std::vector<ApproachStep> approachShape;
+    // No TensionLevel: classification remains the Stage 4 policy.
+};
+
 struct ImprovisationResult
 {
     bool valid = false;
@@ -110,6 +149,7 @@ struct ImprovisationResult
     bool substituteDominant = false;
     HarmonicSituation context; // Preserve all interpretations, including unresolved primary.
     std::vector<ImprovisationStrategy> strategies;
+    std::vector<HarmonicConcept> concepts;
     std::string contextDescription;
     std::string unavailableReason;
     std::string scaleUnavailableReason;

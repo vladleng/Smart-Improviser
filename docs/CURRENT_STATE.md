@@ -1,6 +1,6 @@
 # Smart Improviser — Current State
 
-> Планирование обновлено 2026-09-25: согласован workflow работы над песней, user content и постоянных tension-подсказок. 0.3a–0.3d приняты; следующий checkpoint — 0.3e; последняя принятая stable — 0.3.
+> Планирование обновлено 2026-09-25: согласован workflow работы над песней, user content и постоянных tension-подсказок. 0.3a–0.3d приняты; текущий checkpoint — 0.3e (реализован, ожидается CI / live-test); последняя принятая stable — 0.3.
 
 > Короткая точка входа для нового чата или рабочей сессии. Подробная архитектура — в `PROJECT_CONTEXT.md`, этапы — в `ROADMAP.md`, правила версий — в `VERSIONING.md`, фактический прогресс — в GitHub Issues.
 
@@ -13,7 +13,7 @@
 - **Рабочая линия:** `0.3a → 0.3x`
 - **Итог Stage 3:** `0.4`
 - **Stage 2 Issue:** #3 — закрыт стабильной `0.3`
-- **Stage 3 Issue:** #4 — рабочий план `0.3a–0.3h`; 0.3a–0.3d приняты; следующий checkpoint — 0.3e
+- **Stage 3 Issue:** #4 — рабочий план `0.3a–0.3h`; 0.3a–0.3d приняты; текущий checkpoint — 0.3e (реализован, ожидается CI / live-test)
 
 `0.3` — релизное закрытие Stage 2. Новая музыкальная логика относительно принятого `0.2f` не добавлялась: stable release фиксирует уже проверенное состояние Harmonic Engine.
 
@@ -132,7 +132,7 @@ Stage 3 использует готовый `HarmonicSituation` и выдаёт 
 - resolution notes;
 - базовые improvisation strategies.
 
-Рабочая декомпозиция опубликована в [STAGE_3_PLAN.md](STAGE_3_PLAN.md) и Issue #4. Начальная методика согласована в [IMPROVISATION_METHOD.md](IMPROVISATION_METHOD.md); 0.3a–0.3d приняты, следующий checkpoint — 0.3e.
+Рабочая декомпозиция опубликована в [STAGE_3_PLAN.md](STAGE_3_PLAN.md) и Issue #4. Начальная методика согласована в [IMPROVISATION_METHOD.md](IMPROVISATION_METHOD.md); 0.3a–0.3d приняты, текущий checkpoint — 0.3e (реализован, ожидается CI / live-test).
 
 Согласованная продуктовая цель: [PRODUCT_WORKFLOW.md](PRODUCT_WORKFLOW.md). Общая/личная библиотеки — Stage 5; сохраняемый Song workspace — Stage 7; быстрый ввод нот/TAB и ручной конструктор — Stage 8; Planner — Stage 10. Смена tension не переписывает сохранённые идеи.
 
@@ -176,6 +176,12 @@ Scale source хранит ступени, root/spelling и ссылку на int
 
 10 C++ test targets проходят. Windows Build #246 — success. Живой тест fix2 принят Владом 2026-09-25; PR #26 merged. [Каталог и чек-лист 0.3d](STAGE_3_0.3d_LIVE_TEST.md).
 
-Следующий checkpoint — **0.3e Harmonic concepts**.
+Текущий checkpoint — **0.3e Harmonic concepts**; живой тест ещё не принят.
 
 Наблюдение 0.3c: A7 → Dm7 → G7 даёт D Aeolian при primary D minor, а Cmaj7 → Dm7 → G7 — D Dorian. Пользователь принял текущее поведение; сравнение global/local alternatives остаётся 0.3f.
+
+## Рабочий checkpoint 0.3e
+
+Добавлены explicit chord-tone/guide идеи, диатонические надстройки, m6 skeleton из принятого source-каталога, символические chromatic approach/enclosure с реальной текущей/следующей целью. Подготовка оценивается относительно текущего аккорда; confirmed и optional движения различаются. Новые идеи показывают ступени и функциональное SubV spelling fix2. Генерация Phrase, MIDI и Tension policy не добавляются.
+
+11 локальных C++ test targets проходят. Windows CI / живой тест ещё предстоят. [Границы и чек-лист](STAGE_3_0.3e_LIVE_TEST.md). К 0.3f — после принятия.
