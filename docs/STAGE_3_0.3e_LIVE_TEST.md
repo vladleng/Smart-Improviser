@@ -1,10 +1,10 @@
-# Stage 3 / 0.3e — Harmonic concepts
+# Stage 3 / 0.3e — Harmonic concepts [ACCEPTED]
 
-База: принятый 0.3d fix2. Музыкальная часть 0.3e реализована. Русификация fix2 и структурный checkpoint **0.3e-ui** находятся в текущей проверяемой ветке. Stable остаётся 0.3.
+База: принятый 0.3d fix2. Музыкальная часть 0.3e, русификация fix2 и структурный checkpoint **0.3e-ui** приняты живым тестом Владом 2026-09-25. Windows Build #274 — success. PR #28 слит в `main`. Stable остаётся 0.3; следующий checkpoint — **0.3f — Context-aware ranking / ambiguity**.
 
-## Текущий UI слой
+## Принятый UI слой
 
-`0.3e-ui` не меняет Harmonic Engine / Improvisation Engine и музыкальные результаты. Он только организует уже существующие данные для live-test:
+`0.3e-ui` не меняет Harmonic Engine / Improvisation Engine и музыкальные результаты. Он организует уже существующие данные для live-test и последующей работы:
 
 - функции отображаются кратко: **Тоника / Субдоминанта / Доминанта / SubV**;
 - верхняя карточка показывает текущий/следующий аккорд, тональность, локальный центр, harmonic pattern и позицию;
@@ -14,7 +14,7 @@
 
 Полный UI-checklist: [`STAGE_3_0.3e_UI.md`](STAGE_3_0.3e_UI.md).
 
-После принятия `0.3e-ui` дальнейшую полировку layout временно останавливаем и возвращаемся к музыкальному тесту/закрытию 0.3e, затем к 0.3f.
+Дальнейшую полировку layout временно останавливаем. Финальный product UI, Tension UI и production-level оформление возвращаются на последующих этапах.
 
 ## Музыкальная проверка 0.3e
 
@@ -33,9 +33,13 @@
 | C5 без next | Нет выдуманной направляющей септимы; подход направлен к доступной цели |
 | unresolved primary | Explicit chord/next-note ideas допустимы; неподтверждённые scale/m6 ideas не добавляются |
 
-- [ ] UTF-8/русский текст без mojibake.
-- [ ] Ноты/аккорды, ARA, PPQ, BPM, MIDI, SubV, PLAY/STOP не искажены.
-- [ ] PLAY/STOP/seek и смена гармонии обновляют summary и подробные разделы.
-- [ ] Старые идеи исчезают при invalid context и восстанавливаются после reopen.
-- [ ] Regression 0.3d fix2 отсутствует.
-- [ ] Все 11 C++ test targets зелёные.
+- [x] UTF-8/русский текст без mojibake.
+- [x] Ноты/аккорды, ARA, PPQ, BPM, MIDI, SubV, PLAY/STOP не искажены.
+- [x] PLAY/STOP/seek и смена гармонии обновляют summary и подробные разделы.
+- [x] Старые идеи исчезают при invalid context и восстанавливаются после reopen.
+- [x] Regression 0.3d fix2 отсутствует.
+- [x] Все 11 C++ test targets зелёные.
+
+## Зафиксированный future refinement
+
+Во время live-test обнаружен отдельный пробел Stage 2 Pattern Recognizer: классический `iv–V–i` (`Fm7 → G7 → Cm7` в C minor) пока не распознаётся как отдельный оборот. Это не блокирует 0.3e и вынесено в отдельный backlog: [`HARMONIC_ENGINE_FUTURE_REFINEMENTS.md`](HARMONIC_ENGINE_FUTURE_REFINEMENTS.md), Issue #29.
