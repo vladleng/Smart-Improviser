@@ -1,3 +1,4 @@
+#include "core/analysis/HarmonicConcepts.h"
 #include "ara/ARAPluginEditor.h"
 #include "ara/ARAPluginProcessor.h"
 #include "ara/ARAContextDebugState.h"
@@ -317,14 +318,16 @@ void SmartImproviserARAEditor::timerCallback()
     cachedSituation = smartimproviser::harmony::analyzeHarmonicSituation(
         smartimproviser::harmony::mapTimelineHarmonicSnapshot(cachedShared, ppq));
     const auto result = smartimproviser::harmony::analyzeImprovisation(cachedSituation);
-    improvisationText = "STAGE 3 / 0.3d\nSource applications / targets\n\n";
+    improvisationText = "STAGE 3 / 0.3e\nHarmonic concepts / sources\n\n";
     if (! result.valid)
         improvisationText += utf8String(result.unavailableReason);
     else
     {
         const auto& strategy = result.strategies.front();
         improvisationText += "CONTEXT\n" + utf8String(result.contextDescription);
-        improvisationText += "\n\nSCALE SOURCES\n";
+        improvisationText += "\n\nHARMONIC IDEAS\n"
+            + utf8String(smartimproviser::harmony::harmonicConceptsText(result));
+        improvisationText += "\nSCALE SOURCES\n";
         bool hasScale = false;
         for (const auto& scalar : result.strategies)
         {

@@ -1,6 +1,7 @@
 #include "core/analysis/ImprovisationEngine.h"
 #include "core/analysis/DiatonicSources.h"
 #include "core/analysis/SpecialSources.h"
+#include "core/analysis/HarmonicConcepts.h"
 #include <utility>
 #include <algorithm>
 #include <cstdlib>
@@ -175,6 +176,7 @@ ImprovisationResult analyzeImprovisation(const HarmonicSituation& situation)
     result.valid = true;
     addDiatonicSource(result);
     addSpecialSources(result);
+    addHarmonicConcepts(result);
     return result;
 }
 }

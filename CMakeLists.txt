@@ -35,6 +35,8 @@ add_library(SmartImproviserCore STATIC
     src/core/analysis/DiatonicSources.h
     src/core/analysis/SpecialSources.cpp
     src/core/analysis/SpecialSources.h
+    src/core/analysis/HarmonicConcepts.cpp
+    src/core/analysis/HarmonicConcepts.h
     src/core/analysis/ImprovisationEngine.cpp
     src/core/analysis/ImprovisationEngine.h
     src/core/analysis/HarmonicEngine.cpp
@@ -155,7 +157,7 @@ target_compile_definitions(SmartImproviserARA
         JUCE_WEB_BROWSER=0
         JUCE_USE_CURL=0
         JUCE_VST3_CAN_REPLACE_VST2=0
-        SMART_IMPROVISER_BUILD_VERSION="0.3d fix2"
+        SMART_IMPROVISER_BUILD_VERSION="0.3e"
 )
 
 target_link_libraries(SmartImproviserARA
@@ -263,3 +265,10 @@ if(MSVC)
     target_compile_options(SmartImproviserSpecialSourcesTests PRIVATE /utf-8)
 endif()
 add_test(NAME SmartImproviserSpecialSourcesTests COMMAND SmartImproviserSpecialSourcesTests)
+
+add_executable(SmartImproviserHarmonicConceptsTests tests/HarmonicConceptsTests.cpp)
+target_link_libraries(SmartImproviserHarmonicConceptsTests PRIVATE SmartImproviserCore)
+if(MSVC)
+    target_compile_options(SmartImproviserHarmonicConceptsTests PRIVATE /utf-8)
+endif()
+add_test(NAME SmartImproviserHarmonicConceptsTests COMMAND SmartImproviserHarmonicConceptsTests)

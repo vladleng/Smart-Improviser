@@ -165,7 +165,7 @@ Stage 3 использует готовый `HarmonicSituation` и должен 
 - resolution notes;
 - базовые improvisation strategies.
 
-Рабочий план Stage 3: [0.3a–0.3h → 0.4](docs/STAGE_3_PLAN.md). Checkpoints **0.3a–0.3c приняты**. Текущая рабочая версия — **0.3d**, melodic minor / diminished sources. [Каталог и живой тест](docs/STAGE_3_0.3d_LIVE_TEST.md). [Начальная методика](docs/IMPROVISATION_METHOD.md): материал Бойко, контекст доминанты перед выбором источника, простая расширяемая модель T1–T3.
+Рабочий план Stage 3: [0.3a–0.3h → 0.4](docs/STAGE_3_PLAN.md). Checkpoints **0.3a–0.3d приняты**, включая SubV spelling fix2. Текущая рабочая версия — **0.3e**, harmonic concepts. [Каталог и живой тест](docs/STAGE_3_0.3e_LIVE_TEST.md). [Начальная методика](docs/IMPROVISATION_METHOD.md): материал Бойко, контекст доминанты перед выбором источника, простая расширяемая модель T1–T3.
 
 ## Дальнейшее направление
 

@@ -1,6 +1,6 @@
 # Stage 3 — Improvisation Engine: рабочий план
 
-> Обновлено 2026-09-25. База: stable 0.3, Stage 2 принят. 0.3a–0.3d приняты; следующий checkpoint — 0.3e. Stable остаётся 0.3.
+> Обновлено 2026-09-25. База: stable 0.3, Stage 2 принят. 0.3a–0.3d приняты; реализован 0.3e, ожидается CI / live-test. Stable остаётся 0.3.
 > Начальная методика и текстовая форма подсказки согласованы: [IMPROVISATION_METHOD.md](IMPROVISATION_METHOD.md). См. [PRODUCT_WORKFLOW.md](PRODUCT_WORKFLOW.md).
 
 ## Результат Stage
@@ -80,9 +80,11 @@ Windows Build #246 — success; живой тест 0.3d fix2 принят Вл�
 
 ### 0.3e — Harmonic concepts
 
-- [ ] Реализовать chord-tone playing, guide-tone targeting и diatonic extensions как конкретные идеи.
-- [ ] Добавить chromatic approach / enclosure concepts с целью; границу короткого примера и генерации Phrase согласовать до реализации.
-- [ ] Оформить ограниченные модели мышления из начальной методики; широкий каталог upper structures, замен и альтернатив отложить. Подготовить расширение для Stage 4.
+[Границы и чек-лист 0.3e](STAGE_3_0.3e_LIVE_TEST.md). 11 локальных тестовых наборов проходят; живой тест ещё не принят.
+
+- [x] Реализовать chord-tone playing, guide-tone targeting и diatonic extensions как конкретные идеи.
+- [x] Добавить chromatic approach / enclosure concepts с целью как символические схемы; генерация коротких нотных примеров/Phrase не вводится и остаётся отдельным будущим решением.
+- [x] Оформить ограниченные модели мышления из начальной методики; широкий каталог upper structures, замен и альтернатив отложить. Подготовить расширение для Stage 4.
 
 **Gate:** проверяемый результат этих пунктов, соответствующие regression tests, отдельный build artifact и live-test, где применим; принятие пользователем перед следующей буквой.
 
