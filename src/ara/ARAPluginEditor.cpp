@@ -288,6 +288,7 @@ juce::String patternName(smartimproviser::harmony::HarmonicPatternType type)
         case HarmonicPatternType::minorIvVi: return ru("Минорный iv-V-i");
         case HarmonicPatternType::dominantToTonic: return "V-I";
         case HarmonicPatternType::turnaroundIVIiiV: return "I-VI-ii-V";
+        case HarmonicPatternType::majorCadentialChain: return ru("Расширенный каданс iii-VI7-ii-V-I");
         case HarmonicPatternType::secondaryDominant: return ru("Вторичная доминанта");
         case HarmonicPatternType::tritoneSubstitution: return ru("Тритоновая замена");
         case HarmonicPatternType::backdoorDominant: return ru("Backdoor-доминанта");
@@ -580,8 +581,9 @@ void SmartImproviserARAEditor::timerCallback()
     cachedShared = SharedHarmonicContextBridge::instance().read();
     const auto ppq = cachedShared.transportAvailable ? cachedShared.transportPpq : -1.0;
     const auto timeline = smartimproviser::harmony::mapTimelineHarmonicSnapshot(cachedShared, ppq);
+    const auto patternWindow = smartimproviser::harmony::mapPatternTimelineWindow(cachedShared, ppq);
     const auto context = smartimproviser::harmony::mapHarmonicContext(cachedShared, ppq);
-    cachedSituation = smartimproviser::harmony::analyzeHarmonicSituation(timeline);
+    cachedSituation = smartimproviser::harmony::analyzeHarmonicSituation(timeline, patternWindow);
     const auto result = smartimproviser::harmony::analyzeImprovisation(cachedSituation);
     const auto debug = ARAContextDebugState::instance().getSnapshot();
 
@@ -924,7 +926,7 @@ void SmartImproviserARAEditor::paint(juce::Graphics& g)
 
     g.setColour(juce::Colour::fromRGB(150, 156, 168));
     g.setFont(14.0f);
-    g.drawText(ru("0.3f • контекстные альтернативы и безопасная неоднозначность"),
+    g.drawText(ru("0.3f fix1 • непрерывность кадансового контекста"),
                24, 47, getWidth() - 48, 22, juce::Justification::centredLeft);
 
     g.setColour(juce::Colour::fromRGB(42, 46, 53));

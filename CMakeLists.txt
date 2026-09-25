@@ -159,7 +159,7 @@ target_compile_definitions(SmartImproviserARA
         JUCE_WEB_BROWSER=0
         JUCE_USE_CURL=0
         JUCE_VST3_CAN_REPLACE_VST2=0
-        SMART_IMPROVISER_BUILD_VERSION="0.3f"
+        SMART_IMPROVISER_BUILD_VERSION="0.3f fix1"
 )
 
 target_link_libraries(SmartImproviserARA
@@ -201,6 +201,13 @@ add_executable(SmartImproviserHarmonicEngineTests
 target_link_libraries(SmartImproviserHarmonicEngineTests PRIVATE SmartImproviserCore)
 target_compile_features(SmartImproviserHarmonicEngineTests PRIVATE cxx_std_20)
 
+add_executable(SmartImproviserPatternContextTests
+    tests/PatternContextTests.cpp
+)
+
+target_link_libraries(SmartImproviserPatternContextTests PRIVATE SmartImproviserCore)
+target_compile_features(SmartImproviserPatternContextTests PRIVATE cxx_std_20)
+
 add_executable(SmartImproviserLocalKeyCenterTests
     tests/LocalKeyCenterTests.cpp
 )
@@ -229,23 +236,34 @@ add_executable(SmartImproviserTimelineContextTests
 target_link_libraries(SmartImproviserTimelineContextTests PRIVATE SmartImproviserContext)
 target_compile_features(SmartImproviserTimelineContextTests PRIVATE cxx_std_20)
 
+add_executable(SmartImproviserPatternWindowMapperTests
+    tests/PatternWindowMapperTests.cpp
+)
+
+target_link_libraries(SmartImproviserPatternWindowMapperTests PRIVATE SmartImproviserContext)
+target_compile_features(SmartImproviserPatternWindowMapperTests PRIVATE cxx_std_20)
+
 if(MSVC)
     target_compile_options(SmartImproviserCoreTests PRIVATE /utf-8)
     target_compile_options(SmartImproviserDataModelTests PRIVATE /utf-8)
     target_compile_options(SmartImproviserHarmonicEngineTests PRIVATE /utf-8)
+    target_compile_options(SmartImproviserPatternContextTests PRIVATE /utf-8)
     target_compile_options(SmartImproviserLocalKeyCenterTests PRIVATE /utf-8)
     target_compile_options(SmartImproviserAmbiguityConfidenceTests PRIVATE /utf-8)
     target_compile_options(SmartImproviserIntegrationValidationTests PRIVATE /utf-8)
     target_compile_options(SmartImproviserTimelineContextTests PRIVATE /utf-8)
+    target_compile_options(SmartImproviserPatternWindowMapperTests PRIVATE /utf-8)
 endif()
 
 add_test(NAME SmartImproviserCoreTests COMMAND SmartImproviserCoreTests)
 add_test(NAME SmartImproviserDataModelTests COMMAND SmartImproviserDataModelTests)
 add_test(NAME SmartImproviserHarmonicEngineTests COMMAND SmartImproviserHarmonicEngineTests)
+add_test(NAME SmartImproviserPatternContextTests COMMAND SmartImproviserPatternContextTests)
 add_test(NAME SmartImproviserLocalKeyCenterTests COMMAND SmartImproviserLocalKeyCenterTests)
 add_test(NAME SmartImproviserAmbiguityConfidenceTests COMMAND SmartImproviserAmbiguityConfidenceTests)
 add_test(NAME SmartImproviserIntegrationValidationTests COMMAND SmartImproviserIntegrationValidationTests)
 add_test(NAME SmartImproviserTimelineContextTests COMMAND SmartImproviserTimelineContextTests)
+add_test(NAME SmartImproviserPatternWindowMapperTests COMMAND SmartImproviserPatternWindowMapperTests)
 
 add_executable(SmartImproviserImprovisationTests tests/ImprovisationEngineTests.cpp)
 target_link_libraries(SmartImproviserImprovisationTests PRIVATE SmartImproviserCore)
