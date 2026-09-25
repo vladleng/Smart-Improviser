@@ -38,6 +38,8 @@ private:
 
     juce::String summaryContext;
     juce::String summaryMeta;
+    juce::String summaryPattern;
+    juce::String summaryThinking;
     juce::String materialText;
     juce::String sourcesText;
     juce::String harmonicText;
