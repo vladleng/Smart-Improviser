@@ -137,6 +137,30 @@ HarmonicPattern recognizePattern(const HarmonicSituation& situation) noexcept
                            true);
     }
 
+    // Full minor iv-V-i. This is distinct from iiø-V-i while all three
+    // members are visible; the two cadences intentionally collapse to V-i
+    // at the final tonic when the older predominant has left the Stage 1 window.
+    if (situation.previousChordAvailable
+        && situation.nextChordAvailable
+        && key.mode == KeyMode::minor
+        && isDegree(situation.previousChord, key, 4)
+        && situation.previousChord.quality == ChordQuality::minor
+        && isDegree(situation.currentChord, key, 5)
+        && situation.currentChord.quality == ChordQuality::dominant
+        && isDegree(situation.nextChord, key, 1)
+        && isMinorFamily(situation.nextChord)
+        && situation.harmonic.dominantResolutionConfirmed)
+    {
+        return makePattern(HarmonicPatternType::minorIvVi,
+                           PatternMemberRole::dominant,
+                           1,
+                           3,
+                           ConfidenceLevel::confirmed,
+                           true,
+                           true,
+                           true);
+    }
+
     // Full ii-SubV-I in major.
     if (situation.previousChordAvailable
         && situation.nextChordAvailable
@@ -249,22 +273,6 @@ HarmonicPattern recognizePattern(const HarmonicSituation& situation) noexcept
                            true);
     }
 
-    if (key.mode == KeyMode::major
-        && situation.previousChordAvailable
-        && isDegree(situation.previousChord, key, 5)
-        && situation.previousChord.quality == ChordQuality::dominant
-        && isDegree(situation.currentChord, key, 1)
-        && situation.currentChord.quality == ChordQuality::major)
-    {
-        return makePattern(HarmonicPatternType::majorIiVI,
-                           PatternMemberRole::resolution,
-                           2,
-                           3,
-                           ConfidenceLevel::high,
-                           true,
-                           false);
-    }
-
     if (key.mode == KeyMode::minor
         && situation.nextChordAvailable
         && isDegree(situation.currentChord, key, 2)
@@ -282,19 +290,38 @@ HarmonicPattern recognizePattern(const HarmonicSituation& situation) noexcept
     }
 
     if (key.mode == KeyMode::minor
-        && situation.previousChordAvailable
+        && situation.nextChordAvailable
+        && isDegree(situation.currentChord, key, 4)
+        && situation.currentChord.quality == ChordQuality::minor
+        && isDegree(situation.nextChord, key, 5)
+        && situation.nextChord.quality == ChordQuality::dominant)
+    {
+        return makePattern(HarmonicPatternType::minorIvVi,
+                           PatternMemberRole::predominant,
+                           0,
+                           3,
+                           ConfidenceLevel::high,
+                           false,
+                           true);
+    }
+
+    // On the tonic only V-I / V-i is actually visible. Do not invent the
+    // earlier predominant (ii, iiø or iv) from a two-chord window.
+    if (situation.previousChordAvailable
         && isDegree(situation.previousChord, key, 5)
         && situation.previousChord.quality == ChordQuality::dominant
         && isDegree(situation.currentChord, key, 1)
-        && isMinorFamily(situation.currentChord))
+        && ((key.mode == KeyMode::major && situation.currentChord.quality == ChordQuality::major)
+            || (key.mode == KeyMode::minor && isMinorFamily(situation.currentChord))))
     {
-        return makePattern(HarmonicPatternType::minorIiHalfDimVi,
+        return makePattern(HarmonicPatternType::dominantToTonic,
                            PatternMemberRole::resolution,
+                           1,
                            2,
-                           3,
                            ConfidenceLevel::high,
                            true,
-                           false);
+                           false,
+                           true);
     }
 
     // Tritone-substitution boundary positions.
