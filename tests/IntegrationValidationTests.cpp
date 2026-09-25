@@ -138,9 +138,9 @@ int main()
            "G7-C returns cleanly to global C major");
 
     const auto turnResolution = analyzeHarmonicSituation(windowAt(cMajor, turnaround, 4));
-    expect(turnResolution.pattern.type == HarmonicPatternType::majorIiVI
+    expect(turnResolution.pattern.type == HarmonicPatternType::dominantToTonic
            && turnResolution.pattern.role == PatternMemberRole::resolution,
-           "final Cmaj7 is recognized as ii-V-I resolution boundary");
+           "final Cmaj7 keeps generic V-I resolution without inventing a predominant");
 
     // ---------------------------------------------------------------------
     // Borrowed/modal ambiguity must resolve again when the harmony becomes
