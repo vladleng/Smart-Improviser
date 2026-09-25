@@ -364,8 +364,11 @@ void analyzeLocalKeyCenter(HarmonicSituation& situation) noexcept
         }
     }
 
-    // Minor iv-V boundary seen at V with previous iv available.
+    // Minor iv-V boundary seen at V with previous iv available. It is only a
+    // candidate while the following tonic is unknown; a known next chord is
+    // handled by the full three-chord check above and may contradict C minor.
     if (situation.previousChordAvailable
+        && ! situation.nextChordAvailable
         && situation.previousChord.quality == ChordQuality::minor
         && situation.currentChord.quality == ChordQuality::dominant)
     {
