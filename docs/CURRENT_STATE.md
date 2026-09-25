@@ -1,6 +1,6 @@
 # Smart Improviser — Current State
 
-> Планирование обновлено 2026-09-25: согласован workflow работы над песней, user content и постоянных tension-подсказок. 0.3a–0.3d приняты; текущий checkpoint — 0.3e (реализован, ожидается CI / live-test); последняя принятая stable — 0.3.
+> Планирование обновлено 2026-09-25: `0.3a–0.3f` приняты; `0.3e-ui` принят вместе с 0.3e. Следующий checkpoint — **0.3g Explanation / usable output**. Последняя принятая stable — `0.3`.
 
 > Короткая точка входа для нового чата или рабочей сессии. Подробная архитектура — в `PROJECT_CONTEXT.md`, этапы — в `ROADMAP.md`, правила версий — в `VERSIONING.md`, фактический прогресс — в GitHub Issues.
 
@@ -8,14 +8,16 @@
 
 - **Завершённые Stage:** Stage 0, Stage 1, Stage 2
 - **Текущая стабильная версия:** `0.3`
-- **Последний завершённый Stage:** Stage 2 — Harmonic Engine
 - **Текущий Stage:** Stage 3 — Improvisation Engine
 - **Рабочая линия:** `0.3a → 0.3x`
 - **Итог Stage 3:** `0.4`
 - **Stage 2 Issue:** #3 — закрыт стабильной `0.3`
-- **Stage 3 Issue:** #4 — рабочий план `0.3a–0.3h`; 0.3a–0.3d приняты; текущий checkpoint — 0.3e (реализован, ожидается CI / live-test)
+- **Stage 3 Issue:** #4 — рабочий план `0.3a–0.3h`; `0.3a–0.3f` приняты
+- **Issue #29:** minor `iv–V–i` + boundary semantics — закрыт в `0.3f`
+- **PR #30:** `0.3f — context-aware ranking, ambiguity and minor iv-V-i` — готов к merge после acceptance
+- **Следующий checkpoint:** `0.3g — Explanation / usable output`
 
-`0.3` — релизное закрытие Stage 2. Новая музыкальная логика относительно принятого `0.2f` не добавлялась: stable release фиксирует уже проверенное состояние Harmonic Engine.
+`0.3` — релизное закрытие Stage 2. Stable release фиксирует принятое состояние Harmonic Engine; subsequent Stage 3 checkpoints расширяют Improvisation Engine с отдельными regression/live gates.
 
 ## Архитектурная граница
 
@@ -44,11 +46,15 @@ Local Key Center Analyzer
 Ambiguity / Confidence Analyzer
         ↓
 HarmonicSituation
+        ↓
+Improvisation Engine
+        ↓
+Context-aware strategy ranking
 ```
 
 ## Stable 0.3 — Stage 2 complete
 
-В стабильную `0.3` входят все принятые checkpoints:
+Принятые checkpoints Stage 2:
 
 ```text
 0.2a — Harmonic Engine foundation          [ACCEPTED]
@@ -62,126 +68,80 @@ HarmonicSituation
 0.3  — Stage 2 complete                    [STABLE]
 ```
 
-### Возможности Harmonic Engine
-
-- basic harmonic functions;
-- major `ii–V–I` на `ii / V / I`;
-- minor `iiø–V–i` на `iiø / V / i`;
-- `V–I`;
-- `I–VI–ii–V`;
-- secondary dominants и dominant chains;
-- ordinary `V7` / `SubV7`;
-- major/minor `ii–SubV–I`;
-- applied SubV и guide-tone resolution;
-- local key center: `candidate / tonicized / established / modulationCandidate`;
-- remote local centers;
-- global/local harmonic interpretations;
-- borrowed/modal ambiguity;
-- `unique / ambiguous` semantics и explicit primary interpretation;
-- enharmonic-aware KeyCenter display через `rootFifths`;
-- boundary false-positive guards;
-- diagnostic UI для global/local/ambiguity/confidence.
-
-### Integration validation
-
-`0.2f` добавил отдельный regression target:
-
-```text
-SmartImproviserIntegrationValidationTests
-```
-
-Live-tested в Fender Studio Pro:
-
-```text
-Cmaj7 → A7 → Dm7 → G7 → Cmaj7
-Cmaj7 → Fm7 → G7 → Cmaj7
-Em7b5 → Eb7 → Dm → G7 → Cmaj7
-C#7 → F#maj7 → Bmaj7
-Dm7 → G7 → Abmaj7
-```
-
-Подтверждены переходы:
-
-```text
-Global → Local primary → Global
-Unique → Ambiguous → Unique
-Tonicized → Modulation candidate
-```
-
-Stage 1 / ARA regression не обнаружен.
-
-## Версия 0.3
-
-```text
-Build label: Smart Improviser 0.3
-CMake:      0.3.0
-Artifact:   Smart-Improviser-0.3-Windows
-Package:    Smart Improviser.vst3
-Tests:      7 regression/integration targets
-```
+Stage 2 умеет: basic harmonic functions, major `ii–V–I`, minor `iiø–V–i`, `V–I`, `I–VI–ii–V`, secondary dominants/chains, ordinary `V7` / `SubV7`, local key centers, global/local/modal ambiguity, enharmonic-aware spelling и boundary guards.
 
 ## Stage 3 / Improvisation Engine
 
-Stage 3 использует готовый `HarmonicSituation` и выдаёт музыкально применимый материал для импровизации:
+Stage 3 использует готовый `HarmonicSituation` и выдаёт:
 
 - chord tones;
 - guide tones;
 - target notes;
-- scales;
+- scales/source material;
 - harmonic concepts;
 - resolution notes;
-- базовые improvisation strategies.
+- improvisation strategies;
+- context-specific alternatives с provenance по harmonic interpretation.
 
-Рабочая декомпозиция опубликована в [STAGE_3_PLAN.md](STAGE_3_PLAN.md) и Issue #4. Начальная методика согласована в [IMPROVISATION_METHOD.md](IMPROVISATION_METHOD.md); 0.3a–0.3d приняты, текущий checkpoint — 0.3e (реализован, ожидается CI / live-test).
+Рабочая декомпозиция: [STAGE_3_PLAN.md](STAGE_3_PLAN.md). Методика: [IMPROVISATION_METHOD.md](IMPROVISATION_METHOD.md). Основной первичный источник текущего метода — Игорь Бойко, «Мой метод», раздел 2 (2010); проектные правила Smart Improviser отделяются от авторской методики.
 
-Согласованная продуктовая цель: [PRODUCT_WORKFLOW.md](PRODUCT_WORKFLOW.md). Общая/личная библиотеки — Stage 5; сохраняемый Song workspace — Stage 7; быстрый ввод нот/TAB и ручной конструктор — Stage 8; Planner — Stage 10. Смена tension не переписывает сохранённые идеи.
+## Принятые checkpoints Stage 3
 
-## Что читать при продолжении Stage 3
+### 0.3a — Strategy contract / foundation
+Windows Build #231 — success; live-test принят 2026-09-24; PR #23 merged.
+
+### 0.3b — Structural tones / targets / resolution
+Guide tones, characteristic tones, реальные next-chord targets, confirmed ResolutionTarget moves и отдельные optional melodic connections. Windows Build #234 — success; PR #24 merged.
+
+### 0.3c — Diatonic / modal sources
+Ограниченный context-aware diatonic/modal catalog; source хранит degrees/spelling и interpretation provenance; tension не назначается. Windows Build #237 — success; принят 2026-09-25; PR #25 merged.
+
+### 0.3d — Melodic minor / diminished sources
+Четыре melodic-minor applications, project-rule SubV и whole-half diminished. Confirmed SubV spelling выводится функционально: host `C#7→C` показывается музыкально как `Db7 / Ab melodic minor / Abm6`. Windows Build #246 — success; live-test принят 2026-09-25; PR #26 merged.
+
+### 0.3e + 0.3e-ui — Harmonic concepts / diagnostic UI
+Добавлены chord-tone playing, guide-tone targeting, diatonic extensions, m6-thinking, symbolic chromatic approach/enclosure, confirmed vs optional moves. UI: компактная карточка «Текущий контекст», функция Тоника / Субдоминанта / Доминанта / SubV, pattern/позиция, строка «Мышление», четыре collapsible sections. Windows Build #274 — success; принято 2026-09-25; PR #28 merged.
+
+### 0.3f — Context-aware ranking / ambiguity [ACCEPTED]
+
+Принято Владом 2026-09-25. Windows Build #284 — success. Live-test пройден. Issue #29 закрыт.
+
+Реализовано:
+
+- foundation остаётся `interpretationIndependent`;
+- diatonic/modal и special sources собираются для каждого валидного interpretation;
+- context-dependent strategy хранит `interpretationIndex` + evidence;
+- при выбранной primary её strategies идут раньше alternatives;
+- при `primaryInterpretationIndex = -1` нет скрытого winner;
+- recommendation priority и harmonic confidence остаются раздельными;
+- добавлен отдельный `minorIvVi` для `iv–V–i`;
+- `iv→V` работает как boundary candidate, полный `iv→V→i` — confirmed cadence;
+- local minor center поддерживает тот же pattern;
+- финальный `V→I/i` без earlier predominant обозначается общим двухаккордовым resolution;
+- false-positive `C major: Fm7 → G7 → Cmaj7` устранён: на `G7` известный `Cmaj7` блокирует ложный local C minor;
+- UI при unresolved ambiguity явно показывает несколько candidates и не склеивает их в одну уверенную трактовку;
+- Stage 1 contract `previous/current/next` не расширен.
+
+Acceptance: [STAGE_3_0.3f_LIVE_TEST.md](STAGE_3_0.3f_LIVE_TEST.md).
+
+## Следующий checkpoint — 0.3g
+
+`0.3g — Explanation / usable output` должен завершить объяснимую пользовательскую цепочку:
+
+```text
+идея → source → важные ноты → target/resolution → почему
+```
+
+Основные задачи: deterministic explanations, Why?-data, аккуратное presentation-layer представление уже рассчитанного Core-результата. T1/T2/T3 policy остаётся Stage 4.
+
+## Что читать при продолжении
 
 1. `docs/CURRENT_STATE.md`;
-2. `docs/ROADMAP.md`;
-3. `docs/STAGE_1_TO_STAGE_2_CONTRACT.md`;
-4. `docs/PROJECT_CONTEXT.md`;
-5. `docs/ARCHITECTURAL_DECISIONS.md`;
-6. `docs/VERSIONING.md`;
-7. Issue #3 — история завершённого Stage 2;
-8. `docs/PRODUCT_WORKFLOW.md` — согласованный пользовательский сценарий;
-9. `docs/STAGE_3_PLAN.md` — рабочий план Stage 3.
-
-## Принятый checkpoint 0.3a
-
-Реализована основа Improvisation Engine: одна стратегия по explicit chord tones, сохранение гармонического контекста и target, отдельные source/thinking/resolution поля, deterministic rule ID/version и priority. Диагностика справа; анализ вне paint. Локально 8 C++ test targets проходят. Windows Build #231 — success. Влад принял живой тест 2026-09-24, PR #23 слит в main.
-
-[Чек-лист живой проверки](STAGE_3_0.3a_LIVE_TEST.md). Гаммы, модели Бойко и выбор T1–T3 ещё не реализованы.
-
-## Принятый checkpoint 0.3b
-
-Подготовлены guide tones (только присутствующие 3/7), characteristic tones, реальные звуки следующего аккорда и показ движений ResolutionTarget Stage 2. Для неподтверждённого перехода предлагаются отдельные optional melodic connections к ближайшему root/guide следующего аккорда; они не подтверждают гармоническую функцию.
-
-8 локальных C++ test targets проходят. Windows Build #234 — success; Влад принял живой тест, PR #24 слит в main. [Чек-лист 0.3b](STAGE_3_0.3b_LIVE_TEST.md). Материал пока отображается как pitch classes. Stable остаётся 0.3.
-
-## Принятый checkpoint 0.3c
-
-Добавлен ограниченный диатонический каталог: режимы принятого major/minor center и Mixolydian для ordinary dominant seventh с подтверждённой major target. Сначала проверяется совместимость со всеми explicit chord tones/degrees. Unresolved primary, minor-target dominant, SubV, цепи и неподдерживаемые случаи сохраняют chord-tone foundation с объяснением отсутствия гаммы.
-
-Scale source хранит ступени, root/spelling и ссылку на interpretation; source не меняет tonal center. Опоры, characteristic tones и resolution 0.3b сохраняются. Новая гамма выводится с корректным enharmonic spelling; прежние списки опор пока pitch classes. Tension policy не реализуется.
-
-9 локальных C++ test targets проходят; Windows Build #237 success. Влад принял 0.3c 2026-09-25; PR #25 merged. [Чек-лист](STAGE_3_0.3c_LIVE_TEST.md).
-
-## Принятый checkpoint 0.3d
-
-Добавлены четыре melodic-minor application из раздела 2 Бойко, отдельное project-правило SubV и whole-half для dim7. Источник, m6 thinking, реальные опоры и цель сохраняются отдельно. Source/chord spelling, объявленные пропуски b7 на m7 и натуральной 5 в altered, проверка явных надстроек и slash bass, отдельные optional color moves. Tension не назначается. Правая диагностическая панель прокручивается.
-
-В live-test выявился отдельный enharmonic case Studio Pro: Chord Track показывает Db7, а structured ARA root приходит как C#. Fix1 через `ARA SheetChord name` не решил реальный host-case. В fix2 confirmed SubV spellings выводятся функционально из реальной цели уже в Improvisation Engine: C#7→C становится пользовательски понятным Db7, source — Ab melodic minor / Abm6, G — #11 относительно Db. Stage 1/2 raw diagnostic при этом может оставаться C#7.
-
-10 C++ test targets проходят. Windows Build #246 — success. Живой тест fix2 принят Владом 2026-09-25; PR #26 merged. [Каталог и чек-лист 0.3d](STAGE_3_0.3d_LIVE_TEST.md).
-
-Текущий checkpoint — **0.3e Harmonic concepts**; живой тест ещё не принят.
-
-Наблюдение 0.3c: A7 → Dm7 → G7 даёт D Aeolian при primary D minor, а Cmaj7 → Dm7 → G7 — D Dorian. Пользователь принял текущее поведение; сравнение global/local alternatives остаётся 0.3f.
-
-## Рабочий checkpoint 0.3e
-
-Добавлены explicit chord-tone/guide идеи, диатонические надстройки, m6 skeleton из принятого source-каталога, символические chromatic approach/enclosure с реальной текущей/следующей целью. Подготовка оценивается относительно текущего аккорда; confirmed и optional движения различаются. Новые идеи показывают ступени и функциональное SubV spelling fix2. Генерация Phrase, MIDI и Tension policy не добавляются.
-
-11 локальных C++ test targets проходят. Windows CI / живой тест ещё предстоят. [Границы и чек-лист](STAGE_3_0.3e_LIVE_TEST.md). К 0.3f — после принятия.
+2. `docs/STAGE_3_PLAN.md`;
+3. `docs/STAGE_3_0.3f_LIVE_TEST.md` как принятый checkpoint;
+4. `docs/STAGE_1_TO_STAGE_2_CONTRACT.md`;
+5. `docs/PROJECT_CONTEXT.md`;
+6. `docs/ARCHITECTURAL_DECISIONS.md`;
+7. `docs/IMPROVISATION_METHOD.md`;
+8. Issue #4 — Stage 3;
+9. Issue #29 — закрытая история `iv–V–i` refinement.

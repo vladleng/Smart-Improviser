@@ -113,6 +113,14 @@ bool isPredominantForRoot(const NormalizedChord& chord,
     return false;
 }
 
+bool isMinorSubdominantForRoot(const NormalizedChord& chord,
+                               int targetRoot) noexcept
+{
+    return chord.valid
+        && chord.quality == ChordQuality::minor
+        && wrap12(chord.rootPitchClass - targetRoot) == 5;
+}
+
 HarmonicPattern makeLocalPattern(HarmonicPatternType type,
                                  PatternMemberRole role,
                                  int position,
@@ -242,16 +250,24 @@ void analyzeLocalKeyCenter(HarmonicSituation& situation) noexcept
         const auto targetRoot = situation.nextChord.rootPitchClass;
         const auto ordinary = isOrdinaryDominantOfRoot(situation.currentChord, targetRoot);
         const auto substitute = isSubstituteDominantOfRoot(situation.currentChord, targetRoot);
+        const auto ordinaryPredominant = isPredominantForRoot(situation.previousChord, targetRoot, mode);
+        const auto minorIv = mode == KeyMode::minor
+            && situation.nextChord.quality == ChordQuality::minor
+            && isMinorSubdominantForRoot(situation.previousChord, targetRoot);
 
-        if ((ordinary || substitute)
-            && isPredominantForRoot(situation.previousChord, targetRoot, mode))
+        // ii / iiø may lead to V or SubV as before. iv is intentionally added
+        // only for the ordinary minor V-i cadence in 0.3f.
+        if (((ordinary || substitute) && ordinaryPredominant)
+            || (ordinary && minorIv))
         {
             const auto key = makeKey(targetRoot, mode);
             const auto type = substitute
                 ? HarmonicPatternType::tritoneSubstitution
-                : (mode == KeyMode::minor
-                    ? HarmonicPatternType::minorIiHalfDimVi
-                    : HarmonicPatternType::majorIiVI);
+                : (minorIv
+                    ? HarmonicPatternType::minorIvVi
+                    : (mode == KeyMode::minor
+                        ? HarmonicPatternType::minorIiHalfDimVi
+                        : HarmonicPatternType::majorIiVI));
             const auto role = substitute
                 ? PatternMemberRole::substituteDominant
                 : PatternMemberRole::dominant;
@@ -272,6 +288,38 @@ void analyzeLocalKeyCenter(HarmonicSituation& situation) noexcept
                                          true,
                                          true,
                                          true));
+            if (situation.localKey.valid)
+                return;
+        }
+    }
+
+    // Minor iv-V boundary. Derive the possible tonic from the ordinary V,
+    // rather than treating every minor chord as a major-key ii.
+    if (situation.nextChordAvailable
+        && situation.currentChord.quality == ChordQuality::minor
+        && situation.nextChord.quality == ChordQuality::dominant)
+    {
+        const auto targetRoot = wrap12(situation.nextChord.rootPitchClass - 7);
+        if (isMinorSubdominantForRoot(situation.currentChord, targetRoot)
+            && isOrdinaryDominantOfRoot(situation.nextChord, targetRoot))
+        {
+            const auto key = makeKey(targetRoot, KeyMode::minor);
+            applyCenter(situation,
+                        makeCenter(key,
+                                   KeyCenterScope::temporary,
+                                   KeyCenterStatus::candidate,
+                                   ConfidenceLevel::high,
+                                   false,
+                                   true,
+                                   false),
+                        makeLocalPattern(HarmonicPatternType::minorIvVi,
+                                         PatternMemberRole::predominant,
+                                         0,
+                                         3,
+                                         ConfidenceLevel::high,
+                                         false,
+                                         true,
+                                         false));
             if (situation.localKey.valid)
                 return;
         }
@@ -313,6 +361,40 @@ void analyzeLocalKeyCenter(HarmonicSituation& situation) noexcept
                 if (situation.localKey.valid)
                     return;
             }
+        }
+    }
+
+    // Minor iv-V boundary seen at V with previous iv available. It is only a
+    // candidate while the following tonic is unknown; a known next chord is
+    // handled by the full three-chord check above and may contradict C minor.
+    if (situation.previousChordAvailable
+        && ! situation.nextChordAvailable
+        && situation.previousChord.quality == ChordQuality::minor
+        && situation.currentChord.quality == ChordQuality::dominant)
+    {
+        const auto targetRoot = wrap12(situation.currentChord.rootPitchClass - 7);
+        if (isMinorSubdominantForRoot(situation.previousChord, targetRoot)
+            && isOrdinaryDominantOfRoot(situation.currentChord, targetRoot))
+        {
+            const auto key = makeKey(targetRoot, KeyMode::minor);
+            applyCenter(situation,
+                        makeCenter(key,
+                                   KeyCenterScope::temporary,
+                                   KeyCenterStatus::candidate,
+                                   ConfidenceLevel::high,
+                                   true,
+                                   false,
+                                   false),
+                        makeLocalPattern(HarmonicPatternType::minorIvVi,
+                                         PatternMemberRole::dominant,
+                                         1,
+                                         3,
+                                         ConfidenceLevel::high,
+                                         true,
+                                         false,
+                                         false));
+            if (situation.localKey.valid)
+                return;
         }
     }
 

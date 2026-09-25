@@ -190,8 +190,20 @@ int main()
     auto situation=withSelectedCenter(key,makeChord(2,{0,3,6,10}));
     situation.primaryInterpretationIndex=-1;
     result=analyzeImprovisation(situation);
-    expect(!conceptOf(result,HarmonicConceptKind::diatonicExtensions) && !conceptOf(result,HarmonicConceptKind::thinkingArpeggio),"unresolved interpretation has no fabricated scale concepts");
-    for (const auto& idea:result.concepts) expect(idea.interpretationIndependent && idea.interpretationIndex==-1,"explicit-note ideas honestly independent");
+    bool hasDependentConcept = false;
+    for (const auto& idea:result.concepts)
+    {
+        if (idea.interpretationIndependent)
+        {
+            expect(idea.interpretationIndex==-1,"interpretation-independent concepts keep index -1");
+        }
+        else
+        {
+            hasDependentConcept = true;
+            expect(idea.interpretationIndex==0,"unresolved primary retains explicit interpretation provenance");
+        }
+    }
+    expect(hasDependentConcept,"unresolved primary retains attributed source concepts without hidden selection");
     situation=withSelectedCenter(makeKey(7,false),makeChord(7,{0,4,7,11}));
     result=analyzeImprovisation(situation);
     anchors=conceptOf(result,HarmonicConceptKind::chordAnchors);

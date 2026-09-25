@@ -169,7 +169,9 @@ int main()
     auto situation = withSelectedCenter(cMajor, makeChord(2,{0,3,7,10}));
     situation.primaryInterpretationIndex = -1;
     result = analyzeImprovisation(situation);
-    expect(!scale(result) && result.valid, "unresolved primary retains only chord strategy");
+    expect(scale(result) && scale(result)->interpretationIndex == 0
+           && !scale(result)->interpretationIndependent,
+           "unresolved primary retains attributed source without selecting it implicitly");
     situation = withSelectedCenter(cMajor, makeChord(2,{0,3,7,10}));
     situation.interpretations[0].center = makeGlobalKeyCenter(normalizeKey(makeKey(-2,false)));
     situation.interpretations[0].kind = HarmonicInterpretationKind::localCenter;

@@ -86,12 +86,15 @@ int functionalSubVRootFifths(const ImprovisationResult& result, const Normalized
         ? candidate : chord.rootFifths;
 }
 
-void append(ImprovisationResult& result, const Rule& rule, bool subV = false)
+void append(ImprovisationResult& result, const Rule& rule, int index, bool subV = false)
 {
     const auto& chord = result.context.currentChord;
     if (!compatible(rule, chord)) return;
-    const int index = result.context.primaryInterpretationIndex;
+    if (index < 0 || index >= result.context.interpretationCount
+        || static_cast<std::size_t>(index) >= result.context.interpretations.size()) return;
     const auto& interpretation = result.context.interpretations[static_cast<std::size_t>(index)];
+    if (!interpretation.valid) return;
+
     auto strategy = result.strategies.front();
     const auto chordSpellingFifths = subV ? functionalSubVRootFifths(result, chord) : chord.rootFifths;
     if (subV)
@@ -103,8 +106,8 @@ void append(ImprovisationResult& result, const Rule& rule, bool subV = false)
     }
     strategy.kind = rule.kind;
     strategy.ruleId = subV ? "project.subv.melodic-minor.V" : rule.id;
-    strategy.ruleVersion = subV ? 2 : 1;
-    strategy.priority = 40; // Stable catalog order, not a tension or confidence score.
+    strategy.ruleVersion = subV ? 3 : 2;
+    strategy.priority = 40; // Catalog/recommendation order, never harmonic confidence.
     strategy.interpretationIndependent = false;
     strategy.interpretationIndex = index;
     strategy.evidence = interpretation.evidence;
@@ -120,7 +123,8 @@ void append(ImprovisationResult& result, const Rule& rule, bool subV = false)
     strategy.usageHint = rule.hint;
     strategy.idea = rule.application;
     strategy.explanation = strategy.sourceReference;
-    strategy.conditions = "Use with the selected interpretation; source root is not a song key. ";
+    strategy.conditions = "Use with harmonic interpretation " + std::to_string(index + 1)
+        + "; source root is not a song key. ";
     strategy.conditions += rule.hint;
     if (rule.omittedInterval >= 0 && chord.hasTone(rule.omittedInterval))
         strategy.omittedChordTones.push_back(wrap(chord.rootPitchClass + rule.omittedInterval));
@@ -192,28 +196,42 @@ void addSpecialSources(ImprovisationResult& result)
 {
     if (!result.valid || result.strategies.empty()) return;
     const auto& situation = result.context;
-    const int index = situation.primaryInterpretationIndex;
-    if (index < 0 || index >= situation.interpretationCount
-        || static_cast<std::size_t>(index) >= situation.interpretations.size()) return;
-    const auto& interpretation = situation.interpretations[static_cast<std::size_t>(index)];
-    if (!interpretation.valid || !interpretation.center.valid || !interpretation.center.key.valid
-        || (interpretation.center.key.mode != KeyMode::major && interpretation.center.key.mode != KeyMode::minor)) return;
     const auto& chord = situation.currentChord;
-    if (chord.quality == ChordQuality::dominant)
+
+    for (std::uint8_t i = 0; i < situation.interpretationCount; ++i)
     {
-        if (!situation.resolution.available || !situation.resolution.confirmed
-            || !situation.nextChordAvailable || !situation.nextChord.valid
-            || (result.dominantContext != DominantContext::toMajor && result.dominantContext != DominantContext::toMinor)) return;
-        if (result.substituteDominant)
-            append(result, lydian, true);
-        else if (!interpretation.harmonic.substituteDominantCandidate && !situation.harmonic.substituteDominantConfirmed)
+        const int index = static_cast<int>(i);
+        const auto& interpretation = situation.interpretations[i];
+        if (!interpretation.valid || !interpretation.center.valid || !interpretation.center.key.valid
+            || (interpretation.center.key.mode != KeyMode::major && interpretation.center.key.mode != KeyMode::minor))
+            continue;
+
+        if (chord.quality == ChordQuality::dominant)
         {
-            if (result.dominantContext == DominantContext::toMajor) append(result, lydian);
-            append(result, altered);
+            if (!situation.resolution.available || !situation.resolution.confirmed
+                || !situation.nextChordAvailable || !situation.nextChord.valid
+                || (result.dominantContext != DominantContext::toMajor
+                    && result.dominantContext != DominantContext::toMinor))
+                continue;
+
+            const bool subV = interpretation.harmonic.substituteDominantConfirmed;
+            if (subV)
+            {
+                append(result, lydian, index, true);
+            }
+            else if (!interpretation.harmonic.substituteDominantCandidate)
+            {
+                if (result.dominantContext == DominantContext::toMajor)
+                    append(result, lydian, index);
+                append(result, altered, index);
+            }
         }
+        else if (chord.quality == ChordQuality::minor)
+            append(result, minor, index);
+        else if (chord.quality == ChordQuality::halfDiminished)
+            append(result, halfDim, index);
+        else if (chord.quality == ChordQuality::diminished && chord.hasTone(9))
+            append(result, diminished, index);
     }
-    else if (chord.quality == ChordQuality::minor) append(result, minor);
-    else if (chord.quality == ChordQuality::halfDiminished) append(result, halfDim);
-    else if (chord.quality == ChordQuality::diminished && chord.hasTone(9)) append(result, diminished);
 }
 }

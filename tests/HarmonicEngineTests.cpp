@@ -122,7 +122,8 @@ int main()
     expect(! majorSituation.localKey.valid,
            "global cadence does not create redundant local center");
 
-    // Major boundary positions remain high-confidence candidates.
+    // Major boundary positions: ii-V remains a three-chord candidate, but at
+    // the final tonic only the visible V-I pair may be asserted.
     const auto majorIiPosition = analyzeHarmonicSituation(
         makeCurrentNextSnapshot(cMajor, dMin7, g7));
     expect(majorIiPosition.pattern.type == HarmonicPatternType::majorIiVI
@@ -134,12 +135,13 @@ int main()
 
     const auto majorIPosition = analyzeHarmonicSituation(
         makePreviousCurrentSnapshot(cMajor, g7, cMaj7));
-    expect(majorIPosition.pattern.type == HarmonicPatternType::majorIiVI
+    expect(majorIPosition.pattern.type == HarmonicPatternType::dominantToTonic
            && majorIPosition.pattern.role == PatternMemberRole::resolution
-           && majorIPosition.pattern.positionIndex == 2,
-           "major I boundary is position 3/3 resolution");
+           && majorIPosition.pattern.positionIndex == 1
+           && majorIPosition.pattern.length == 2,
+           "major tonic boundary is generic V-I resolution");
 
-    // Minor iiø-V-i on all three visible positions.
+    // Minor iiø-V-i at visible predominant/V positions.
     const auto aMinor = makeKey(3, true);
     const auto bHalfDim7 = makeChord(5, { 0, 3, 6, 10 });
     const auto e7 = makeChord(4, { 0, 4, 7, 10 });
@@ -163,10 +165,40 @@ int main()
 
     const auto minorI = analyzeHarmonicSituation(
         makePreviousCurrentSnapshot(aMinor, e7, aMinorChord));
-    expect(minorI.pattern.type == HarmonicPatternType::minorIiHalfDimVi
+    expect(minorI.pattern.type == HarmonicPatternType::dominantToTonic
            && minorI.pattern.role == PatternMemberRole::resolution
-           && minorI.pattern.positionIndex == 2,
-           "minor tonic boundary recognized");
+           && minorI.pattern.positionIndex == 1
+           && minorI.pattern.length == 2,
+           "minor tonic boundary is generic V-i resolution");
+
+    // 0.3f: classic minor iv-V-i.
+    const auto cMinor = makeKey(0, true);
+    const auto fMin7 = makeChord(-1, { 0, 3, 7, 10 });
+    const auto cMin7 = makeChord(0, { 0, 3, 7, 10 });
+
+    const auto minorIvV = analyzeHarmonicSituation(
+        makeCurrentNextSnapshot(cMinor, fMin7, g7));
+    expect(minorIvV.pattern.type == HarmonicPatternType::minorIvVi
+           && minorIvV.pattern.role == PatternMemberRole::predominant
+           && minorIvV.pattern.positionIndex == 0
+           && minorIvV.pattern.length == 3,
+           "minor iv-V boundary is position 1/3");
+
+    const auto minorIvFull = analyzeHarmonicSituation(
+        makeSnapshot(cMinor, fMin7, g7, cMin7));
+    expect(minorIvFull.pattern.type == HarmonicPatternType::minorIvVi
+           && minorIvFull.pattern.role == PatternMemberRole::dominant
+           && minorIvFull.pattern.positionIndex == 1
+           && minorIvFull.pattern.length == 3,
+           "minor iv-V-i full cadence recognized at V");
+    expect(minorIvFull.pattern.evidence.confidence == ConfidenceLevel::confirmed,
+           "minor iv-V-i full cadence is confirmed");
+
+    const auto minorIvTonic = analyzeHarmonicSituation(
+        makePreviousCurrentSnapshot(cMinor, g7, cMin7));
+    expect(minorIvTonic.pattern.type == HarmonicPatternType::dominantToTonic
+           && minorIvTonic.pattern.role == PatternMemberRole::resolution,
+           "final minor tonic does not invent ii-half-diminished or iv predominant");
 
     // I-VI-ii-V turnaround.
     const auto turnaroundVI = analyzeHarmonicSituation(

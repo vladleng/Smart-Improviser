@@ -12,6 +12,7 @@ enum class HarmonicPatternType : std::uint8_t
     none,
     majorIiVI,
     minorIiHalfDimVi,
+    minorIvVi,
     dominantToTonic,
     turnaroundIVIiiV,
     secondaryDominant,

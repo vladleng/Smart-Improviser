@@ -31,6 +31,16 @@ NormalizedKey makeParallelKey(const NormalizedKey& source) noexcept
     return key;
 }
 
+bool sameTonalCenter(const HarmonicInterpretation& a,
+                     const HarmonicInterpretation& b) noexcept
+{
+    return a.valid && b.valid
+        && a.center.valid && b.center.valid
+        && a.center.key.valid && b.center.key.valid
+        && a.center.key.rootPitchClass == b.center.key.rootPitchClass
+        && a.center.key.mode == b.center.key.mode;
+}
+
 void addInterpretation(HarmonicSituation& situation,
                        HarmonicInterpretation interpretation) noexcept
 {
@@ -179,9 +189,30 @@ void analyzeAmbiguityAndConfidence(HarmonicSituation& situation) noexcept
     if (! situation.valid)
         return;
 
-    addInterpretation(situation, makeGlobalInterpretation(situation));
-    addInterpretation(situation, makeLocalInterpretation(situation));
-    addInterpretation(situation, makeModalInterpretation(situation));
+    auto globalInterpretation = makeGlobalInterpretation(situation);
+    auto localInterpretation = makeLocalInterpretation(situation);
+    const auto modalInterpretation = makeModalInterpretation(situation);
+
+    // 0.3f: a local-center inference and a modal-interchange reading can point
+    // to exactly the same tonal center. Example: Fm7 -> G7 in project C major
+    // yields a candidate C-minor iv-V reading, while borrowed-harmony analysis
+    // independently derives the same parallel C-minor center. These are two
+    // evidence paths for one musical interpretation, not two different source
+    // groups. Keep the structurally richer local reading and carry the modal
+    // evidence into it so Stage 3 does not duplicate identical material.
+    const bool modalCollapsedIntoLocal = sameTonalCenter(localInterpretation,
+                                                         modalInterpretation);
+    if (modalCollapsedIntoLocal)
+    {
+        localInterpretation.evidence.add(EvidenceFlag::modalInterchange);
+        localInterpretation.evidence.add(EvidenceFlag::borrowedAmbiguity);
+        localInterpretation.evidence.add(EvidenceFlag::alternativeInterpretation);
+    }
+
+    addInterpretation(situation, globalInterpretation);
+    addInterpretation(situation, localInterpretation);
+    if (! modalCollapsedIntoLocal)
+        addInterpretation(situation, modalInterpretation);
 
     const auto globalIndex = findInterpretation(situation,
                                                 HarmonicInterpretationKind::globalContext);
@@ -218,7 +249,9 @@ void analyzeAmbiguityAndConfidence(HarmonicSituation& situation) noexcept
     // global or local reading before the timeline supplies enough evidence.
     if (localIndex >= 0)
     {
-        markAmbiguous(situation, true, modalIndex >= 0);
+        markAmbiguous(situation,
+                      true,
+                      modalIndex >= 0 || modalCollapsedIntoLocal);
         return;
     }
 

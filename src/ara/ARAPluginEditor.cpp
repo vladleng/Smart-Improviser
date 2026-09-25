@@ -44,18 +44,24 @@ juce::String localizeGeneratedText(juce::String text)
 
     text = text.replace("No primary interpretation: use the explicit chord tones.",
                         ru("Нет основной трактовки: используй явно заданные звуки аккорда."));
+    text = text.replace("No harmonic interpretation: use the explicit chord tones.",
+                        ru("Нет гармонической трактовки: используй явно заданные звуки аккорда."));
     text = text.replace("This chord needs a dedicated source rule; retain its explicit tones.",
                         ru("Для этого аккорда нужен отдельный источник; сохраняй явно заданные звуки."));
     text = text.replace("No compatible SubV source; retain the confirmed targets.",
                         ru("Нет совместимого источника для SubV; сохраняй подтверждённые цели."));
     text = text.replace("No compatible minor-target source; retain anchors and resolution.",
                         ru("Нет совместимого источника для минорной цели; сохраняй опоры и разрешение."));
+    text = text.replace("No basic diatonic source for this minor-target dominant; retain anchors and contextual alternatives.",
+                        ru("Нет базового диатонического источника для доминанты в минор; сохраняй опоры и контекстные альтернативы."));
     text = text.replace("No confirmed major target for the basic dominant source.",
                         ru("Нет подтверждённой мажорной цели для базового доминантового источника."));
     text = text.replace("No supported major/minor center in the selected interpretation.",
                         ru("В выбранной трактовке нет поддерживаемого мажорного/минорного центра."));
     text = text.replace("No compatible diatonic source for all explicit chord tones/degrees.",
                         ru("Нет диатонического источника, совместимого со всеми заданными звуками и ступенями аккорда."));
+    text = text.replace("No compatible diatonic source for the available harmonic interpretations.",
+                        ru("Нет совместимого диатонического источника для доступных гармонических трактовок."));
 
     text = text.replace("Build the line around the actual chord tones; connect the available thirds and sevenths.",
                         ru("Строй линию вокруг реальных звуков аккорда; связывай доступные терции и септимы."));
@@ -278,7 +284,8 @@ juce::String patternName(smartimproviser::harmony::HarmonicPatternType type)
     {
         case HarmonicPatternType::none: return ru("Нет");
         case HarmonicPatternType::majorIiVI: return ru("Мажорный ii-V-I");
-        case HarmonicPatternType::minorIiHalfDimVi: return ru("Минорный iio-V-i");
+        case HarmonicPatternType::minorIiHalfDimVi: return ru("Минорный iiø-V-i");
+        case HarmonicPatternType::minorIvVi: return ru("Минорный iv-V-i");
         case HarmonicPatternType::dominantToTonic: return "V-I";
         case HarmonicPatternType::turnaroundIVIiiV: return "I-VI-ii-V";
         case HarmonicPatternType::secondaryDominant: return ru("Вторичная доминанта");
@@ -611,12 +618,25 @@ void SmartImproviserARAEditor::timerCallback()
     {
         summaryThinking += ru("—");
     }
+    else if (cachedSituation.primaryInterpretationIndex < 0
+             && cachedSituation.evidence.interpretation
+                == smartimproviser::harmony::InterpretationStatus::ambiguous)
+    {
+        summaryThinking += ru("неоднозначно • кандидатов: ")
+            + juce::String(cachedSituation.interpretationCount)
+            + ru(" • см. Источники / ноты");
+    }
     else
     {
         juce::StringArray thoughts;
+        const auto primaryIndex = cachedSituation.primaryInterpretationIndex;
         for (const auto& strategy : result.strategies)
         {
             if (strategy.source.kind != smartimproviser::harmony::MaterialKind::scale)
+                continue;
+            if (! strategy.interpretationIndependent
+                && primaryIndex >= 0
+                && strategy.interpretationIndex != primaryIndex)
                 continue;
 
             juce::String item;
@@ -678,6 +698,7 @@ void SmartImproviserARAEditor::timerCallback()
     {
         const auto& strategy = result.strategies.front();
         bool hasScale = false;
+        int lastInterpretationIndex = -999;
         for (const auto& scalar : result.strategies)
         {
             if (scalar.source.kind != smartimproviser::harmony::MaterialKind::scale)
@@ -686,6 +707,33 @@ void SmartImproviserARAEditor::timerCallback()
             if (hasScale)
                 sourcesText += "\n\n";
             hasScale = true;
+
+            if (scalar.interpretationIndex != lastInterpretationIndex)
+            {
+                lastInterpretationIndex = scalar.interpretationIndex;
+                if (scalar.interpretationIndex >= 0
+                    && scalar.interpretationIndex < cachedSituation.interpretationCount)
+                {
+                    const auto& interpretation = cachedSituation.interpretations[
+                        static_cast<std::size_t>(scalar.interpretationIndex)];
+                    if (cachedSituation.primaryInterpretationIndex < 0)
+                    {
+                        sourcesText += ru("КАНДИДАТ ")
+                            + juce::String(scalar.interpretationIndex + 1) + ": ";
+                    }
+                    else if (scalar.interpretationIndex == cachedSituation.primaryInterpretationIndex)
+                    {
+                        sourcesText += ru("ОСНОВНАЯ ТРАКТОВКА: ");
+                    }
+                    else
+                    {
+                        sourcesText += ru("АЛЬТЕРНАТИВА: ");
+                    }
+                    sourcesText += interpretationKindNameRu(interpretation.kind)
+                        + " • " + centerKeyDisplayName(interpretation.center) + "\n";
+                }
+            }
+
             sourcesText += localizeGeneratedText(utf8String(scalar.source.name)) + "\n";
             for (const auto& note : scalar.source.notes)
                 sourcesText += utf8String(note.spelling) + " ";
@@ -876,7 +924,7 @@ void SmartImproviserARAEditor::paint(juce::Graphics& g)
 
     g.setColour(juce::Colour::fromRGB(150, 156, 168));
     g.setFont(14.0f);
-    g.drawText(ru("Структурный интерфейс 0.3e-ui • музыкальная логика без изменений"),
+    g.drawText(ru("0.3f • контекстные альтернативы и безопасная неоднозначность"),
                24, 47, getWidth() - 48, 22, juce::Justification::centredLeft);
 
     g.setColour(juce::Colour::fromRGB(42, 46, 53));

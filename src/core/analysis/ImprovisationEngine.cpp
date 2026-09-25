@@ -1,4 +1,5 @@
 #include "core/analysis/ImprovisationEngine.h"
+#include "core/analysis/ContextRanking.h"
 #include "core/analysis/DiatonicSources.h"
 #include "core/analysis/SpecialSources.h"
 #include "core/analysis/HarmonicConcepts.h"
@@ -147,7 +148,7 @@ ImprovisationResult analyzeImprovisation(const HarmonicSituation& situation)
     strategy.ruleId = "core.explicit-chord-tones";
     strategy.priority = 100;
     strategy.interpretationIndependent = true;
-    strategy.interpretationIndex = harmonic != nullptr ? index : -1;
+    strategy.interpretationIndex = -1;
     strategy.evidence = situation.evidence;
     strategy.actualChord = displayChord;
     strategy.thinkingStructure = displayChord;
@@ -167,15 +168,20 @@ ImprovisationResult analyzeImprovisation(const HarmonicSituation& situation)
         return result;
     }
     strategy.resolution = situation.resolution;
-    strategy.ruleVersion = 2;
+    strategy.ruleVersion = 3;
     addTargets(strategy, situation);
     strategy.idea = "Use chord tones; connect available thirds and sevenths to the next harmony.";
     strategy.explanation = "Guide tones and colors are drawn only from explicit chord tones.";
     strategy.conditions = "Confirmed moves come from harmonic analysis; suggested moves are optional.";
     result.strategies.push_back(std::move(strategy));
     result.valid = true;
+
+    // Collect every admissible interpretation-specific source before sorting.
+    // The ranking layer changes presentation order only; it never changes
+    // harmonic evidence or chooses a primary interpretation on behalf of Stage 2.
     addDiatonicSource(result);
     addSpecialSources(result);
+    rankImprovisationStrategies(result);
     addHarmonicConcepts(result);
     return result;
 }

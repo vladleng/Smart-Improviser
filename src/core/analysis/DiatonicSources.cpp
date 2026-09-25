@@ -49,78 +49,75 @@ bool containsChord(const ModeDefinition& mode, const NormalizedChord& chord)
     }
     return true;
 }
-}
 
-void addDiatonicSource(ImprovisationResult& result)
+bool appendForInterpretation(ImprovisationResult& result, int index)
 {
-    if (!result.valid || result.strategies.empty()) return;
     const auto& situation = result.context;
-    const auto index = situation.primaryInterpretationIndex;
     if (index < 0 || index >= situation.interpretationCount
-        || static_cast<std::size_t>(index) >= situation.interpretations.size()
-        || !situation.interpretations[static_cast<std::size_t>(index)].valid)
-    {
-        result.scaleUnavailableReason = "No primary interpretation: use the explicit chord tones.";
-        return;
-    }
+        || static_cast<std::size_t>(index) >= situation.interpretations.size())
+        return false;
+
     const auto& interpretation = situation.interpretations[static_cast<std::size_t>(index)];
+    if (!interpretation.valid)
+        return false;
+
     const auto& chord = situation.currentChord;
     if (chord.quality == ChordQuality::suspended2 || chord.quality == ChordQuality::suspended4
         || chord.quality == ChordQuality::power || chord.quality == ChordQuality::noThird
         || chord.quality == ChordQuality::unknown)
-    {
-        result.scaleUnavailableReason = "This chord needs a dedicated source rule; retain its explicit tones.";
-        return;
-    }
+        return false;
+
     const ModeDefinition* selected = nullptr;
     bool targetBased = false;
-    // A leading-tone half-diminished chord can have dominant function without
-    // being a dominant-seventh source case. Keep its diatonic Locrian material.
-    if (chord.quality == ChordQuality::dominant || result.substituteDominant)
+
+    // Dominant source selection is interpretation-specific in 0.3f. A SubV
+    // reading must not suppress an ordinary dominant alternative (or vice versa).
+    if (chord.quality == ChordQuality::dominant)
     {
-        if (result.substituteDominant || interpretation.harmonic.substituteDominantCandidate
-            || situation.harmonic.substituteDominantConfirmed)
-            result.scaleUnavailableReason = "No compatible SubV source; retain the confirmed targets.";
-        else if (result.dominantContext == DominantContext::toMinor)
-            result.scaleUnavailableReason = "No compatible minor-target source; retain anchors and resolution.";
-        else if (result.dominantContext != DominantContext::toMajor)
-            result.scaleUnavailableReason = "No confirmed major target for the basic dominant source.";
-        else
-        {
-            selected = &modes[4]; // Ordinary V -> major: basic Mixolydian.
-            targetBased = true;
-        }
-        if (!selected) return;
+        if (interpretation.harmonic.substituteDominantConfirmed
+            || interpretation.harmonic.substituteDominantCandidate)
+            return false;
+        if (result.dominantContext == DominantContext::toMinor)
+            return false;
+        if (result.dominantContext != DominantContext::toMajor)
+            return false;
+        selected = &modes[4]; // Ordinary V -> major: basic Mixolydian.
+        targetBased = true;
     }
     else
     {
         const auto& center = interpretation.center;
-        if (!center.valid || !center.key.valid || (center.key.mode != KeyMode::major && center.key.mode != KeyMode::minor))
-        {
-            result.scaleUnavailableReason = "No supported major/minor center in the selected interpretation.";
-            return;
-        }
+        if (!center.valid || !center.key.valid
+            || (center.key.mode != KeyMode::major && center.key.mode != KeyMode::minor))
+            return false;
+
         for (const auto& mode : modes)
         {
             bool match = true;
             for (int interval = 0; interval < 12; ++interval)
             {
                 const bool inMode = std::find(mode.intervals.begin(), mode.intervals.end(), interval) != mode.intervals.end();
-                if (inMode != center.key.hasPitchClass((chord.rootPitchClass + interval) % 12)) { match = false; break; }
+                if (inMode != center.key.hasPitchClass((chord.rootPitchClass + interval) % 12))
+                {
+                    match = false;
+                    break;
+                }
             }
-            if (match) { selected = &mode; break; }
+            if (match)
+            {
+                selected = &mode;
+                break;
+            }
         }
     }
+
     if (!selected || !containsChord(*selected, chord))
-    {
-        result.scaleUnavailableReason = "No compatible diatonic source for all explicit chord tones/degrees.";
-        return;
-    }
+        return false;
 
     auto strategy = result.strategies.front(); // Preserve structural tones, targets and resolution.
     strategy.kind = ImprovisationStrategyKind::diatonicColor;
     strategy.ruleId = selected->rule;
-    strategy.ruleVersion = 1;
+    strategy.ruleVersion = 2;
     strategy.priority = 50;
     strategy.interpretationIndependent = false;
     strategy.interpretationIndex = index;
@@ -131,6 +128,7 @@ void addDiatonicSource(ImprovisationResult& result)
     strategy.source.rootPitchClass = chord.rootPitchClass;
     strategy.source.rootFifths = chord.rootFifths;
     strategy.source.name = spell(chord.rootFifths, 1, chord.rootPitchClass) + " " + selected->name;
+
     for (int degree = 1; degree <= 7; ++degree)
     {
         const int interval = selected->intervals[static_cast<std::size_t>(degree - 1)];
@@ -140,13 +138,22 @@ void addDiatonicSource(ImprovisationResult& result)
         note.degree = degree;
         note.role = MaterialNoteRole::scaleTone;
         for (const auto& anchor : result.strategies.front().source.notes)
-            if (anchor.pitchClass == note.pitchClass) { note.role = anchor.role; note.characteristic = anchor.characteristic; break; }
+        {
+            if (anchor.pitchClass == note.pitchClass)
+            {
+                note.role = anchor.role;
+                note.characteristic = anchor.characteristic;
+                break;
+            }
+        }
         note.spelling = spell(chord.rootFifths, degree, note.pitchClass);
         strategy.source.notes.push_back(std::move(note));
     }
+
     strategy.idea = "Connect the chord anchors using " + strategy.source.name + ".";
-    strategy.explanation = targetBased ? "Basic dominant material for the confirmed major target."
-        : "Diatonic material of the selected center "
+    strategy.explanation = targetBased
+        ? "Basic dominant material for the confirmed major target in this interpretation."
+        : "Diatonic material of interpretation " + std::to_string(index + 1) + ": "
             + spell(interpretation.center.key.rootFifths, 1, interpretation.center.key.rootPitchClass)
             + " " + keyModeName(interpretation.center.key.mode) + ", starting from the chord root.";
     strategy.conditions = "Scale notes are available material, not equally stable landing notes; use the chord anchors and targets.";
@@ -156,6 +163,39 @@ void addDiatonicSource(ImprovisationResult& result)
     strategy.usageHint = "Use chord anchors and targets.";
     if (chord.hasTone(4) && std::find(selected->intervals.begin(), selected->intervals.end(), 5) != selected->intervals.end())
         strategy.usageHint = "Natural 4th: passing against major 3rd.";
+
     result.strategies.push_back(std::move(strategy));
+    return true;
+}
+}
+
+void addDiatonicSource(ImprovisationResult& result)
+{
+    if (!result.valid || result.strategies.empty())
+        return;
+
+    const auto& situation = result.context;
+    bool added = false;
+    for (std::uint8_t i = 0; i < situation.interpretationCount; ++i)
+        added = appendForInterpretation(result, static_cast<int>(i)) || added;
+
+    if (added)
+    {
+        result.scaleUnavailableReason.clear();
+        return;
+    }
+
+    if (situation.interpretationCount == 0)
+        result.scaleUnavailableReason = "No harmonic interpretation: use the explicit chord tones.";
+    else if (situation.currentChord.quality == ChordQuality::suspended2
+             || situation.currentChord.quality == ChordQuality::suspended4
+             || situation.currentChord.quality == ChordQuality::power
+             || situation.currentChord.quality == ChordQuality::noThird
+             || situation.currentChord.quality == ChordQuality::unknown)
+        result.scaleUnavailableReason = "This chord needs a dedicated source rule; retain its explicit tones.";
+    else if (result.dominantContext == DominantContext::toMinor)
+        result.scaleUnavailableReason = "No basic diatonic source for this minor-target dominant; retain anchors and contextual alternatives.";
+    else
+        result.scaleUnavailableReason = "No compatible diatonic source for the available harmonic interpretations.";
 }
 }
