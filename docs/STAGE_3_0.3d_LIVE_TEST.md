@@ -1,7 +1,9 @@
 # Stage 3 / 0.3d — Melodic minor / diminished sources
 
+Статус: **ACCEPTED 2026-09-25**. Windows Build #246 success; live-test 0.3d fix2 принят Владом. PR #26 слит в main. Stable остаётся 0.3; следующий checkpoint — 0.3e.
+
 0.3c принят Владом 2026-09-25; Windows Build #237 success; PR #25 merged.
-0.3d реализован; живой тест выявил enharmonic spelling issue для SubV. Fix1 не решил live-case: Fender Studio продолжил отдавать C#-spelling в Stage 3 при визуальном Db7 на Chord Track. Текущая проверяемая версия — 0.3d fix2. Stable остаётся 0.3.
+0.3d live-test выявил enharmonic spelling issue для SubV. Fix1 не решил live-case: Fender Studio продолжил отдавать C#-spelling в Stage 3 при визуальном Db7 на Chord Track. Fix2 перенёс spelling confirmed SubV в функциональный слой Improvisation Engine и прошёл живую проверку.
 
 ## Каталог и границы
 
@@ -16,7 +18,7 @@
 | project.subv.melodic-minor.V | confirmed SubV7 → major/minor | melodic minor от V SubV | применение Lydian dominant к SubV — правило проекта, не буквальная формулировка автора |
 | boyko.diminished.whole-half | dim7 | тон–полутон от корня | с. 112, пример 176; восемь звуков, не путать с полууменьшённым аккордом |
 
-Правила пока требуют выбранную primary interpretation с поддерживаемым major/minor center. Dominant chains, unresolved dominant, sus и unresolved primary сохраняют прежние опоры. Это ограниченный каталог, не универсальный выбор всех возможных гамм.
+Правила требуют выбранную primary interpretation с поддерживаемым major/minor center. Dominant chains, unresolved dominant, sus и unresolved primary сохраняют прежние опоры. Это ограниченный каталог, не универсальный выбор всех возможных гамм.
 
 Полутон–тон для доминанты не добавлен автоматически: в проверенном разделе источник тон–полутон дан для dim7. Harmonic minor, дополнительные outside-подходы и выбор T1–T3 остаются последующими расширениями.
 
@@ -37,9 +39,9 @@
 
 Fix1 пытался восстановить enharmonic spelling из `ARA SheetChord name`. Автоматические тесты этого пути проходят, но live-test показал, что Studio Pro в данном сценарии не отдаёт пригодное исходное `Db`-написание через это поле: справа по-прежнему было `C#7 → G# melodic minor`.
 
-Поэтому fix1 не принимается как решение пользовательского кейса.
+Поэтому fix1 не принят как решение пользовательского кейса.
 
-## 0.3d fix2 — functional SubV spelling
+## 0.3d fix2 — functional SubV spelling [ACCEPTED]
 
 Fix2 не зависит от текста, возвращаемого host. Когда Harmonic Engine уже подтвердил SubV и реальную цель, написание выводится из функции:
 
@@ -49,7 +51,7 @@ Fix2 не зависит от текста, возвращаемого host. К�
 - `G` пишется как `#11` относительно Db;
 - sounding pitch classes, Stage 2 function и tonal center не меняются.
 
-Это исправление находится в Improvisation Engine, а не в Stage 1 mapper: Stage 1 не должен сам угадывать гармоническую функцию. Левая Stage 1/2 диагностическая строка `Current chord` может по-прежнему показывать host-canonicalized `C#7`; проверяемый продуктовый вывод Stage 3 справа должен использовать функциональное `Db7`.
+Это исправление находится в Improvisation Engine, а не в Stage 1 mapper: Stage 1 не должен сам угадывать гармоническую функцию. Левая Stage 1/2 диагностическая строка `Current chord` может по-прежнему показывать host-canonicalized `C#7`; проверяемый продуктовый вывод Stage 3 справа использует функциональное `Db7`.
 
 ## Проверка в Fender Studio Pro
 
@@ -57,27 +59,28 @@ Artifact `Smart-Improviser-0.3d-fix2-Windows`; установленная пап
 
 Проект C major, если не указано другое:
 
-| Сценарий | Ожидаемый результат |
+| Сценарий | Результат |
 |---|---|
-| Cmaj7 → Dm7 → G7, на Dm7 | D Dorian сохранён; дополнительно D melodic minor / Dm6; C# — проходящая большая 7 против C в m7 |
-| Dm7 → G7 → Cmaj7, на G7 | G Mixolydian; D melodic minor / Dm6 (#11 C#); Ab melodic minor / Abm6 (altered) |
-| Dm7b5 → G7 → Cm, на G7 | Ab melodic minor; цель Cm с Eb, B→C и F→Eb сохранены; нет automatic Mixolydian |
-| Тот же оборот, на Dm7b5 | При выбранной C minor interpretation: F melodic minor / Fm6; natural 9 E относительно D; опоры D F Ab C сохранены |
-| G7b9 → Cmaj7 | Ab melodic minor; explicit Ab в аккорде сохранён; несовместимого Mixolydian нет |
-| G9 → Cm / G13 → Cm | Нет altered, теряющего явную natural 9/13; опоры и minor target остаются |
-| Db7 → Cmaj7, затем Cm | Справа Stage 3: Db7; Ab melodic minor / Abm6; G = #11 относительно Db; target меняется major/minor |
-| Gdim7 в C major при выбранной трактовке | G whole-half diminished: G A Bb C Db Eb Fb F#; восемь звуков, Fb = уменьшённая септима |
-| G7 → C7 / G7 без следующего аккорда | Нет автоматического special source |
-| G7sus4 → Cmaj7 | Нет добавленной B через melodic-minor правило |
+| Cmaj7 → Dm7 → G7, на Dm7 | PASS — D Dorian сохранён; дополнительно D melodic minor / Dm6; C# — проходящая большая 7 против C в m7 |
+| Dm7 → G7 → Cmaj7, на G7 | PASS — G Mixolydian; D melodic minor / Dm6 (#11 C#); Ab melodic minor / Abm6 (altered) |
+| Dm7b5 → G7 → Cm, на G7 | PASS — Ab melodic minor; цель Cm с Eb, B→C и F→Eb сохранены; нет automatic Mixolydian |
+| Тот же оборот, на Dm7b5 | PASS при C minor interpretation — F melodic minor / Fm6; natural 9 E относительно D; опоры D F Ab C сохранены |
+| G7b9 → Cmaj7 | PASS — Ab melodic minor; explicit Ab в аккорде сохранён; несовместимого Mixolydian нет |
+| G9 → Cm / G13 → Cm | PASS — altered не теряет явную natural 9/13; опоры и minor target остаются |
+| Db7 → Cmaj7 | PASS fix2 — справа Stage 3: Db7; Ab melodic minor / Abm6; G = #11 относительно Db |
+| Db7 → Cm | PASS fix2 — то же функциональное Db/Ab-spelling; корректная minor target |
+| Gdim7 в C major при выбранной трактовке | PASS — G whole-half diminished: G A Bb C Db Eb Fb F#; восемь звуков, Fb = уменьшённая септима |
+| G7 → C7 / G7 без следующего аккорда | PASS — нет автоматического special source |
+| G7sus4 → Cmaj7 | PASS — нет добавленной B через melodic-minor правило |
 
-- [ ] Исходная гамма и строка On chord показывают одинаковые высоты с разными функциями/написанием.
-- [ ] Правую панель можно прокрутить до опор/targets/resolution; текст не обрезан, таймер не сбрасывает прокрутку при неизменном контексте.
-- [ ] PLAY/STOP/seek, изменение текущего аккорда и major/minor цели обновляют весь список.
-- [ ] При отсутствии валидного контекста старые источники исчезают; reopen восстанавливает результат.
-- [ ] Предыдущие chord/guide/characteristic notes и confirmed/suggested движения работают.
-- [ ] fix2: справа `Db7 → Cmaj7` показывает Db7 / Ab melodic minor / Abm6 / G как #11, без G#/E#/F##.
-- [ ] fix2: справа `Db7 → Cm` сохраняет то же функциональное написание Db/Ab и корректную minor target.
+- [x] Исходная гамма и строка On chord показывают одинаковые высоты с разными функциями/написанием.
+- [x] Правую панель можно прокрутить до опор/targets/resolution; текст не обрезан, таймер не сбрасывает прокрутку при неизменном контексте.
+- [x] PLAY/STOP/seek, изменение текущего аккорда и major/minor цели обновляют весь список.
+- [x] При отсутствии валидного контекста старые источники исчезают; reopen восстанавливает результат.
+- [x] Предыдущие chord/guide/characteristic notes и confirmed/suggested движения работают.
+- [x] fix2: справа `Db7 → Cmaj7` показывает Db7 / Ab melodic minor / Abm6 / G как #11, без G#/E#/F##.
+- [x] fix2: справа `Db7 → Cm` сохраняет то же функциональное написание Db/Ab и корректную minor target.
 
-Автоматически: 10 C++ test targets. SpecialSources regression теперь отдельно проверяет два входных spelling одного pitch class: явный Db (`rootFifths=-5`) и host-canonicalized C# (`rootFifths=7`) — оба обязаны дать функциональный `Db7 / Ab melodic minor` при подтверждённом разрешении в C. TimelineContextMapper regression fix1 сохранён как безопасная metadata-попытка, но больше не является единственным механизмом.
+Автоматически: 10 C++ test targets. Windows Build #246 — success. SpecialSources regression отдельно проверяет два входных spelling одного pitch class: явный Db (`rootFifths=-5`) и host-canonicalized C# (`rootFifths=7`) — оба дают функциональный `Db7 / Ab melodic minor` при подтверждённом разрешении в C. TimelineContextMapper regression fix1 сохранён как безопасная metadata-попытка, но не является единственным механизмом.
 
-После принятия 0.3d fix2 — 0.3e. При необходимости следующий точечный fix текущей буквы.
+0.3d принят. Следующий checkpoint — 0.3e Harmonic concepts.
