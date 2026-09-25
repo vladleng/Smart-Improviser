@@ -15,7 +15,7 @@
 - **Stage 3 Issue:** #4 — активен
 - **Принято Stage 3:** `0.3a–0.3f` + `0.3f fix1`
 - **PR #30:** merged — базовый `0.3f`
-- **PR #31:** acceptance fix1; merge в main закрывает refinement
+- **PR #31:** merged — `0.3f fix1`, squash commit `1117502220887fe05e294b3b6a4af3037c7b5d88`
 - **Windows Build #310:** success; финальный code/live gate fix1
 - **Текущий checkpoint:** `0.3g — Explanation / usable output`
 - **После 0.3g:** `0.3h — Integration / musical validation`
@@ -100,7 +100,7 @@ Windows Build #284 — success; live-test принят 2026-09-25; PR #30 merged
 Реализованы context-dependent alternatives для global/local/modal interpretations, явная unresolved ambiguity без hidden winner, deterministic ranking отдельно от harmonic confidence, minor `iv–V–i`, safe generic `V→I/i` fallback и защита от false-positive `Fm7→G7→Cmaj7`.
 
 ### 0.3f fix1 — Pattern continuity / hierarchical cadence context [ACCEPTED]
-Windows Build #310 — success; финальный live-test принят Владом 2026-09-25.
+Windows Build #310 — success; финальный live-test принят Владом 2026-09-25; PR #31 merged.
 
 Реализовано:
 
