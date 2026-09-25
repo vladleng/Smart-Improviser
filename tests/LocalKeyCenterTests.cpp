@@ -167,6 +167,32 @@ int main()
            && candidateDMinor.localHarmonic.effectiveFunction == HarmonicFunction::predominant,
            "Em7b5 is locally ii in candidate D minor");
 
+    // 0.3f: minor iv-V-i may also establish a local minor center without
+    // extending the previous/current/next Stage 1 contract.
+    const auto fMinor7 = makeChord(-1, { 0, 3, 7, 10 });
+    const auto cMinor7 = makeChord(0, { 0, 3, 7, 10 });
+    const auto candidateCMinorFromIv = analyzeHarmonicSituation(
+        makeCurrentNext(fMajor, fMinor7, g7));
+    expect(candidateCMinorFromIv.localKey.valid
+           && candidateCMinorFromIv.localKey.key.rootPitchClass == 0
+           && candidateCMinorFromIv.localKey.key.mode == KeyMode::minor,
+           "Fm7-G7 can suggest C minor as a local candidate");
+    expect(candidateCMinorFromIv.localKey.status == KeyCenterStatus::candidate
+           && candidateCMinorFromIv.localPattern.type == HarmonicPatternType::minorIvVi
+           && candidateCMinorFromIv.localPattern.role == PatternMemberRole::predominant,
+           "iv-V candidate carries minor iv-V-i pattern evidence");
+
+    const auto localCMinorFromIv = analyzeHarmonicSituation(
+        makeSnapshot(fMajor, fMinor7, g7, cMinor7));
+    expect(localCMinorFromIv.localKey.valid
+           && localCMinorFromIv.localKey.key.rootPitchClass == 0
+           && localCMinorFromIv.localKey.key.mode == KeyMode::minor,
+           "Fm7-G7-Cm7 establishes local C minor");
+    expect(localCMinorFromIv.localKey.status == KeyCenterStatus::established
+           && localCMinorFromIv.localPattern.type == HarmonicPatternType::minorIvVi
+           && localCMinorFromIv.localPattern.role == PatternMemberRole::dominant,
+           "full local iv-V-i is confirmed as its own pattern");
+
     // Remote local major center, independent of the global key's scale degrees.
     const auto gsMin7 = makeChord(8, { 0, 3, 7, 10 });
     const auto cs7 = makeChord(7, { 0, 4, 7, 10 });
