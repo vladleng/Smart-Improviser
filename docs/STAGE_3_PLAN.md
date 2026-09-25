@@ -79,7 +79,7 @@ Windows Build #246 — success; живой тест 0.3d fix2 принят Вл�
 
 ### 0.3f — Context-aware ranking / ambiguity [ACCEPTED]
 
-Принято Владом 2026-09-25. Windows Build #284 — success. PR #30 подготовлен к merge. Issue #29 закрыт. Полный acceptance: [STAGE_3_0.3f_LIVE_TEST.md](STAGE_3_0.3f_LIVE_TEST.md).
+Принято Владом 2026-09-25. Windows Build #284 — success. PR #30 слит в `main` squash commit `5cdc126733393a7c69e864eda9c925b146cc56f1`. Issue #29 закрыт. Полный acceptance: [STAGE_3_0.3f_LIVE_TEST.md](STAGE_3_0.3f_LIVE_TEST.md).
 
 - [x] Собирать context-dependent diatonic/special strategies для всех валидных global/local/modal interpretations, не только для primary.
 - [x] Обрабатывать `primaryInterpretationIndex = -1` без скрытого выбора трактовки; каждая strategy хранит provenance через `interpretationIndex` и evidence.
