@@ -216,7 +216,7 @@ juce::String harmonicFunctionNameRu(smartimproviser::harmony::HarmonicFunction f
     switch (function)
     {
         case HarmonicFunction::tonic: return ru("Тоника");
-        case HarmonicFunction::predominant: return ru("Преддоминанта");
+        case HarmonicFunction::predominant: return ru("Субдоминантовая функция");
         case HarmonicFunction::dominant: return ru("Доминанта");
         case HarmonicFunction::substituteDominant: return "SubV";
         case HarmonicFunction::other: return ru("Другая");
@@ -304,7 +304,7 @@ juce::String patternRoleName(smartimproviser::harmony::PatternMemberRole role)
     switch (role)
     {
         case PatternMemberRole::preparation: return ru("Подготовка");
-        case PatternMemberRole::predominant: return ru("Преддоминанта");
+        case PatternMemberRole::predominant: return ru("Субдоминантовая функция");
         case PatternMemberRole::dominant: return ru("Доминанта");
         case PatternMemberRole::substituteDominant: return "SubV";
         case PatternMemberRole::tonic: return ru("Тоника");
