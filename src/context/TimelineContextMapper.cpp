@@ -133,6 +133,33 @@ double toleranceFor(const SharedHarmonicContextSnapshot& shared) noexcept
 {
     return shared.transportPlaying ? kTimelineEpsilon : kStoppedCursorTolerancePpq;
 }
+
+void fillPatternWindow(TimelineHarmonicSnapshot& result,
+                       const SharedHarmonicContextSnapshot& shared,
+                       int chordIndex) noexcept
+{
+    if (chordIndex < 0 || ! shared.sheetChordsAvailable || shared.sheetChordStoredCount <= 0)
+        return;
+
+    constexpr int halfWindow = static_cast<int>(kMaxPatternWindowChords / 2);
+    int begin = std::max(0, chordIndex - halfWindow);
+    int end = std::min(shared.sheetChordStoredCount,
+                       begin + static_cast<int>(kMaxPatternWindowChords));
+
+    // Near the end of the timeline, shift the bounded window backwards so the
+    // current chord still has as much preceding pattern evidence as possible.
+    begin = std::max(0, end - static_cast<int>(kMaxPatternWindowChords));
+
+    result.patternWindow.chordCount = static_cast<std::uint8_t>(end - begin);
+    result.patternWindow.currentIndex = chordIndex - begin;
+
+    for (int sourceIndex = begin; sourceIndex < end; ++sourceIndex)
+    {
+        const auto destination = static_cast<std::size_t>(sourceIndex - begin);
+        result.patternWindow.chords[destination] =
+            makeChordContext(shared.sheetChords[sourceIndex], true);
+    }
+}
 }
 
 HarmonicContext mapHarmonicContext(const SharedHarmonicContextSnapshot& shared,
@@ -213,6 +240,8 @@ TimelineHarmonicSnapshot mapTimelineHarmonicSnapshot(
             result.nextChordAvailable = true;
             result.nextChord = makeChordContext(shared.sheetChords[chordIndex + 1], shared.sheetChordsAvailable);
         }
+
+        fillPatternWindow(result, shared, chordIndex);
     }
     else if (shared.sheetChordsAvailable && shared.sheetChordStoredCount > 0
              && ppq + tolerance < shared.sheetChords[0].position)
