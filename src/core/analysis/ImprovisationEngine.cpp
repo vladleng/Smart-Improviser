@@ -1,4 +1,5 @@
 #include "core/analysis/ImprovisationEngine.h"
+#include "core/analysis/DiatonicSources.h"
 #include <utility>
 #include <algorithm>
 #include <cstdlib>
@@ -22,7 +23,7 @@ std::vector<MaterialNote> chordMaterial(const NormalizedChord& chord)
         const bool characteristic = !guide && interval != 0 && interval != 7;
         notes.push_back({ (chord.rootPitchClass + interval) % kPitchClassCount,
             interval, degree, guide ? MaterialNoteRole::guideTone :
-                (characteristic ? MaterialNoteRole::colorTone : MaterialNoteRole::chordTone), characteristic });
+                (characteristic ? MaterialNoteRole::colorTone : MaterialNoteRole::chordTone), characteristic, {} });
     }
     return notes;
 }
@@ -147,6 +148,7 @@ ImprovisationResult analyzeImprovisation(const HarmonicSituation& situation)
     strategy.conditions = "Confirmed moves come from harmonic analysis; suggested moves are optional.";
     result.strategies.push_back(std::move(strategy));
     result.valid = true;
+    addDiatonicSource(result);
     return result;
 }
 }

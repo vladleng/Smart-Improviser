@@ -43,7 +43,9 @@ enum class PhraseRole : std::uint8_t
 };
 
 enum class MaterialKind : std::uint8_t { undefined, chordTones, scale };
-enum class MaterialNoteRole : std::uint8_t { chordTone, guideTone, colorTone, passingTone };
+enum class MaterialNoteRole : std::uint8_t { chordTone, guideTone, colorTone, passingTone, scaleTone };
+enum class DiatonicMode : std::uint8_t { none, ionian, dorian, phrygian, lydian, mixolydian, aeolian, locrian };
+
 enum class DominantContext : std::uint8_t
 {
     notDominant, unresolved, toMajor, toMinor, toDominant, toOther
@@ -56,11 +58,14 @@ struct MaterialNote
     int degree = 0;
     MaterialNoteRole role = MaterialNoteRole::chordTone;
     bool characteristic = false; // Explicit extension/alteration or sus-defining tone.
+    std::string spelling; // Degree-aware spelling, populated for scale sources.
 };
 
 struct SourceMaterial
 {
     MaterialKind kind = MaterialKind::undefined;
+    DiatonicMode mode = DiatonicMode::none;
+    int rootFifths = 0;
     int rootPitchClass = -1; // Source root, never an inferred song key.
     std::string name;
     std::vector<MaterialNote> notes; // Deterministic ascending relative intervals.
@@ -101,5 +106,6 @@ struct ImprovisationResult
     std::vector<ImprovisationStrategy> strategies;
     std::string contextDescription;
     std::string unavailableReason;
+    std::string scaleUnavailableReason;
 };
 }
