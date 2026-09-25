@@ -1,7 +1,28 @@
 # Stage 3 / 0.3e — Harmonic concepts
 
 База: принятый 0.3d fix2, Windows Build #246 success, PR #26 merged.
-0.3e реализован; живой тест ожидается. Stable остаётся 0.3.
+0.3e реализован; до первого live-test добавлен **0.3e fix1** — русификация диагностического интерфейса без изменения музыкальной логики. Stable остаётся 0.3.
+
+## 0.3e fix1 — русификация диагностического интерфейса
+
+Цель fix1 — сделать текущий проверочный интерфейс читаемым на русском перед музыкальным live-test 0.3e.
+
+Переводятся:
+
+- подписи и статусы Stage 1 / Stage 2 diagnostics;
+- заголовки и пояснения Stage 3 справа;
+- context / harmonic ideas / scale sources / targets / resolution;
+- human-readable подсказки и сообщения об отсутствии подходящего источника;
+- global/local interpretation, confidence, patterns, relations и статусы local center.
+
+Не переводятся либо сохраняются как устоявшиеся обозначения:
+
+- названия нот и аккордов (`Db7`, `Cmaj7`, `F#`, `Bb` и т. п.);
+- римские функциональные схемы (`ii-V-I`, `V-I`);
+- технические/музыкальные обозначения `ARA`, `PPQ`, `BPM`, `SubV`, `guide tones`, `Phrase`, `MIDI`;
+- имена source/mode, когда английское название является удобным однозначным идентификатором (`Dorian`, `Mixolydian`, `melodic minor`, `Lydian dominant`, `Altered dominant`).
+
+Русификация выполняется в presentation layer диагностического editor. Host-neutral Core, rule IDs, pitch classes, harmonic analysis и результаты 0.3e не меняются.
 
 ## Объём и граница с Phrase
 
@@ -32,25 +53,27 @@ Approach/enclosure — продуктовые шаблоны, не транск�
 
 ## Проверка в Fender Studio Pro
 
-Artifact `Smart-Improviser-0.3e-Windows`, установленная папка `Smart Improviser.vst3`, заголовок 0.3e. Новый блок **HARMONIC IDEAS** стоит перед **SCALE SOURCES** в прокручиваемой правой панели.
+Artifact `Smart-Improviser-0.3e-fix1-Windows`, установленная папка `Smart Improviser.vst3`, заголовок **0.3e fix1**. Новый блок **ГАРМОНИЧЕСКИЕ ИДЕИ** стоит перед **ИСТОЧНИКИ ГАММ** в прокручиваемой правой панели.
 
 | Сценарий | Ожидается |
 |---|---|
-| C major / Dm7 → G7 → Cmaj7, на G7 | Chord-tone playing: G B D F; guides B/F, confirmed B→C и F→E |
-| Тот же G7 | Diatonic colors: A (9), C (11) [passing], E (13) |
-| Тот же G7 | Think Dm6 over G7: D (5), F (b7), A (9), B (3); Think Abm6 over G7: Ab (b9), B (3), Eb (b13), F (b7) |
-| Тот же G7 | Approach/enclosure target E (3) in Cmaj7 [next chord]; схемы -1→0 и +1→-1→0; верхний подготовительный звук принадлежит G7, нижний — нет |
-| G7 → Cm | Цель становится Eb (b3) in Cm; -1 подготовка теперь принадлежит G7 (высота D), +1 — нет (высота E). Подтверждённое F→Eb сохранено |
-| Cmaj7 → Dm7 → G7, на Dm7 | Guide connections к G7 помечены optional, а не confirmed |
-| Db7 → Cmaj7 / Cm | Новая идея Think Abm6 over Db7; корректное функциональное написание, major/minor targets различаются |
+| C major / Dm7 → G7 → Cmaj7, на G7 | Игра по звукам аккорда: G B D F; guide tones B/F, подтверждённые B→C и F→E |
+| Тот же G7 | Диатонические краски: A (9), C (11) [проходящая], E (13) |
+| Тот же G7 | Мыслить Dm6 поверх G7: D (5), F (b7), A (9), B (3); Мыслить Abm6 поверх G7: Ab (b9), B (3), Eb (b13), F (b7) |
+| Тот же G7 | Хроматический approach/enclosure: цель E (3) в Cmaj7 [следующий аккорд]; схемы -1→0 и +1→-1→0 |
+| G7 → Cm | Цель становится Eb (b3) в Cm; подтверждённое F→Eb сохранено |
+| Cmaj7 → Dm7 → G7, на Dm7 | Guide connections к G7 остаются необязательными, а не подтверждёнными |
+| Db7 → Cmaj7 / Cm | Идея «Мыслить Abm6 поверх Db7»; функциональное написание fix2 сохранено |
 | G7sus4 → Cmaj7 | В guide-идее только F (b7), отсутствующая B не добавляется |
-| C major / C трезвучие, без next | Guide только E; approach target E [current chord]; септима не добавляется |
-| C5 без next | Нет guide-идеи, подход направлен к C [current chord] |
-| C major / Dm7b5 → G7 при UNRESOLVED | Explicit-note идеи допустимы; неподтверждённые scale/m6 идеи не появляются |
+| C major / C трезвучие, без next | Guide только E; approach направлен к E текущего аккорда; септима не добавляется |
+| C5 без next | Нет guide-идеи, подход направлен к C текущего аккорда |
+| C major / Dm7b5 → G7 при unresolved primary | Explicit-note идеи допустимы; неподтверждённые scale/m6 идеи не появляются |
 | C# major / C#maj7 | Новые аккордовые опоры пишутся C# E# G# B# |
 
 Последние два столбца диагностики ниже источников могут пока сохранять pitch-class запись старых checkpoints; новые harmonic ideas используют ступенное написание.
 
+- [ ] Все пользовательские подписи, статусы и пояснения diagnostics отображаются на русском; нотные имена/аккорды и оговорённые термины не искажены.
+- [ ] Кириллица корректно отображается в Windows VST3 без кракозябр и обрезания ключевых строк.
 - [ ] PLAY/STOP/seek, изменения аккорда и цели major/minor обновляют идеи вместе с источниками.
 - [ ] После удаления валидного контекста старые идеи исчезают; reopen восстанавливает результат.
 - [ ] Прокрутка позволяет прочитать все идеи, источники и targets; неизменный контекст не сбрасывает позицию.
@@ -58,6 +81,6 @@ Artifact `Smart-Improviser-0.3e-Windows`, установленная папка 
 
 ## Автоматическая проверка
 
-11 C++ test targets проходят локально через g++. Новый набор проверяет реальные major/minor targets, guide/optional semantics, m6 skeleton и source связь, passing colors, sus/triad/power, unresolved primary, написание SubV fix2/C#/Gb, 12 тональностей, оценку подготовки на текущем аккорде, детерминированность и очистку invalid context.
+11 C++ test targets из 0.3e остаются без изменения: fix1 затрагивает presentation layer и build label/artifact. Windows CI должен подтвердить компиляцию UTF-8 строк и отсутствие regression существующих тестов.
 
-Windows VST3/UI — CI и живой тест. После принятия 0.3e — 0.3f.
+После принятия 0.3e fix1 закрываем 0.3e и переходим к 0.3f.
