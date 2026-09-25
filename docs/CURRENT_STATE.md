@@ -14,7 +14,7 @@
 - **Stage 2 Issue:** #3 — закрыт стабильной `0.3`
 - **Stage 3 Issue:** #4 — рабочий план `0.3a–0.3h`; `0.3a–0.3f` приняты
 - **Issue #29:** minor `iv–V–i` + boundary semantics — закрыт в `0.3f`
-- **PR #30:** `0.3f — context-aware ranking, ambiguity and minor iv-V-i` — готов к merge после acceptance
+- **PR #30:** merged в `main`, squash commit `5cdc126733393a7c69e864eda9c925b146cc56f1`
 - **Следующий checkpoint:** `0.3g — Explanation / usable output`
 
 `0.3` — релизное закрытие Stage 2. Stable release фиксирует принятое состояние Harmonic Engine; subsequent Stage 3 checkpoints расширяют Improvisation Engine с отдельными regression/live gates.
@@ -104,7 +104,7 @@ Guide tones, characteristic tones, реальные next-chord targets, confirme
 
 ### 0.3f — Context-aware ranking / ambiguity [ACCEPTED]
 
-Принято Владом 2026-09-25. Windows Build #284 — success. Live-test пройден. Issue #29 закрыт.
+Принято Владом 2026-09-25. Windows Build #284 — success. Live-test пройден. PR #30 merged. Issue #29 закрыт.
 
 Реализовано:
 
