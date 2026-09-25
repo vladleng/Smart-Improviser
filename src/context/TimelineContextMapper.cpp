@@ -18,6 +18,55 @@ IntervalMask copyIntervals(const std::uint8_t (&source)[kPitchClassCount]) noexc
     return result;
 }
 
+int pitchClassForFifths(std::int32_t fifths) noexcept
+{
+    auto pitchClass = static_cast<int>((fifths * 7) % kPitchClassCount);
+    if (pitchClass < 0)
+        pitchClass += kPitchClassCount;
+    return pitchClass;
+}
+
+bool namedRootFifths(const char* name,
+                     std::int32_t rawRoot,
+                     std::int32_t& result) noexcept
+{
+    if (name == nullptr || name[0] == '\0')
+        return false;
+
+    std::int32_t fifths = 0;
+    switch (name[0])
+    {
+        case 'C': case 'c': fifths = 0; break;
+        case 'D': case 'd': fifths = 2; break;
+        case 'E': case 'e': fifths = 4; break;
+        case 'F': case 'f': fifths = -1; break;
+        case 'G': case 'g': fifths = 1; break;
+        case 'A': case 'a': fifths = 3; break;
+        case 'B': case 'b': fifths = 5; break;
+        default: return false;
+    }
+
+    const auto b1 = static_cast<unsigned char>(name[1]);
+    const auto b2 = static_cast<unsigned char>(name[2]);
+    const auto b3 = static_cast<unsigned char>(name[3]);
+    if (name[1] == 'b')
+        fifths -= 7;
+    else if (name[1] == '#')
+        fifths += 7;
+    else if (b1 == 0xE2u && b2 == 0x99u && b3 == 0xADu) // U+266D MUSIC FLAT SIGN
+        fifths -= 7;
+    else if (b1 == 0xE2u && b2 == 0x99u && b3 == 0xAFu) // U+266F MUSIC SHARP SIGN
+        fifths += 7;
+
+    // The host name is spelling metadata only. Never let a malformed label
+    // change the sounding pitch received in the structured ARA root field.
+    if (pitchClassForFifths(fifths) != pitchClassForFifths(rawRoot))
+        return false;
+
+    result = fifths;
+    return true;
+}
+
 template <typename Event>
 int findActiveEventIndex(const Event* events, int count, double ppq, double tolerance) noexcept
 {
@@ -51,6 +100,20 @@ ChordContext makeChordContext(const SharedChordEvent& chord, bool available) noe
     result.startPpq = chord.position;
     result.root = chord.root;
     result.bass = chord.bass;
+
+    // ARA's structured root may be enharmonically canonicalized by the host
+    // even when the chord-track label preserves the user's spelling. Keep the
+    // structured pitch as authority, but recover an equivalent spelling from
+    // the label (Db vs C#, etc.) when it describes the same pitch class.
+    std::int32_t spelledRoot = chord.root;
+    if (namedRootFifths(chord.name, chord.root, spelledRoot))
+    {
+        const auto bassWasRoot = pitchClassForFifths(chord.bass) == pitchClassForFifths(chord.root);
+        result.root = spelledRoot;
+        if (bassWasRoot)
+            result.bass = spelledRoot;
+    }
+
     result.intervals = copyIntervals(chord.intervals);
     return result;
 }
