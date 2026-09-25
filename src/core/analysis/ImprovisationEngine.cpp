@@ -1,5 +1,6 @@
 #include "core/analysis/ImprovisationEngine.h"
 #include "core/analysis/DiatonicSources.h"
+#include "core/analysis/SpecialSources.h"
 #include <utility>
 #include <algorithm>
 #include <cstdlib>
@@ -32,6 +33,28 @@ int nearestDelta(int from, int to)
 {
     const int delta = (to - from + 12) % 12;
     return delta > 6 ? delta - 12 : delta;
+}
+
+NormalizedChord functionalSubVSpelling(const HarmonicSituation& situation)
+{
+    auto chord = situation.currentChord;
+    if (! chord.valid || ! situation.resolution.available || ! situation.resolution.confirmed
+        || ! situation.resolution.targetChord.valid)
+        return chord;
+
+    // A confirmed tritone-substitute dominant is the bII7 of its real target.
+    // Derive notation from that target rather than from a host-canonicalized
+    // C#/Db pitch name. This changes spelling only; pitch classes stay intact.
+    const auto candidateRootFifths = situation.resolution.targetChord.rootFifths - 5;
+    if (circleOfFifthsToPitchClass(candidateRootFifths) != chord.rootPitchClass)
+        return chord;
+
+    const bool bassIsRoot = chord.bassPitchClass == chord.rootPitchClass;
+    chord.rootFifths = candidateRootFifths;
+    if (bassIsRoot)
+        chord.bassFifths = candidateRootFifths;
+    chord.slashBass = chord.bassPitchClass != chord.rootPitchClass;
+    return chord;
 }
 
 void addTargets(ImprovisationStrategy& strategy, const HarmonicSituation& situation)
@@ -83,11 +106,12 @@ ImprovisationResult analyzeImprovisation(const HarmonicSituation& situation)
     result.secondaryDominant = situation.harmonic.appliedDominantConfirmed;
     result.substituteDominant = harmonic != nullptr && harmonic->substituteDominantConfirmed;
     const auto& chord = situation.currentChord;
+    const auto displayChord = result.substituteDominant ? functionalSubVSpelling(situation) : chord;
     const bool dominant = chord.quality == ChordQuality::dominant
         || (harmonic != nullptr
             && (harmonic->effectiveFunction == HarmonicFunction::dominant
                 || harmonic->effectiveFunction == HarmonicFunction::substituteDominant));
-    result.contextDescription = normalizedChordSymbol(chord);
+    result.contextDescription = normalizedChordSymbol(displayChord);
     if (dominant)
     {
         result.dominantContext = DominantContext::unresolved;
@@ -124,11 +148,12 @@ ImprovisationResult analyzeImprovisation(const HarmonicSituation& situation)
     strategy.interpretationIndependent = true;
     strategy.interpretationIndex = harmonic != nullptr ? index : -1;
     strategy.evidence = situation.evidence;
-    strategy.actualChord = chord;
-    strategy.thinkingStructure = chord;
+    strategy.actualChord = displayChord;
+    strategy.thinkingStructure = displayChord;
     strategy.source.kind = MaterialKind::chordTones;
+    strategy.source.rootFifths = displayChord.rootFifths;
     strategy.source.rootPitchClass = chord.rootPitchClass;
-    strategy.source.name = normalizedChordSymbol(chord);
+    strategy.source.name = normalizedChordSymbol(displayChord);
     strategy.source.notes = chordMaterial(chord);
     for (const auto& note : strategy.source.notes)
     {
@@ -149,6 +174,7 @@ ImprovisationResult analyzeImprovisation(const HarmonicSituation& situation)
     result.strategies.push_back(std::move(strategy));
     result.valid = true;
     addDiatonicSource(result);
+    addSpecialSources(result);
     return result;
 }
 }

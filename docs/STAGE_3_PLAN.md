@@ -1,6 +1,6 @@
 # Stage 3 — Improvisation Engine: рабочий план
 
-> Обновлено 2026-09-24. База: stable 0.3, Stage 2 принят. 0.3a и 0.3b приняты; начата реализация 0.3c. Stable остаётся 0.3.
+> Обновлено 2026-09-25. База: stable 0.3, Stage 2 принят. 0.3a–0.3d приняты; следующий checkpoint — 0.3e. Stable остаётся 0.3.
 > Начальная методика и текстовая форма подсказки согласованы: [IMPROVISATION_METHOD.md](IMPROVISATION_METHOD.md). См. [PRODUCT_WORKFLOW.md](PRODUCT_WORKFLOW.md).
 
 ## Результат Stage
@@ -56,7 +56,9 @@ Windows Build #234 — success; живой тест принят Владом; P
 
 **Gate:** проверяемый результат этих пунктов, соответствующие regression tests, отдельный build artifact и live-test, где применим; принятие пользователем перед следующей буквой.
 
-### 0.3c — Diatonic / modal sources
+### 0.3c — Diatonic / modal sources [ACCEPTED]
+
+Windows Build #237 success; принят Владом 2026-09-25, PR #25 merged.
 
 Каталог и ограничения: [STAGE_3_0.3c_LIVE_TEST.md](STAGE_3_0.3c_LIVE_TEST.md). Один дополнительный scale source к chord-tone foundation; minor-target dominant/SubV/altered источники остаются 0.3d.
 
@@ -66,11 +68,13 @@ Windows Build #234 — success; живой тест принят Владом; P
 
 **Gate:** проверяемый результат этих пунктов, соответствующие regression tests, отдельный build artifact и live-test, где применим; принятие пользователем перед следующей буквой.
 
-### 0.3d — Melodic minor / diminished sources
+### 0.3d — Melodic minor / diminished sources [ACCEPTED]
 
-- [ ] Добавить согласованный ограниченный набор melodic-minor и diminished applications.
-- [ ] Для каждого источника определить условия применения, характерные интервалы, ограничения и разрешения.
-- [ ] Различать ordinary V / SubV и major/minor target; не закреплять за гаммой безусловный Tension Level.
+Windows Build #246 — success; живой тест 0.3d fix2 принят Владом 2026-09-25; PR #26 слит в main. Fix1 не решил реальный enharmonic-case Studio Pro; fix2 перенёс spelling confirmed SubV в функциональный слой Improvisation Engine. Каталог, ограничения и история проверки: [STAGE_3_0.3d_LIVE_TEST.md](STAGE_3_0.3d_LIVE_TEST.md).
+
+- [x] Добавить согласованный ограниченный набор melodic-minor и diminished applications.
+- [x] Для каждого источника определить условия применения, характерные интервалы, ограничения и разрешения.
+- [x] Различать ordinary V / SubV и major/minor target; не закреплять за гаммой безусловный Tension Level.
 
 **Gate:** проверяемый результат этих пунктов, соответствующие regression tests, отдельный build artifact и live-test, где применим; принятие пользователем перед следующей буквой.
 
@@ -120,4 +124,4 @@ Windows Build #234 — success; живой тест принят Владом; P
 
 ## Открытые решения
 
-Для 0.3a согласованы: текстовая подсказка, контекст перед материалом, ограниченный каталог Бойко и одна основная рекомендация на доступный уровень после Stage 4. Нотные примеры/прослушивание, ручная трактовка и дополнительные альтернативы отложены. Дальнейшие буквы начинаются после принятия текущего checkpoint.
+Для 0.3a согласованы: текстовая подсказка, контекст перед материалом, ограниченный каталог Бойко и одна основная рекомендация на доступный уровень после Stage 4. Нотные примеры/прослушивание, ручная трактовка и дополнительные альтернативы отложены. Следующий checkpoint после принятого 0.3d — 0.3e.

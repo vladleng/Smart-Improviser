@@ -1,6 +1,6 @@
 # Smart Improviser — Current State
 
-> Планирование обновлено 2026-09-24: согласован workflow работы над песней, user content и постоянных tension-подсказок. 0.3a и 0.3b приняты; начата рабочая версия 0.3c; последняя принятая stable — 0.3.
+> Планирование обновлено 2026-09-25: согласован workflow работы над песней, user content и постоянных tension-подсказок. 0.3a–0.3d приняты; следующий checkpoint — 0.3e; последняя принятая stable — 0.3.
 
 > Короткая точка входа для нового чата или рабочей сессии. Подробная архитектура — в `PROJECT_CONTEXT.md`, этапы — в `ROADMAP.md`, правила версий — в `VERSIONING.md`, фактический прогресс — в GitHub Issues.
 
@@ -13,7 +13,7 @@
 - **Рабочая линия:** `0.3a → 0.3x`
 - **Итог Stage 3:** `0.4`
 - **Stage 2 Issue:** #3 — закрыт стабильной `0.3`
-- **Stage 3 Issue:** #4 — обновлён рабочий план `0.3a–0.3h`; 0.3a и 0.3b приняты; начат 0.3c
+- **Stage 3 Issue:** #4 — рабочий план `0.3a–0.3h`; 0.3a–0.3d приняты; следующий checkpoint — 0.3e
 
 `0.3` — релизное закрытие Stage 2. Новая музыкальная логика относительно принятого `0.2f` не добавлялась: stable release фиксирует уже проверенное состояние Harmonic Engine.
 
@@ -120,9 +120,9 @@ Package:    Smart Improviser.vst3
 Tests:      7 regression/integration targets
 ```
 
-## Следующий этап — Stage 3 / Improvisation Engine
+## Stage 3 / Improvisation Engine
 
-Stage 3 должен использовать готовый `HarmonicSituation` и выдавать музыкально применимый материал для импровизации:
+Stage 3 использует готовый `HarmonicSituation` и выдаёт музыкально применимый материал для импровизации:
 
 - chord tones;
 - guide tones;
@@ -132,11 +132,11 @@ Stage 3 должен использовать готовый `HarmonicSituation`
 - resolution notes;
 - базовые improvisation strategies.
 
-Рабочая декомпозиция опубликована в [STAGE_3_PLAN.md](STAGE_3_PLAN.md) и Issue #4. Начальная методика согласована в [IMPROVISATION_METHOD.md](IMPROVISATION_METHOD.md); 0.3a и 0.3b приняты, следующий checkpoint — 0.3c.
+Рабочая декомпозиция опубликована в [STAGE_3_PLAN.md](STAGE_3_PLAN.md) и Issue #4. Начальная методика согласована в [IMPROVISATION_METHOD.md](IMPROVISATION_METHOD.md); 0.3a–0.3d приняты, следующий checkpoint — 0.3e.
 
 Согласованная продуктовая цель: [PRODUCT_WORKFLOW.md](PRODUCT_WORKFLOW.md). Общая/личная библиотеки — Stage 5; сохраняемый Song workspace — Stage 7; быстрый ввод нот/TAB и ручной конструктор — Stage 8; Planner — Stage 10. Смена tension не переписывает сохранённые идеи.
 
-## Что читать при переходе к Stage 3
+## Что читать при продолжении Stage 3
 
 1. `docs/CURRENT_STATE.md`;
 2. `docs/ROADMAP.md`;
@@ -144,10 +144,9 @@ Stage 3 должен использовать готовый `HarmonicSituation`
 4. `docs/PROJECT_CONTEXT.md`;
 5. `docs/ARCHITECTURAL_DECISIONS.md`;
 6. `docs/VERSIONING.md`;
-7. Issue #3 — история завершённого Stage 2.
-
+7. Issue #3 — история завершённого Stage 2;
 8. `docs/PRODUCT_WORKFLOW.md` — согласованный пользовательский сценарий;
-9. `docs/STAGE_3_PLAN.md` — рабочий план следующего этапа и открытые решения.
+9. `docs/STAGE_3_PLAN.md` — рабочий план Stage 3.
 
 ## Принятый checkpoint 0.3a
 
@@ -161,10 +160,22 @@ Stage 3 должен использовать готовый `HarmonicSituation`
 
 8 локальных C++ test targets проходят. Windows Build #234 — success; Влад принял живой тест, PR #24 слит в main. [Чек-лист 0.3b](STAGE_3_0.3b_LIVE_TEST.md). Материал пока отображается как pitch classes. Stable остаётся 0.3.
 
-## Рабочий checkpoint 0.3c
+## Принятый checkpoint 0.3c
 
 Добавлен ограниченный диатонический каталог: режимы принятого major/minor center и Mixolydian для ordinary dominant seventh с подтверждённой major target. Сначала проверяется совместимость со всеми explicit chord tones/degrees. Unresolved primary, minor-target dominant, SubV, цепи и неподдерживаемые случаи сохраняют chord-tone foundation с объяснением отсутствия гаммы.
 
 Scale source хранит ступени, root/spelling и ссылку на interpretation; source не меняет tonal center. Опоры, characteristic tones и resolution 0.3b сохраняются. Новая гамма выводится с корректным enharmonic spelling; прежние списки опор пока pitch classes. Tension policy не реализуется.
 
-9 локальных C++ test targets проходят; Windows CI отслеживается в PR. Живой тест 0.3c ещё не принят. [Чек-лист](STAGE_3_0.3c_LIVE_TEST.md).
+9 локальных C++ test targets проходят; Windows Build #237 success. Влад принял 0.3c 2026-09-25; PR #25 merged. [Чек-лист](STAGE_3_0.3c_LIVE_TEST.md).
+
+## Принятый checkpoint 0.3d
+
+Добавлены четыре melodic-minor application из раздела 2 Бойко, отдельное project-правило SubV и whole-half для dim7. Источник, m6 thinking, реальные опоры и цель сохраняются отдельно. Source/chord spelling, объявленные пропуски b7 на m7 и натуральной 5 в altered, проверка явных надстроек и slash bass, отдельные optional color moves. Tension не назначается. Правая диагностическая панель прокручивается.
+
+В live-test выявился отдельный enharmonic case Studio Pro: Chord Track показывает Db7, а structured ARA root приходит как C#. Fix1 через `ARA SheetChord name` не решил реальный host-case. В fix2 confirmed SubV spellings выводятся функционально из реальной цели уже в Improvisation Engine: C#7→C становится пользовательски понятным Db7, source — Ab melodic minor / Abm6, G — #11 относительно Db. Stage 1/2 raw diagnostic при этом может оставаться C#7.
+
+10 C++ test targets проходят. Windows Build #246 — success. Живой тест fix2 принят Владом 2026-09-25; PR #26 merged. [Каталог и чек-лист 0.3d](STAGE_3_0.3d_LIVE_TEST.md).
+
+Следующий checkpoint — **0.3e Harmonic concepts**.
+
+Наблюдение 0.3c: A7 → Dm7 → G7 даёт D Aeolian при primary D minor, а Cmaj7 → Dm7 → G7 — D Dorian. Пользователь принял текущее поведение; сравнение global/local alternatives остаётся 0.3f.

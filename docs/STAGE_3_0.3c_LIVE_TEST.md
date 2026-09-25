@@ -1,6 +1,6 @@
 # Stage 3 / 0.3c — Diatonic / modal sources
 
-Статус: реализация подготовлена; живой тест ожидается. 0.3b принят, CI #234 success, PR #24 merged.
+Статус: принят Владом 2026-09-25. Windows Build #237 success; PR #25 merged. Переход к 0.3d разрешён.
 
 ## Объём
 

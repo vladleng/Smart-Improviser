@@ -2,6 +2,7 @@
 
 #include <cmath>
 #include <cstdlib>
+#include <cstring>
 #include <iostream>
 
 using namespace smartimproviser::harmony;
@@ -135,6 +136,39 @@ int main()
 
     expect(nextChordStartAfter(timeline, 12.0) == 16.0, "next chord boundary is exact");
     expect(nextChordStartAfter(timeline, 20.0) < 0.0, "no boundary after final chord");
+
+    // Fender Studio can expose a pitch-equivalent structured root while the
+    // chord-track label keeps the user's enharmonic spelling. Preserve the
+    // label spelling only when it matches the same sounding pitch class.
+    SharedHarmonicContextSnapshot spelling;
+    spelling.sheetChordsAvailable = true;
+    spelling.sheetChordEventCount = 1;
+    spelling.sheetChordStoredCount = 1;
+    spelling.sheetChords[0].position = 0.0;
+    spelling.sheetChords[0].root = 7; // C# in circle-of-fifths notation
+    spelling.sheetChords[0].bass = 7;
+    setMajorTriad(spelling.sheetChords[0].intervals);
+    std::strcpy(spelling.sheetChords[0].name, "Db7");
+
+    auto spelled = mapTimelineHarmonicSnapshot(spelling, 0.0);
+    expect(spelled.currentChord.root == -5 && spelled.currentChord.bass == -5,
+           "Db label preserves flat root spelling for an enharmonic C# structured root");
+
+    std::strcpy(spelling.sheetChords[0].name, "C#7");
+    spelled = mapTimelineHarmonicSnapshot(spelling, 0.0);
+    expect(spelled.currentChord.root == 7 && spelled.currentChord.bass == 7,
+           "C# label preserves sharp root spelling");
+
+    std::strcpy(spelling.sheetChords[0].name, "Eb7");
+    spelled = mapTimelineHarmonicSnapshot(spelling, 0.0);
+    expect(spelled.currentChord.root == 7 && spelled.currentChord.bass == 7,
+           "mismatched label cannot change structured sounding pitch");
+
+    const char unicodeFlat[] = "D\xE2\x99\xAD" "7";
+    std::strcpy(spelling.sheetChords[0].name, unicodeFlat);
+    spelled = mapTimelineHarmonicSnapshot(spelling, 0.0);
+    expect(spelled.currentChord.root == -5,
+           "Unicode flat sign is accepted as enharmonic spelling metadata");
 
     SharedHarmonicContextSnapshot tempo;
     tempo.tempoEntriesAvailable = true;

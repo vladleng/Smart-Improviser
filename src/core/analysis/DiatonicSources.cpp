@@ -80,9 +80,9 @@ void addDiatonicSource(ImprovisationResult& result)
     {
         if (result.substituteDominant || interpretation.harmonic.substituteDominantCandidate
             || situation.harmonic.substituteDominantConfirmed)
-            result.scaleUnavailableReason = "SubV source rules follow in 0.3d; retain the confirmed targets.";
+            result.scaleUnavailableReason = "No compatible SubV source; retain the confirmed targets.";
         else if (result.dominantContext == DominantContext::toMinor)
-            result.scaleUnavailableReason = "Minor-target dominant: dedicated minor/altered sources follow in 0.3d.";
+            result.scaleUnavailableReason = "No compatible minor-target source; retain anchors and resolution.";
         else if (result.dominantContext != DominantContext::toMajor)
             result.scaleUnavailableReason = "No confirmed major target for the basic dominant source.";
         else
@@ -152,6 +152,10 @@ void addDiatonicSource(ImprovisationResult& result)
     strategy.conditions = "Scale notes are available material, not equally stable landing notes; use the chord anchors and targets.";
     if (chord.hasTone(4) && std::find(selected->intervals.begin(), selected->intervals.end(), 5) != selected->intervals.end())
         strategy.conditions += " Treat the natural 4th as a passing tone against the major 3rd.";
+    strategy.source.chordRelativeNotes = strategy.source.notes;
+    strategy.usageHint = "Use chord anchors and targets.";
+    if (chord.hasTone(4) && std::find(selected->intervals.begin(), selected->intervals.end(), 5) != selected->intervals.end())
+        strategy.usageHint = "Natural 4th: passing against major 3rd.";
     result.strategies.push_back(std::move(strategy));
 }
 }
