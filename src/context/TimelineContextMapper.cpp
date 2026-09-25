@@ -134,12 +134,12 @@ double toleranceFor(const SharedHarmonicContextSnapshot& shared) noexcept
     return shared.transportPlaying ? kTimelineEpsilon : kStoppedCursorTolerancePpq;
 }
 
-void fillPatternWindow(TimelineHarmonicSnapshot& result,
-                       const SharedHarmonicContextSnapshot& shared,
-                       int chordIndex) noexcept
+PatternTimelineWindow buildPatternWindow(const SharedHarmonicContextSnapshot& shared,
+                                         int chordIndex) noexcept
 {
+    PatternTimelineWindow result;
     if (chordIndex < 0 || ! shared.sheetChordsAvailable || shared.sheetChordStoredCount <= 0)
-        return;
+        return result;
 
     constexpr int halfWindow = static_cast<int>(kMaxPatternWindowChords / 2);
     int begin = std::max(0, chordIndex - halfWindow);
@@ -150,15 +150,16 @@ void fillPatternWindow(TimelineHarmonicSnapshot& result,
     // current chord still has as much preceding pattern evidence as possible.
     begin = std::max(0, end - static_cast<int>(kMaxPatternWindowChords));
 
-    result.patternWindow.chordCount = static_cast<std::uint8_t>(end - begin);
-    result.patternWindow.currentIndex = chordIndex - begin;
+    result.chordCount = static_cast<std::uint8_t>(end - begin);
+    result.currentIndex = chordIndex - begin;
 
     for (int sourceIndex = begin; sourceIndex < end; ++sourceIndex)
     {
         const auto destination = static_cast<std::size_t>(sourceIndex - begin);
-        result.patternWindow.chords[destination] =
-            makeChordContext(shared.sheetChords[sourceIndex], true);
+        result.chords[destination] = makeChordContext(shared.sheetChords[sourceIndex], true);
     }
+
+    return result;
 }
 }
 
@@ -240,8 +241,6 @@ TimelineHarmonicSnapshot mapTimelineHarmonicSnapshot(
             result.nextChordAvailable = true;
             result.nextChord = makeChordContext(shared.sheetChords[chordIndex + 1], shared.sheetChordsAvailable);
         }
-
-        fillPatternWindow(result, shared, chordIndex);
     }
     else if (shared.sheetChordsAvailable && shared.sheetChordStoredCount > 0
              && ppq + tolerance < shared.sheetChords[0].position)
@@ -261,6 +260,20 @@ TimelineHarmonicSnapshot mapTimelineHarmonicSnapshot(
         result.globalKey = makeKeyContext(shared.keySignatures[keyIndex], shared.keySignaturesAvailable);
 
     return result;
+}
+
+PatternTimelineWindow mapPatternTimelineWindow(
+    const SharedHarmonicContextSnapshot& shared,
+    double ppq) noexcept
+{
+    if (ppq < 0.0)
+        return {};
+
+    const auto chordIndex = findActiveEventIndex(shared.sheetChords,
+                                                 shared.sheetChordStoredCount,
+                                                 ppq,
+                                                 toleranceFor(shared));
+    return buildPatternWindow(shared, chordIndex);
 }
 
 double nextChordStartAfter(const SharedHarmonicContextSnapshot& shared,
