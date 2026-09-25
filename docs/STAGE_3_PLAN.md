@@ -1,6 +1,6 @@
 # Stage 3 — Improvisation Engine: рабочий план
 
-> Обновлено 2026-09-24. База: stable 0.3, Stage 2 принят. 0.3a и 0.3b приняты; начата реализация 0.3c. Stable остаётся 0.3.
+> Обновлено 2026-09-25. База: stable 0.3, Stage 2 принят. 0.3a–0.3c приняты; реализован 0.3d, ожидается CI / live-test. Stable остаётся 0.3.
 > Начальная методика и текстовая форма подсказки согласованы: [IMPROVISATION_METHOD.md](IMPROVISATION_METHOD.md). См. [PRODUCT_WORKFLOW.md](PRODUCT_WORKFLOW.md).
 
 ## Результат Stage
@@ -56,7 +56,9 @@ Windows Build #234 — success; живой тест принят Владом; P
 
 **Gate:** проверяемый результат этих пунктов, соответствующие regression tests, отдельный build artifact и live-test, где применим; принятие пользователем перед следующей буквой.
 
-### 0.3c — Diatonic / modal sources
+### 0.3c — Diatonic / modal sources [ACCEPTED]
+
+Windows Build #237 success; принят Владом 2026-09-25, PR #25 merged.
 
 Каталог и ограничения: [STAGE_3_0.3c_LIVE_TEST.md](STAGE_3_0.3c_LIVE_TEST.md). Один дополнительный scale source к chord-tone foundation; minor-target dominant/SubV/altered источники остаются 0.3d.
 
@@ -68,9 +70,11 @@ Windows Build #234 — success; живой тест принят Владом; P
 
 ### 0.3d — Melodic minor / diminished sources
 
-- [ ] Добавить согласованный ограниченный набор melodic-minor и diminished applications.
-- [ ] Для каждого источника определить условия применения, характерные интервалы, ограничения и разрешения.
-- [ ] Различать ordinary V / SubV и major/minor target; не закреплять за гаммой безусловный Tension Level.
+Каталог, ограничения и чек-лист: [STAGE_3_0.3d_LIVE_TEST.md](STAGE_3_0.3d_LIVE_TEST.md). Локальные тесты проходят; живой тест ещё не принят.
+
+- [x] Добавить согласованный ограниченный набор melodic-minor и diminished applications.
+- [x] Для каждого источника определить условия применения, характерные интервалы, ограничения и разрешения.
+- [x] Различать ordinary V / SubV и major/minor target; не закреплять за гаммой безусловный Tension Level.
 
 **Gate:** проверяемый результат этих пунктов, соответствующие regression tests, отдельный build artifact и live-test, где применим; принятие пользователем перед следующей буквой.
 

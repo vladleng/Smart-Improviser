@@ -28,7 +28,8 @@ enum class ImprovisationStrategyKind : std::uint8_t
     diminishedDominant,
     tritoneSuperimposition,
     chromaticEnclosure,
-    sideSlipOutside
+    sideSlipOutside,
+    diminishedApplication
 };
 
 enum class PhraseRole : std::uint8_t
@@ -68,7 +69,8 @@ struct SourceMaterial
     int rootFifths = 0;
     int rootPitchClass = -1; // Source root, never an inferred song key.
     std::string name;
-    std::vector<MaterialNote> notes; // Deterministic ascending relative intervals.
+    std::vector<MaterialNote> notes; // Deterministic ascending source-relative intervals.
+    std::vector<MaterialNote> chordRelativeNotes; // Same pitches, degrees/spelling relative to actual chord.
 };
 
 struct ImprovisationStrategy
@@ -94,6 +96,10 @@ struct ImprovisationStrategy
     std::string idea;
     std::string explanation;
     std::string conditions;
+    std::string sourceReference;
+    std::string usageHint; // Compact diagnostic instruction, not a tension classification.
+    std::vector<int> omittedChordTones; // Pitch classes explicitly omitted by this application.
+    std::vector<ResolutionMove> sourceTransitions; // Optional color-to-target moves; never harmonic evidence.
 };
 
 struct ImprovisationResult

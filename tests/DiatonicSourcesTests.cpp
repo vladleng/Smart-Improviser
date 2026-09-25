@@ -99,7 +99,7 @@ TimelineHarmonicSnapshot makePreviousCurrentSnapshot(const KeyContext& key,
 const ImprovisationStrategy* scale(const ImprovisationResult& result)
 {
     for (const auto& strategy : result.strategies)
-        if (strategy.source.kind == MaterialKind::scale) return &strategy;
+        if (strategy.source.kind == MaterialKind::scale && strategy.source.mode != DiatonicMode::none) return &strategy;
     return nullptr;
 }
 HarmonicSituation withSelectedCenter(const KeyContext& key, const ChordContext& chord)
@@ -146,7 +146,7 @@ int main()
     expect(!scale(analyzeImprovisation(analyzeHarmonicSituation(snapshot))), "chain not major tonic");
     snapshot.currentChord = makeChord(-5,{0,4,7,10});
     snapshot.nextChord = makeChord(0,{0,4,7,11});
-    expect(!scale(analyzeImprovisation(analyzeHarmonicSituation(snapshot))), "SubV waits for dedicated sources");
+    expect(!scale(analyzeImprovisation(analyzeHarmonicSituation(snapshot))), "SubV excludes basic diatonic source");
     snapshot.currentChord = makeChord(1,{0,1,4,7,10});
     expect(!scale(analyzeImprovisation(analyzeHarmonicSituation(snapshot))), "b9 conflicts with Mixolydian");
     snapshot.currentChord = makeChord(1,{0,5,7,10});

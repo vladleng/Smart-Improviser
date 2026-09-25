@@ -296,6 +296,16 @@ SmartImproviserARAEditor::SmartImproviserARAEditor(SmartImproviserARAProcessor& 
     : juce::AudioProcessorEditor(p), processor(p)
 {
     setSize(1020, 1010);
+    improvisationDetails.setMultiLine(true, true);
+    improvisationDetails.setReadOnly(true);
+    improvisationDetails.setScrollbarsShown(true);
+    improvisationDetails.setCaretVisible(false);
+    improvisationDetails.setFont(juce::Font(juce::FontOptions(15.0f)));
+    improvisationDetails.setColour(juce::TextEditor::backgroundColourId, juce::Colour::fromRGB(42, 46, 53));
+    improvisationDetails.setColour(juce::TextEditor::textColourId, juce::Colour::fromRGB(225, 230, 238));
+    improvisationDetails.setColour(juce::TextEditor::outlineColourId, juce::Colours::transparentBlack);
+    improvisationDetails.setBounds(652, 96, 332, 836);
+    addAndMakeVisible(improvisationDetails);
     timerCallback();
     startTimerHz(10);
 }
@@ -307,27 +317,40 @@ void SmartImproviserARAEditor::timerCallback()
     cachedSituation = smartimproviser::harmony::analyzeHarmonicSituation(
         smartimproviser::harmony::mapTimelineHarmonicSnapshot(cachedShared, ppq));
     const auto result = smartimproviser::harmony::analyzeImprovisation(cachedSituation);
-    improvisationText = "STAGE 3 / 0.3c\nDiatonic sources / targets\n\n";
+    improvisationText = "STAGE 3 / 0.3d\nSource applications / targets\n\n";
     if (! result.valid)
         improvisationText += utf8String(result.unavailableReason);
     else
     {
         const auto& strategy = result.strategies.front();
         improvisationText += "CONTEXT\n" + utf8String(result.contextDescription);
-        improvisationText += "\n\nSCALE SOURCE\n";
-        const auto scalar = std::find_if(result.strategies.begin(), result.strategies.end(), [](const auto& candidate)
-        { return candidate.source.kind == smartimproviser::harmony::MaterialKind::scale; });
-        if (scalar != result.strategies.end())
+        improvisationText += "\n\nSCALE SOURCES\n";
+        bool hasScale = false;
+        for (const auto& scalar : result.strategies)
         {
-            improvisationText += utf8String(scalar->source.name) + "\n";
-            for (const auto& note : scalar->source.notes) improvisationText += utf8String(note.spelling) + " ";
-            improvisationText += "\nUse chord anchors and targets.";
-            if (scalar->actualChord.hasTone(4)
-                && std::any_of(scalar->source.notes.begin(), scalar->source.notes.end(),
-                    [](const auto& note) { return note.semitonesFromRoot == 5; }))
-                improvisationText += "\nNatural 4th: passing against major 3rd.";
+            if (scalar.source.kind != smartimproviser::harmony::MaterialKind::scale) continue;
+            if (hasScale) improvisationText += "\n\n";
+            hasScale = true;
+            improvisationText += utf8String(scalar.source.name) + "\n";
+            for (const auto& note : scalar.source.notes) improvisationText += utf8String(note.spelling) + " ";
+            if (!scalar.sourceReference.empty())
+            {
+                improvisationText += "\n" + utf8String(scalar.idea);
+                improvisationText += "\nThink: " + utf8String(smartimproviser::harmony::normalizedChordSymbol(scalar.thinkingStructure));
+                improvisationText += "\nOn chord: ";
+                for (const auto& note : scalar.source.chordRelativeNotes)
+                    improvisationText += utf8String(note.spelling) + " ";
+            }
+            improvisationText += "\n" + utf8String(scalar.usageHint);
+            if (!scalar.sourceTransitions.empty())
+            {
+                improvisationText += "\nOptional color moves: ";
+                for (const auto& move : scalar.sourceTransitions)
+                    improvisationText += juce::String(pitchClassName(move.fromPitchClass)) + "->"
+                        + pitchClassName(move.toPitchClass) + " ";
+            }
         }
-        else improvisationText += utf8String(result.scaleUnavailableReason);
+        if (!hasScale) improvisationText += utf8String(result.scaleUnavailableReason);
         improvisationText += "\n\nCHORD ANCHORS\n";
         for (const auto& note : strategy.source.notes)
             improvisationText += juce::String(pitchClassName(note.pitchClass)) + " ";
@@ -368,6 +391,11 @@ void SmartImproviserARAEditor::timerCallback()
 
 
     }
+    if (improvisationDetails.getText() != improvisationText)
+    {
+        improvisationDetails.setText(improvisationText, false);
+        improvisationDetails.moveCaretToTop(false);
+    }
     repaint();
 }
 
@@ -396,8 +424,7 @@ void SmartImproviserARAEditor::paint(juce::Graphics& g)
     g.fillRoundedRectangle(640.0f, 84.0f, 356.0f, 860.0f, 8.0f);
     g.setColour(juce::Colour::fromRGB(225, 230, 238));
     g.setFont(15.0f);
-    g.drawFittedText(improvisationText, 656, 100, 324, 828,
-                     juce::Justification::topLeft, 54, 1.0f);
+
 
     int y = 84;
     drawRow(g, y, "ARA binding", processor.isAraBound() ? "BOUND" : "NOT BOUND", true); y += 25;

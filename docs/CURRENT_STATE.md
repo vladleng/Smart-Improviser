@@ -1,6 +1,6 @@
 # Smart Improviser — Current State
 
-> Планирование обновлено 2026-09-24: согласован workflow работы над песней, user content и постоянных tension-подсказок. 0.3a и 0.3b приняты; начата рабочая версия 0.3c; последняя принятая stable — 0.3.
+> Планирование обновлено 2026-09-24: согласован workflow работы над песней, user content и постоянных tension-подсказок. 0.3a–0.3c приняты; рабочая версия 0.3d; последняя принятая stable — 0.3.
 
 > Короткая точка входа для нового чата или рабочей сессии. Подробная архитектура — в `PROJECT_CONTEXT.md`, этапы — в `ROADMAP.md`, правила версий — в `VERSIONING.md`, фактический прогресс — в GitHub Issues.
 
@@ -13,7 +13,7 @@
 - **Рабочая линия:** `0.3a → 0.3x`
 - **Итог Stage 3:** `0.4`
 - **Stage 2 Issue:** #3 — закрыт стабильной `0.3`
-- **Stage 3 Issue:** #4 — обновлён рабочий план `0.3a–0.3h`; 0.3a и 0.3b приняты; начат 0.3c
+- **Stage 3 Issue:** #4 — обновлён рабочий план `0.3a–0.3h`; 0.3a–0.3c приняты; реализован 0.3d, ожидается CI / live-test
 
 `0.3` — релизное закрытие Stage 2. Новая музыкальная логика относительно принятого `0.2f` не добавлялась: stable release фиксирует уже проверенное состояние Harmonic Engine.
 
@@ -132,7 +132,7 @@ Stage 3 должен использовать готовый `HarmonicSituation`
 - resolution notes;
 - базовые improvisation strategies.
 
-Рабочая декомпозиция опубликована в [STAGE_3_PLAN.md](STAGE_3_PLAN.md) и Issue #4. Начальная методика согласована в [IMPROVISATION_METHOD.md](IMPROVISATION_METHOD.md); 0.3a и 0.3b приняты, следующий checkpoint — 0.3c.
+Рабочая декомпозиция опубликована в [STAGE_3_PLAN.md](STAGE_3_PLAN.md) и Issue #4. Начальная методика согласована в [IMPROVISATION_METHOD.md](IMPROVISATION_METHOD.md); 0.3a–0.3c приняты, текущий checkpoint — 0.3d.
 
 Согласованная продуктовая цель: [PRODUCT_WORKFLOW.md](PRODUCT_WORKFLOW.md). Общая/личная библиотеки — Stage 5; сохраняемый Song workspace — Stage 7; быстрый ввод нот/TAB и ручной конструктор — Stage 8; Planner — Stage 10. Смена tension не переписывает сохранённые идеи.
 
@@ -161,10 +161,18 @@ Stage 3 должен использовать готовый `HarmonicSituation`
 
 8 локальных C++ test targets проходят. Windows Build #234 — success; Влад принял живой тест, PR #24 слит в main. [Чек-лист 0.3b](STAGE_3_0.3b_LIVE_TEST.md). Материал пока отображается как pitch classes. Stable остаётся 0.3.
 
-## Рабочий checkpoint 0.3c
+## Принятый checkpoint 0.3c
 
 Добавлен ограниченный диатонический каталог: режимы принятого major/minor center и Mixolydian для ordinary dominant seventh с подтверждённой major target. Сначала проверяется совместимость со всеми explicit chord tones/degrees. Unresolved primary, minor-target dominant, SubV, цепи и неподдерживаемые случаи сохраняют chord-tone foundation с объяснением отсутствия гаммы.
 
 Scale source хранит ступени, root/spelling и ссылку на interpretation; source не меняет tonal center. Опоры, characteristic tones и resolution 0.3b сохраняются. Новая гамма выводится с корректным enharmonic spelling; прежние списки опор пока pitch classes. Tension policy не реализуется.
 
-9 локальных C++ test targets проходят; Windows CI отслеживается в PR. Живой тест 0.3c ещё не принят. [Чек-лист](STAGE_3_0.3c_LIVE_TEST.md).
+9 локальных C++ test targets проходят; Windows Build #237 success. Влад принял 0.3c 2026-09-25; PR #25 merged. [Чек-лист](STAGE_3_0.3c_LIVE_TEST.md).
+
+## Рабочий checkpoint 0.3d
+
+Добавлены четыре melodic-minor application из раздела 2 Бойко, отдельное project-правило SubV и whole-half для dim7. Источник, m6 thinking, реальные опоры и цель сохраняются отдельно. Source/chord spelling, объявленные пропуски b7 на m7 и натуральной 5 в altered, проверка явных надстроек и slash bass, отдельные optional color moves. Tension не назначается. Правая диагностическая панель прокручивается.
+
+10 локальных C++ test targets проходят. Windows CI / живой тест ещё предстоят. [Каталог и чек-лист 0.3d](STAGE_3_0.3d_LIVE_TEST.md). К 0.3e — после принятия.
+
+Наблюдение 0.3c: A7 → Dm7 → G7 даёт D Aeolian при primary D minor, а Cmaj7 → Dm7 → G7 — D Dorian. Пользователь принял текущее поведение; сравнение global/local alternatives остаётся 0.3f.

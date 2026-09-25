@@ -23,6 +23,7 @@ private:
     SharedHarmonicContextSnapshot cachedShared;
     smartimproviser::harmony::HarmonicSituation cachedSituation;
     juce::String improvisationText;
+    juce::TextEditor improvisationDetails;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(SmartImproviserARAEditor)
 };
