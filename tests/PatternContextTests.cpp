@@ -49,9 +49,9 @@ ChordContext makeChord(std::int32_t rootFifths,
 }
 
 template <std::size_t N>
-TimelineHarmonicSnapshot makeWindowSnapshot(const KeyContext& key,
-                                            const std::array<ChordContext, N>& chords,
-                                            int currentIndex)
+TimelineHarmonicSnapshot makeSnapshot(const KeyContext& key,
+                                      const std::array<ChordContext, N>& chords,
+                                      int currentIndex)
 {
     TimelineHarmonicSnapshot snapshot;
     snapshot.positionAvailable = true;
@@ -69,12 +69,28 @@ TimelineHarmonicSnapshot makeWindowSnapshot(const KeyContext& key,
         snapshot.nextChordAvailable = true;
         snapshot.nextChord = chords[static_cast<std::size_t>(currentIndex + 1)];
     }
-
-    snapshot.patternWindow.chordCount = static_cast<std::uint8_t>(N);
-    snapshot.patternWindow.currentIndex = currentIndex;
-    for (std::size_t i = 0; i < N; ++i)
-        snapshot.patternWindow.chords[i] = chords[i];
     return snapshot;
+}
+
+template <std::size_t N>
+PatternTimelineWindow makePatternWindow(const std::array<ChordContext, N>& chords,
+                                        int currentIndex)
+{
+    PatternTimelineWindow window;
+    window.chordCount = static_cast<std::uint8_t>(N);
+    window.currentIndex = currentIndex;
+    for (std::size_t i = 0; i < N; ++i)
+        window.chords[i] = chords[i];
+    return window;
+}
+
+template <std::size_t N>
+HarmonicSituation analyzeWindow(const KeyContext& key,
+                                const std::array<ChordContext, N>& chords,
+                                int currentIndex)
+{
+    return analyzeHarmonicSituation(makeSnapshot(key, chords, currentIndex),
+                                    makePatternWindow(chords, currentIndex));
 }
 
 TimelineHarmonicSnapshot makeFallbackSnapshot(const KeyContext& key,
@@ -107,8 +123,7 @@ int main()
     const std::array majorCadence { gMin7, c7, fMaj7 };
     for (int index = 0; index < 3; ++index)
     {
-        const auto situation = analyzeHarmonicSituation(
-            makeWindowSnapshot(fMajor, majorCadence, index));
+        const auto situation = analyzeWindow(fMajor, majorCadence, index);
         expect(situation.pattern.type == HarmonicPatternType::majorIiVI,
                "major ii-V-I keeps one top-level pattern");
         expect(situation.pattern.positionIndex == index
@@ -118,28 +133,29 @@ int main()
                "major cadence exposes PatternContext");
     }
 
-    const auto majorTonic = analyzeHarmonicSituation(
-        makeWindowSnapshot(fMajor, majorCadence, 2));
+    const auto majorTonic = analyzeWindow(fMajor, majorCadence, 2);
     expect(majorTonic.pattern.role == PatternMemberRole::resolution,
            "major tonic remains cadence resolution");
     expect(majorTonic.patternContext.status == PatternContextStatus::completed,
            "major cadence context completes on tonic");
 
-    // Without bounded confirmed context the 0.3f safety rule remains intact.
+    // The old Stage 2 entry point still receives only previous/current/next.
+    // Without separate confirmed pattern evidence the 0.3f safety rule remains.
     const auto fallback = analyzeHarmonicSituation(
         makeFallbackSnapshot(fMajor, c7, fMaj7));
     expect(fallback.pattern.type == HarmonicPatternType::dominantToTonic
            && fallback.pattern.positionIndex == 1
            && fallback.pattern.length == 2,
            "missing PatternContext falls back to generic V-I");
+    expect(! fallback.patternContext.valid,
+           "Stage 2 snapshot does not invent carried history");
 
     // Minor iiø-V-i continuity.
     const auto dHalfDim7 = makeChord(2, { 0, 3, 6, 10 }, 0.0);
     const auto g7 = makeChord(1, { 0, 4, 7, 10 }, 4.0);
     const auto cMin7 = makeChord(0, { 0, 3, 7, 10 }, 8.0);
     const std::array minorTwoFiveOne { dHalfDim7, g7, cMin7 };
-    const auto minorIiTonic = analyzeHarmonicSituation(
-        makeWindowSnapshot(cMinor, minorTwoFiveOne, 2));
+    const auto minorIiTonic = analyzeWindow(cMinor, minorTwoFiveOne, 2);
     expect(minorIiTonic.pattern.type == HarmonicPatternType::minorIiHalfDimVi
            && minorIiTonic.pattern.positionIndex == 2,
            "minor ii-half-diminished-V-i keeps 3/3 on tonic");
@@ -147,8 +163,7 @@ int main()
     // Minor iv-V-i continuity remains distinct from iiø-V-i.
     const auto fMin7 = makeChord(-1, { 0, 3, 7, 10 }, 0.0);
     const std::array minorIvCadence { fMin7, g7, cMin7 };
-    const auto minorIvTonic = analyzeHarmonicSituation(
-        makeWindowSnapshot(cMinor, minorIvCadence, 2));
+    const auto minorIvTonic = analyzeWindow(cMinor, minorIvCadence, 2);
     expect(minorIvTonic.pattern.type == HarmonicPatternType::minorIvVi
            && minorIvTonic.pattern.positionIndex == 2,
            "minor iv-V-i keeps its own 3/3 identity on tonic");
@@ -164,8 +179,7 @@ int main()
 
     for (int index = 0; index < 5; ++index)
     {
-        const auto situation = analyzeHarmonicSituation(
-            makeWindowSnapshot(cMajor, chain, index));
+        const auto situation = analyzeWindow(cMajor, chain, index);
         expect(situation.localPattern.type == HarmonicPatternType::majorCadentialChain,
                "iii-VI7-ii-V-I is one local top-level cadence");
         expect(situation.localPattern.positionIndex == index
@@ -180,23 +194,20 @@ int main()
                "extended cadence PatternContext stores F center");
     }
 
-    const auto chainD7 = analyzeHarmonicSituation(
-        makeWindowSnapshot(cMajor, chain, 1));
+    const auto chainD7 = analyzeWindow(cMajor, chain, 1);
     expect(chainD7.patternContext.nestedPatternCount >= 1
            && chainD7.patternContext.nestedPatterns[0].type
                 == HarmonicPatternType::secondaryDominant,
            "D7 keeps nested V/ii evidence");
 
-    const auto chainGm = analyzeHarmonicSituation(
-        makeWindowSnapshot(cMajor, chain, 2));
+    const auto chainGm = analyzeWindow(cMajor, chain, 2);
     expect(chainGm.patternContext.nestedPatternCount == 2,
            "Gm7 carries V/ii resolution and ii-V-I nested evidence");
     expect(chainGm.patternContext.nestedPatterns[1].type
                 == HarmonicPatternType::majorIiVI,
            "Gm7 nested cadence is major ii-V-I");
 
-    const auto chainTonic = analyzeHarmonicSituation(
-        makeWindowSnapshot(cMajor, chain, 4));
+    const auto chainTonic = analyzeWindow(cMajor, chain, 4);
     expect(chainTonic.localPattern.role == PatternMemberRole::resolution
            && chainTonic.patternContext.status == PatternContextStatus::completed,
            "extended cadence completes on Fmaj7");
@@ -206,8 +217,7 @@ int main()
     // recognized as a normal local ii-V-I.
     const auto dMin7 = makeChord(2, { 0, 3, 7, 10 }, 4.0);
     const std::array editedChain { aMin7, dMin7, chainGMin7, chainC7, chainFMaj7 };
-    const auto afterEdit = analyzeHarmonicSituation(
-        makeWindowSnapshot(cMajor, editedChain, 4));
+    const auto afterEdit = analyzeWindow(cMajor, editedChain, 4);
     expect(afterEdit.localPattern.type == HarmonicPatternType::majorIiVI
            && afterEdit.localPattern.positionIndex == 2,
            "chord edit removes stale extended cadence but keeps valid nested cadence");
