@@ -10,6 +10,11 @@ namespace
 {
 constexpr double kTimelineEpsilon = 1.0e-12;
 constexpr double kStoppedCursorTolerancePpq = 1.0e-6;
+// Studio Pro may report a stopped transport position a few thousandths of a
+// quarter note before an ARA chord event that is drawn on the same visible
+// grid boundary. Snap only chord selection while STOPped; PLAY stays sample-
+// strict so the musical context never advances early during playback.
+constexpr double kStoppedChordBoundarySnapPpq = 1.0e-2;
 
 IntervalMask copyIntervals(const std::uint8_t (&source)[kPitchClassCount]) noexcept
 {
@@ -134,6 +139,20 @@ double toleranceFor(const SharedHarmonicContextSnapshot& shared) noexcept
     return shared.transportPlaying ? kTimelineEpsilon : kStoppedCursorTolerancePpq;
 }
 
+double chordToleranceFor(const SharedHarmonicContextSnapshot& shared) noexcept
+{
+    return shared.transportPlaying ? kTimelineEpsilon : kStoppedChordBoundarySnapPpq;
+}
+
+int findActiveChordIndex(const SharedHarmonicContextSnapshot& shared,
+                         double ppq) noexcept
+{
+    return findActiveEventIndex(shared.sheetChords,
+                                shared.sheetChordStoredCount,
+                                ppq,
+                                chordToleranceFor(shared));
+}
+
 PatternTimelineWindow buildPatternWindow(const SharedHarmonicContextSnapshot& shared,
                                          int chordIndex) noexcept
 {
@@ -179,10 +198,7 @@ HarmonicContext mapHarmonicContext(const SharedHarmonicContextSnapshot& shared,
 
     const auto tolerance = toleranceFor(shared);
 
-    const auto chordIndex = findActiveEventIndex(shared.sheetChords,
-                                                 shared.sheetChordStoredCount,
-                                                 ppq,
-                                                 tolerance);
+    const auto chordIndex = findActiveChordIndex(shared, ppq);
     if (chordIndex >= 0)
         result.chord = makeChordContext(shared.sheetChords[chordIndex], shared.sheetChordsAvailable);
 
@@ -222,10 +238,7 @@ TimelineHarmonicSnapshot mapTimelineHarmonicSnapshot(
 
     const auto tolerance = toleranceFor(shared);
 
-    const auto chordIndex = findActiveEventIndex(shared.sheetChords,
-                                                 shared.sheetChordStoredCount,
-                                                 ppq,
-                                                 tolerance);
+    const auto chordIndex = findActiveChordIndex(shared, ppq);
     if (chordIndex >= 0)
     {
         result.currentChord = makeChordContext(shared.sheetChords[chordIndex], shared.sheetChordsAvailable);
@@ -243,7 +256,7 @@ TimelineHarmonicSnapshot mapTimelineHarmonicSnapshot(
         }
     }
     else if (shared.sheetChordsAvailable && shared.sheetChordStoredCount > 0
-             && ppq + tolerance < shared.sheetChords[0].position)
+             && ppq + chordToleranceFor(shared) < shared.sheetChords[0].position)
     {
         // Before the first chord event there is deliberately no current chord,
         // but exposing the first upcoming event makes the Stage 2 contract
@@ -269,11 +282,7 @@ PatternTimelineWindow mapPatternTimelineWindow(
     if (ppq < 0.0)
         return {};
 
-    const auto chordIndex = findActiveEventIndex(shared.sheetChords,
-                                                 shared.sheetChordStoredCount,
-                                                 ppq,
-                                                 toleranceFor(shared));
-    return buildPatternWindow(shared, chordIndex);
+    return buildPatternWindow(shared, findActiveChordIndex(shared, ppq));
 }
 
 double nextChordStartAfter(const SharedHarmonicContextSnapshot& shared,
@@ -282,7 +291,7 @@ double nextChordStartAfter(const SharedHarmonicContextSnapshot& shared,
     if (! shared.sheetChordsAvailable || shared.sheetChordStoredCount <= 0 || ppq < 0.0)
         return -1.0;
 
-    const auto threshold = ppq + toleranceFor(shared);
+    const auto threshold = ppq + chordToleranceFor(shared);
     for (int index = 0; index < shared.sheetChordStoredCount; ++index)
         if (shared.sheetChords[index].position > threshold)
             return shared.sheetChords[index].position;
