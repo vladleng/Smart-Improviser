@@ -468,6 +468,340 @@ void mergePatternEvidence(HarmonicSituation& situation) noexcept
         situation.evidence.confidence = situation.pattern.evidence.confidence;
     }
 }
+
+bool sameKey(const NormalizedKey& a, const NormalizedKey& b) noexcept
+{
+    return a.valid && b.valid
+        && a.rootPitchClass == b.rootPitchClass
+        && a.mode == b.mode;
+}
+
+NormalizedKey makePatternCenter(const NormalizedChord& tonic, KeyMode mode) noexcept
+{
+    NormalizedKey key;
+    if (! tonic.valid || (mode != KeyMode::major && mode != KeyMode::minor))
+        return key;
+
+    static constexpr int majorIntervals[] = { 0, 2, 4, 5, 7, 9, 11 };
+    static constexpr int minorIntervals[] = { 0, 2, 3, 5, 7, 8, 10 };
+
+    key.valid = true;
+    key.rootFifths = tonic.rootFifths;
+    key.rootPitchClass = tonic.rootPitchClass;
+    key.mode = mode;
+
+    const auto* intervals = mode == KeyMode::major ? majorIntervals : minorIntervals;
+    for (int i = 0; i < 7; ++i)
+        key.tones[static_cast<std::size_t>(intervals[i])] = true;
+
+    return key;
+}
+
+bool rootIs(const NormalizedChord& chord, const NormalizedChord& tonic, int semitones) noexcept
+{
+    return chord.valid && tonic.valid
+        && wrap12(chord.rootPitchClass - tonic.rootPitchClass) == semitones;
+}
+
+bool matchesMajorIiVI(const NormalizedChord& ii,
+                      const NormalizedChord& v,
+                      const NormalizedChord& tonic) noexcept
+{
+    return tonic.valid
+        && tonic.quality == ChordQuality::major
+        && ii.quality == ChordQuality::minor
+        && v.quality == ChordQuality::dominant
+        && rootIs(ii, tonic, 2)
+        && rootIs(v, tonic, 7);
+}
+
+bool matchesMinorIiVI(const NormalizedChord& ii,
+                      const NormalizedChord& v,
+                      const NormalizedChord& tonic) noexcept
+{
+    return tonic.valid
+        && isMinorFamily(tonic)
+        && ii.quality == ChordQuality::halfDiminished
+        && v.quality == ChordQuality::dominant
+        && rootIs(ii, tonic, 2)
+        && rootIs(v, tonic, 7);
+}
+
+bool matchesMinorIvVI(const NormalizedChord& iv,
+                      const NormalizedChord& v,
+                      const NormalizedChord& tonic) noexcept
+{
+    return tonic.valid
+        && isMinorFamily(tonic)
+        && iv.quality == ChordQuality::minor
+        && v.quality == ChordQuality::dominant
+        && rootIs(iv, tonic, 5)
+        && rootIs(v, tonic, 7);
+}
+
+bool matchesMajorCadentialChain(const NormalizedChord& iii,
+                                const NormalizedChord& viDominant,
+                                const NormalizedChord& ii,
+                                const NormalizedChord& v,
+                                const NormalizedChord& tonic) noexcept
+{
+    return tonic.valid
+        && tonic.quality == ChordQuality::major
+        && iii.quality == ChordQuality::minor
+        && viDominant.quality == ChordQuality::dominant
+        && ii.quality == ChordQuality::minor
+        && v.quality == ChordQuality::dominant
+        && rootIs(iii, tonic, 4)
+        && rootIs(viDominant, tonic, 9)
+        && rootIs(ii, tonic, 2)
+        && rootIs(v, tonic, 7)
+        && isDominantOf(viDominant, ii);
+}
+
+PatternMemberRole cadenceRole(int position, int length) noexcept
+{
+    if (length == 5)
+    {
+        switch (position)
+        {
+            case 0: return PatternMemberRole::preparation;
+            case 1: return PatternMemberRole::dominant;
+            case 2: return PatternMemberRole::predominant;
+            case 3: return PatternMemberRole::dominant;
+            case 4: return PatternMemberRole::resolution;
+            default: return PatternMemberRole::undefined;
+        }
+    }
+
+    switch (position)
+    {
+        case 0: return PatternMemberRole::predominant;
+        case 1: return PatternMemberRole::dominant;
+        case 2: return PatternMemberRole::resolution;
+        default: return PatternMemberRole::undefined;
+    }
+}
+
+void addNestedPattern(PatternContext& context, const HarmonicPattern& pattern) noexcept
+{
+    if (context.nestedPatternCount >= context.nestedPatterns.size())
+        return;
+    context.nestedPatterns[context.nestedPatternCount++] = pattern;
+}
+
+PatternContext makePatternContext(HarmonicPatternType type,
+                                  const NormalizedKey& center,
+                                  int position,
+                                  int length,
+                                  double startPpq,
+                                  double resolutionPpq) noexcept
+{
+    PatternContext context;
+    context.valid = center.valid;
+    context.center = center;
+    context.status = position == length - 1
+        ? PatternContextStatus::completed
+        : PatternContextStatus::confirmed;
+    context.startPpq = startPpq;
+    context.resolutionPpq = resolutionPpq;
+    context.topLevel = makePattern(type,
+                                   cadenceRole(position, length),
+                                   position,
+                                   length,
+                                   ConfidenceLevel::confirmed,
+                                   position > 0,
+                                   position + 1 < length,
+                                   position == length - 1);
+    return context;
+}
+
+void applyPatternContext(HarmonicSituation& situation, const PatternContext& context) noexcept
+{
+    if (! context.valid || ! context.topLevel.recognized())
+        return;
+
+    situation.patternContext = context;
+
+    if (sameKey(context.center, situation.globalKey.key))
+    {
+        situation.pattern = context.topLevel;
+        mergePatternEvidence(situation);
+        return;
+    }
+
+    situation.localKey.valid = true;
+    situation.localKey.key = context.center;
+    situation.localKey.scope = KeyCenterScope::local;
+    situation.localKey.status = KeyCenterStatus::established;
+    situation.localKey.evidence.confidence = ConfidenceLevel::confirmed;
+    situation.localKey.evidence.markUnique();
+    situation.localKey.evidence.add(EvidenceFlag::inferredLocalCenter);
+    situation.localKey.evidence.add(EvidenceFlag::localCadence);
+    situation.localKey.evidence.add(EvidenceFlag::patternMatch);
+    if (context.topLevel.positionIndex == context.topLevel.length - 1)
+        situation.localKey.evidence.add(EvidenceFlag::confirmedResolution);
+
+    situation.localPattern = context.topLevel;
+    if (situation.nextChordAvailable)
+        situation.localHarmonic = analyzeHarmonicFunction(situation.currentChord,
+                                                          context.center,
+                                                          situation.nextChord);
+    else
+        situation.localHarmonic = analyzeHarmonicFunction(situation.currentChord,
+                                                          context.center);
+
+    situation.evidence.add(EvidenceFlag::inferredLocalCenter);
+    situation.evidence.add(EvidenceFlag::localCadence);
+    situation.evidence.add(EvidenceFlag::patternMatch);
+    if (context.topLevel.positionIndex == context.topLevel.length - 1)
+        situation.evidence.add(EvidenceFlag::confirmedResolution);
+
+    analyzeAmbiguityAndConfidence(situation);
+}
+
+void applyPatternWindowContext(HarmonicSituation& situation,
+                               const TimelineHarmonicSnapshot& snapshot) noexcept
+{
+    const auto count = static_cast<int>(snapshot.patternWindow.chordCount);
+    const auto current = snapshot.patternWindow.currentIndex;
+    if (! situation.valid || count <= 0 || current < 0 || current >= count)
+        return;
+
+    std::array<NormalizedChord, kMaxPatternWindowChords> chords {};
+    for (int index = 0; index < count; ++index)
+        chords[static_cast<std::size_t>(index)] =
+            normalizeChord(snapshot.patternWindow.chords[static_cast<std::size_t>(index)]);
+
+    // A five-member cadential chain is the top-level event. Its nested V/ii→ii
+    // and ii-V-I relations remain available as PatternContext evidence, but do
+    // not replace the user's primary cadence label.
+    for (int start = 0; start + 4 < count; ++start)
+    {
+        if (current < start || current > start + 4)
+            continue;
+
+        const auto& iii = chords[static_cast<std::size_t>(start)];
+        const auto& viDominant = chords[static_cast<std::size_t>(start + 1)];
+        const auto& ii = chords[static_cast<std::size_t>(start + 2)];
+        const auto& v = chords[static_cast<std::size_t>(start + 3)];
+        const auto& tonic = chords[static_cast<std::size_t>(start + 4)];
+        if (! matchesMajorCadentialChain(iii, viDominant, ii, v, tonic))
+            continue;
+
+        const auto position = current - start;
+        auto context = makePatternContext(
+            HarmonicPatternType::majorCadentialChain,
+            makePatternCenter(tonic, KeyMode::major),
+            position,
+            5,
+            snapshot.patternWindow.chords[static_cast<std::size_t>(start)].startPpq,
+            snapshot.patternWindow.chords[static_cast<std::size_t>(start + 4)].startPpq);
+
+        if (position == 1)
+        {
+            addNestedPattern(context,
+                             makePattern(HarmonicPatternType::secondaryDominant,
+                                         PatternMemberRole::dominant,
+                                         0,
+                                         2,
+                                         ConfidenceLevel::confirmed,
+                                         false,
+                                         true,
+                                         true));
+        }
+        else if (position == 2)
+        {
+            addNestedPattern(context,
+                             makePattern(HarmonicPatternType::secondaryDominant,
+                                         PatternMemberRole::resolution,
+                                         1,
+                                         2,
+                                         ConfidenceLevel::confirmed,
+                                         true,
+                                         false,
+                                         true));
+            addNestedPattern(context,
+                             makePattern(HarmonicPatternType::majorIiVI,
+                                         PatternMemberRole::predominant,
+                                         0,
+                                         3,
+                                         ConfidenceLevel::confirmed,
+                                         false,
+                                         true));
+        }
+        else if (position == 3)
+        {
+            addNestedPattern(context,
+                             makePattern(HarmonicPatternType::majorIiVI,
+                                         PatternMemberRole::dominant,
+                                         1,
+                                         3,
+                                         ConfidenceLevel::confirmed,
+                                         true,
+                                         true,
+                                         true));
+        }
+        else if (position == 4)
+        {
+            addNestedPattern(context,
+                             makePattern(HarmonicPatternType::majorIiVI,
+                                         PatternMemberRole::resolution,
+                                         2,
+                                         3,
+                                         ConfidenceLevel::confirmed,
+                                         true,
+                                         false,
+                                         true));
+        }
+
+        applyPatternContext(situation, context);
+        return;
+    }
+
+    // Confirmed three-member cadences remain intact on the resolution chord.
+    // This is the carried PatternContext evidence that 0.3f lacked.
+    for (int start = 0; start + 2 < count; ++start)
+    {
+        if (current < start || current > start + 2)
+            continue;
+
+        const auto& first = chords[static_cast<std::size_t>(start)];
+        const auto& dominant = chords[static_cast<std::size_t>(start + 1)];
+        const auto& tonic = chords[static_cast<std::size_t>(start + 2)];
+
+        HarmonicPatternType type = HarmonicPatternType::undefined;
+        KeyMode mode = KeyMode::undefined;
+        if (matchesMajorIiVI(first, dominant, tonic))
+        {
+            type = HarmonicPatternType::majorIiVI;
+            mode = KeyMode::major;
+        }
+        else if (matchesMinorIiVI(first, dominant, tonic))
+        {
+            type = HarmonicPatternType::minorIiHalfDimVi;
+            mode = KeyMode::minor;
+        }
+        else if (matchesMinorIvVI(first, dominant, tonic))
+        {
+            type = HarmonicPatternType::minorIvVi;
+            mode = KeyMode::minor;
+        }
+
+        if (type == HarmonicPatternType::undefined)
+            continue;
+
+        const auto position = current - start;
+        const auto context = makePatternContext(
+            type,
+            makePatternCenter(tonic, mode),
+            position,
+            3,
+            snapshot.patternWindow.chords[static_cast<std::size_t>(start)].startPpq,
+            snapshot.patternWindow.chords[static_cast<std::size_t>(start + 2)].startPpq);
+        applyPatternContext(situation, context);
+        return;
+    }
+}
 }
 
 HarmonicSituation analyzeHarmonicSituation(const TimelineHarmonicSnapshot& snapshot) noexcept
@@ -483,6 +817,11 @@ HarmonicSituation analyzeHarmonicSituation(const TimelineHarmonicSnapshot& snaps
     // DAW project key. This analyzer may expose candidate, temporary, local or
     // modulation-candidate states, but never mutates the explicit global key.
     analyzeLocalKeyCenter(result);
+
+    // 0.3f fix1: rebuild a bounded PatternContext from timeline events on each
+    // analysis pass. This preserves confirmed cadence identity on the tonic and
+    // recognizes the explicit iii-VI7-ii-V-I chain without stale runtime memory.
+    applyPatternWindowContext(result, snapshot);
 
     if (result.evidence.interpretation == InterpretationStatus::unknown)
         result.evidence.markUnique();
