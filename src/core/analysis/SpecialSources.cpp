@@ -75,6 +75,17 @@ bool compatible(const Rule& rule, const NormalizedChord& chord)
     return true;
 }
 
+int functionalSubVRootFifths(const ImprovisationResult& result, const NormalizedChord& chord)
+{
+    if (! result.context.resolution.available || ! result.context.resolution.confirmed
+        || ! result.context.resolution.targetChord.valid)
+        return chord.rootFifths;
+
+    const auto candidate = result.context.resolution.targetChord.rootFifths - 5;
+    return circleOfFifthsToPitchClass(candidate) == chord.rootPitchClass
+        ? candidate : chord.rootFifths;
+}
+
 void append(ImprovisationResult& result, const Rule& rule, bool subV = false)
 {
     const auto& chord = result.context.currentChord;
@@ -82,16 +93,24 @@ void append(ImprovisationResult& result, const Rule& rule, bool subV = false)
     const int index = result.context.primaryInterpretationIndex;
     const auto& interpretation = result.context.interpretations[static_cast<std::size_t>(index)];
     auto strategy = result.strategies.front();
+    const auto chordSpellingFifths = subV ? functionalSubVRootFifths(result, chord) : chord.rootFifths;
+    if (subV)
+    {
+        const bool bassIsRoot = chord.bassPitchClass == chord.rootPitchClass;
+        strategy.actualChord.rootFifths = chordSpellingFifths;
+        if (bassIsRoot) strategy.actualChord.bassFifths = chordSpellingFifths;
+        strategy.actualChord.slashBass = strategy.actualChord.bassPitchClass != strategy.actualChord.rootPitchClass;
+    }
     strategy.kind = rule.kind;
     strategy.ruleId = subV ? "project.subv.melodic-minor.V" : rule.id;
-    strategy.ruleVersion = 1;
+    strategy.ruleVersion = subV ? 2 : 1;
     strategy.priority = 40; // Stable catalog order, not a tension or confidence score.
     strategy.interpretationIndependent = false;
     strategy.interpretationIndex = index;
     strategy.evidence = interpretation.evidence;
     strategy.source = {};
     strategy.source.kind = MaterialKind::scale;
-    strategy.source.rootFifths = chord.rootFifths + rule.sourceFifthsOffset;
+    strategy.source.rootFifths = chordSpellingFifths + rule.sourceFifthsOffset;
     strategy.source.rootPitchClass = circleOfFifthsToPitchClass(strategy.source.rootFifths);
     strategy.source.name = spell(strategy.source.rootFifths, 1, strategy.source.rootPitchClass)
         + (rule.diminished ? " whole-half diminished" : " melodic minor");
@@ -131,7 +150,7 @@ void append(ImprovisationResult& result, const Rule& rule, bool subV = false)
         chordNote.degree = rule.degrees[static_cast<std::size_t>(relative)];
         if (chord.hasTone(relative) && chord.degrees[static_cast<std::size_t>(relative)])
             chordNote.degree = chord.degrees[static_cast<std::size_t>(relative)];
-        chordNote.spelling = spell(chord.rootFifths, chordNote.degree, note.pitchClass);
+        chordNote.spelling = spell(chordSpellingFifths, chordNote.degree, note.pitchClass);
         strategy.source.chordRelativeNotes.push_back(chordNote);
         if (note.characteristic) strategy.characteristicNotes.push_back(chordNote);
     }
