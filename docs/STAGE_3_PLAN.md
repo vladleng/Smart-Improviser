@@ -1,6 +1,6 @@
 # Stage 3 — Improvisation Engine: рабочий план
 
-> Обновлено 2026-09-25. База: stable 0.3, Stage 2 принят. `0.3a–0.3f` приняты; следующий checkpoint — **0.3g Explanation / usable output**. Stable остаётся 0.3.
+> Обновлено 2026-09-25. База: stable 0.3, Stage 2 принят. `0.3a–0.3f` приняты; текущий refinement — **`0.3f fix1 Pattern continuity / hierarchical cadence context`**. После его acceptance переходим к `0.3g Explanation / usable output`. Stable остаётся 0.3.
 > Начальная методика и текстовая форма подсказки согласованы: [IMPROVISATION_METHOD.md](IMPROVISATION_METHOD.md). См. [PRODUCT_WORKFLOW.md](PRODUCT_WORKFLOW.md).
 
 ## Результат Stage
@@ -17,7 +17,9 @@ Stage 3 описывает допустимый материал и страте
 - Global/local/modal interpretation и unresolved primary сохраняют свою семантику.
 - Confidence гармонического вывода отделён от recommendation priority.
 - Explicit chord information имеет приоритет над inferred source.
-- Stage 1 contract сохраняется: previous/current/next; планирование нескольких будущих тактов требует отдельного контракта.
+- Stage 1 contract сохраняется: `previous/current/next`; fix1 не добавляет скрытый `previousN`.
+- Подтверждённый harmonic pattern может сохраняться как отдельный host-neutral `PatternContext` / `RecognizedPatternInstance`, чтобы resolution chord не терял уже доказанный контекст.
+- PatternContext — не произвольная история: только тип, центр/interpretation, members/position, status, resolution и evidence распознанного события; stale state должен пересчитываться на seek/edit/reopen.
 - Сейчас invalid HarmonicSituation включает отсутствие global key/позиции/аккорда; Stage 3 не меняет это скрыто.
 - Source/degree/target data должны подходить для будущих Phrase metadata, не требуя ранней реализации библиотеки.
 - Вычисления и форматирование отделяются от paint; UI отображает результат.
@@ -31,6 +33,7 @@ Stage 3 описывает допустимый материал и страте
 0.3d — Melodic minor / diminished sources
 0.3e — Harmonic concepts
 0.3f — Context-aware ranking / ambiguity
+0.3f fix1 — Pattern continuity / hierarchical cadence context
 0.3g — Explanation / usable output
 0.3h — Integration / musical validation
 0.4  — Stage 3 complete
@@ -85,19 +88,40 @@ Windows Build #246 — success; живой тест 0.3d fix2 принят Вл�
 - [x] Обрабатывать `primaryInterpretationIndex = -1` без скрытого выбора трактовки; каждая strategy хранит provenance через `interpretationIndex` и evidence.
 - [x] Ввести deterministic presentation ranking, сохранив harmonic confidence отдельно от recommendation priority.
 - [x] Включить Issue #29: отдельный minor `iv–V–i`, boundary `iv→V`, full cadence и local-minor candidate/established semantics.
-- [x] На финальном `V→I/i` без более глубокой истории не выдумывать конкретный predominant; показывать общий двухаккордовый resolution.
-- [x] Устранить false-positive `C major: Fm7 → G7 → Cmaj7`: известный major tonic блокирует ложный local C minor.
+- [x] На финальном `V→I/i` без достаточного evidence не выдумывать конкретный predominant; показывать общий двухаккордовый resolution.
+- [x] Устранить false-positive `C major: Fm7 → G7 → Cmaj7`.
 - [x] Сохранить Stage 1 contract `previous/current/next` без расширения истории.
 - [x] Диагностический UI не склеивает unresolved alternatives в одну строку «Мышление» и сохраняет provenance sources.
 - [x] Все 12 regression targets зелёные в Windows Build #284.
 - [x] Live-test принят пользователем 2026-09-25.
 
-### 0.3g — Explanation / usable output [NEXT]
+### 0.3f fix1 — Pattern continuity / hierarchical cadence context [CURRENT]
+
+Полный scope: [STAGE_3_0.3f_FIX1_PLAN.md](STAGE_3_0.3f_FIX1_PLAN.md).
+
+Причина: после acceptance обнаружено, что resolution chord теряет уже подтверждённый earlier predominant из-за snapshot `previous/current/next`. На `Fmaj7` после `Gm7→C7` UI показывает только `V–I`, хотя музыкально это всё ещё `ii–V–I • 3/3`.
+
+- [ ] Ввести host-neutral `PatternContext` / `RecognizedPatternInstance` для continuity уже подтверждённого harmonic event без произвольной истории аккордов.
+- [ ] Сохранять confirmed major `ii–V–I` до resolution chord `I • 3/3`.
+- [ ] Сохранять confirmed minor `iiø–V–i` до `i • 3/3`.
+- [ ] Сохранять confirmed minor `iv–V–i` до `i • 3/3`.
+- [ ] Если carried PatternContext отсутствует, сохранять safe fallback `V→I/i`, не выдумывая predominant.
+- [ ] Добавить top-level pattern `iii–VI7–ii–V–I` для `Am7→D7→Gm7→C7→Fmaj7` в F major.
+- [ ] Сохранять `D7→Gm7 = V/ii→ii` и `Gm7→C7→Fmaj7 = ii–V–I` как nested evidence/subpatterns, но не дробить основной пользовательский каданс.
+- [ ] Разрешить overlap: chord может завершать carried pattern и одновременно участвовать в candidate следующего события.
+- [ ] Гарантировать пересчёт/сброс continuity на seek, chord edits и reopen; stale runtime state запрещён.
+- [ ] Сохранить Stage 1 contract `previous/current/next`.
+- [ ] Regression/live-test минимум для `Gm7→C7→Fmaj7` и `Am7→D7→Gm7→C7→Fmaj7`.
+
+**Gate:** regression tests + отдельный Windows artifact + live-test в Studio Pro + seek/chord-edit validation.
+
+### 0.3g — Explanation / usable output [AFTER FIX1]
 
 - [ ] Показать цепочку: идея → source → важные ноты → target/resolution → почему.
 - [ ] Использовать детерминированные explanations, согласованные с evidence и ограничениями; подготовить Why? data.
 - [ ] Отделить вычисление результата от paint; диагностический UI читает готовые данные, Core не зависит от JUCE/ARA.
 - [ ] Определить, как показывать одинаковый музыкальный материал, возникающий из нескольких interpretations, без потери provenance и без визуального дублирования.
+- [ ] Использовать top-level/nested PatternContext как источник Why?-данных, не переанализируя историю в UI.
 
 **Gate:** regression tests + отдельный build artifact + live-test в Studio Pro.
 
@@ -111,12 +135,13 @@ Windows Build #246 — success; живой тест 0.3d fix2 принят Вл�
 
 ## Общие правила
 
-Минимальные explanation, diagnostics и тесты появляются с первого checkpoint; 0.3g завершает подачу, 0.3h — интеграцию. fixN исправляет текущий checkpoint и не подменяет новую функциональную букву.
+Минимальные explanation, diagnostics и тесты появляются с первого checkpoint; fixN исправляет контекстную семантику принятой буквы и получает собственный regression/live gate. `0.3g` завершает подачу, `0.3h` — интеграцию.
 
 ## Stable 0.4
 
-- Все checkpoints приняты.
+- Все checkpoints и fix-checkpoints приняты.
 - Для согласованных базовых контекстов есть осмысленные стратегии, chord/guide/target notes и объяснимые разрешения.
 - Недостаток данных и неоднозначность отражаются явно.
+- Confirmed harmonic event сохраняет continuity до resolution member без stale history.
 - Все regression/integration checks проходят, live musical validation завершён.
 - Релиз фиксирует принятое состояние без новой музыкальной логики.
