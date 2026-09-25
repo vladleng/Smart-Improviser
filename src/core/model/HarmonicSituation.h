@@ -14,6 +14,39 @@
 namespace smartimproviser::harmony
 {
 constexpr std::size_t kMaxHarmonicInterpretations = 4;
+constexpr std::size_t kMaxPatternWindowChords = 9;
+constexpr std::size_t kMaxNestedPatterns = 2;
+
+enum class PatternContextStatus : std::uint8_t
+{
+    none = 0,
+    candidate,
+    confirmed,
+    completed
+};
+
+// 0.3f fix1 keeps the Stage 1 current/previous/next fields intact and adds a
+// separate, bounded reconstruction window used only by PatternContext. The
+// window is rebuilt from the host timeline on every analysis pass, so seek,
+// reopen and chord edits never depend on stale runtime history.
+struct PatternTimelineWindow
+{
+    std::array<ChordContext, kMaxPatternWindowChords> chords {};
+    std::uint8_t chordCount = 0;
+    int currentIndex = -1;
+};
+
+struct PatternContext
+{
+    bool valid = false;
+    HarmonicPattern topLevel;
+    NormalizedKey center;
+    PatternContextStatus status = PatternContextStatus::none;
+    double startPpq = -1.0;
+    double resolutionPpq = -1.0;
+    std::array<HarmonicPattern, kMaxNestedPatterns> nestedPatterns {};
+    std::uint8_t nestedPatternCount = 0;
+};
 
 struct TimelineHarmonicSnapshot
 {
@@ -29,6 +62,10 @@ struct TimelineHarmonicSnapshot
     ChordContext nextChord;
 
     KeyContext globalKey;
+
+    // Optional Stage 3 pattern-reconstruction metadata. It is deliberately
+    // bounded and does not replace the Stage 1 previous/current/next contract.
+    PatternTimelineWindow patternWindow;
 };
 
 struct HarmonicSituation
@@ -51,6 +88,7 @@ struct HarmonicSituation
     HarmonicAnalysis localHarmonic;
     HarmonicPattern pattern;
     HarmonicPattern localPattern;
+    PatternContext patternContext;
     ResolutionTarget resolution;
     AnalysisEvidence evidence;
 
