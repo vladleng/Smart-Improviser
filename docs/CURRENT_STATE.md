@@ -1,6 +1,6 @@
 # Smart Improviser — Current State
 
-> Планирование обновлено 2026-09-25: `0.3a–0.3f` приняты; `0.3e-ui` принят вместе с 0.3e. Следующий checkpoint — **0.3g Explanation / usable output**. Последняя принятая stable — `0.3`.
+> Планирование обновлено 2026-09-25: `0.3a–0.3f` приняты; после live-feedback открыт **`0.3f fix1 — Pattern continuity / hierarchical cadence context`**. `0.3g` начинается после принятия fix1. Последняя принятая stable — `0.3`.
 
 > Короткая точка входа для нового чата или рабочей сессии. Подробная архитектура — в `PROJECT_CONTEXT.md`, этапы — в `ROADMAP.md`, правила версий — в `VERSIONING.md`, фактический прогресс — в GitHub Issues.
 
@@ -12,10 +12,12 @@
 - **Рабочая линия:** `0.3a → 0.3x`
 - **Итог Stage 3:** `0.4`
 - **Stage 2 Issue:** #3 — закрыт стабильной `0.3`
-- **Stage 3 Issue:** #4 — рабочий план `0.3a–0.3h`; `0.3a–0.3f` приняты
+- **Stage 3 Issue:** #4 — рабочий план `0.3a–0.3h`; `0.3a–0.3f` приняты; текущий refinement — `0.3f fix1`
 - **Issue #29:** minor `iv–V–i` + boundary semantics — закрыт в `0.3f`
 - **PR #30:** merged в `main`, squash commit `5cdc126733393a7c69e864eda9c925b146cc56f1`
-- **Следующий checkpoint:** `0.3g — Explanation / usable output`
+- **Рабочая ветка fix1:** `stage-3-context-ranking-fix1`
+- **Текущий checkpoint:** `0.3f fix1 — Pattern continuity / hierarchical cadence context`
+- **После fix1:** `0.3g — Explanation / usable output`
 
 `0.3` — релизное закрытие Stage 2. Stable release фиксирует принятое состояние Harmonic Engine; subsequent Stage 3 checkpoints расширяют Improvisation Engine с отдельными regression/live gates.
 
@@ -30,6 +32,8 @@ next chord
 global key
 ```
 
+`0.3f fix1` **не расширяет этот контракт до previousN**. Вместо этого Core получает ограниченный state уже распознанного harmonic event (`PatternContext` / `RecognizedPatternInstance`): тип паттерна, центр/interpretation, position, status, expected/confirmed resolution и evidence. Это музыкальная память подтверждённого события, а не произвольная история всех предыдущих аккордов.
+
 Project key в DAW автоматически не меняется. Core не зависит от JUCE / ARA / Fender Studio Pro.
 
 ```text
@@ -38,6 +42,8 @@ TimelineHarmonicSnapshot
 Global harmonic analysis
         ↓
 Pattern Recognizer
+        ↓
+PatternContext / recognized pattern continuity
         ↓
 Tritone Substitution
         ↓
@@ -117,14 +123,40 @@ Guide tones, characteristic tones, реальные next-chord targets, confirme
 - добавлен отдельный `minorIvVi` для `iv–V–i`;
 - `iv→V` работает как boundary candidate, полный `iv→V→i` — confirmed cadence;
 - local minor center поддерживает тот же pattern;
-- финальный `V→I/i` без earlier predominant обозначается общим двухаккордовым resolution;
-- false-positive `C major: Fm7 → G7 → Cmaj7` устранён: на `G7` известный `Cmaj7` блокирует ложный local C minor;
-- UI при unresolved ambiguity явно показывает несколько candidates и не склеивает их в одну уверенную трактовку;
+- финальный `V→I/i` без sufficient carried evidence обозначается общим двухаккордовым resolution;
+- false-positive `C major: Fm7 → G7 → Cmaj7` устранён;
+- UI при unresolved ambiguity явно показывает несколько candidates;
 - Stage 1 contract `previous/current/next` не расширен.
 
 Acceptance: [STAGE_3_0.3f_LIVE_TEST.md](STAGE_3_0.3f_LIVE_TEST.md).
 
-## Следующий checkpoint — 0.3g
+## Текущий refinement — 0.3f fix1
+
+После acceptance обнаружено, что на resolution chord snapshot теряет более ранний predominant и UI показывает только `V–I`, хотя непосредственно перед этим полный pattern уже был подтверждён.
+
+Fix1 вводит continuity подтверждённого pattern instance:
+
+```text
+F major: Gm7 → C7 → Fmaj7
+         1/3    2/3    3/3
+```
+
+и аналогично для `iiø–V–i` и `iv–V–i`. Generic `V→I/i` остаётся fallback, если carried PatternContext действительно отсутствует.
+
+В этот же fix входит top-level расширенный каданс:
+
+```text
+F major: Am7 → D7 → Gm7 → C7 → Fmaj7
+          iii    VI7    ii     V      I
+```
+
+Пользовательский основной контекст должен быть единым `iii–VI7–ii–V–I • 1/5 … 5/5`; `D7→Gm7 = V/ii→ii` и `Gm7→C7→Fmaj7 = ii–V–I` сохраняются как nested evidence/subpatterns, а не как независимые top-level обороты.
+
+Один аккорд может завершать предыдущий pattern и одновременно давать evidence следующего события. Это не требует расширения timeline history; контекст должен пересчитываться безопасно на seek/chord edits/reopen.
+
+Полный scope: [STAGE_3_0.3f_FIX1_PLAN.md](STAGE_3_0.3f_FIX1_PLAN.md).
+
+## После fix1 — 0.3g
 
 `0.3g — Explanation / usable output` должен завершить объяснимую пользовательскую цепочку:
 
@@ -138,9 +170,9 @@ Acceptance: [STAGE_3_0.3f_LIVE_TEST.md](STAGE_3_0.3f_LIVE_TEST.md).
 
 1. `docs/CURRENT_STATE.md`;
 2. `docs/STAGE_3_PLAN.md`;
-3. `docs/STAGE_3_0.3f_LIVE_TEST.md` как принятый checkpoint;
-4. `docs/STAGE_1_TO_STAGE_2_CONTRACT.md`;
-5. `docs/PROJECT_CONTEXT.md`;
+3. `docs/STAGE_3_0.3f_FIX1_PLAN.md` — текущий refinement;
+4. `docs/STAGE_3_0.3f_LIVE_TEST.md` — принятый базовый 0.3f;
+5. `docs/STAGE_1_TO_STAGE_2_CONTRACT.md`;
 6. `docs/ARCHITECTURAL_DECISIONS.md`;
 7. `docs/IMPROVISATION_METHOD.md`;
 8. Issue #4 — Stage 3;
