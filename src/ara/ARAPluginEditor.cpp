@@ -214,7 +214,7 @@ juce::String harmonicFunctionNameRu(smartimproviser::harmony::HarmonicFunction f
     switch (function)
     {
         case HarmonicFunction::tonic: return ru("Тоника");
-        case HarmonicFunction::predominant: return ru("Субдоминантовая функция");
+        case HarmonicFunction::predominant: return ru("Субдоминанта");
         case HarmonicFunction::dominant: return ru("Доминанта");
         case HarmonicFunction::substituteDominant: return "SubV";
         case HarmonicFunction::other: return ru("Другая");
@@ -300,7 +300,7 @@ juce::String patternRoleName(smartimproviser::harmony::PatternMemberRole role)
     switch (role)
     {
         case PatternMemberRole::preparation: return ru("Подготовка");
-        case PatternMemberRole::predominant: return ru("Субдоминантовая функция");
+        case PatternMemberRole::predominant: return ru("Субдоминанта");
         case PatternMemberRole::dominant: return ru("Доминанта");
         case PatternMemberRole::substituteDominant: return "SubV";
         case PatternMemberRole::tonic: return ru("Тоника");
@@ -499,7 +499,7 @@ void SmartImproviserARAEditor::resized()
 {
     const int margin = 24;
     const int gap = 8;
-    const int buttonY = 180;
+    const int buttonY = 244;
     const int buttonH = 36;
     const int available = getWidth() - margin * 2 - gap * 3;
     const int buttonW = available / 4;
@@ -510,7 +510,7 @@ void SmartImproviserARAEditor::resized()
     araButton.setBounds(margin + 3 * (buttonW + gap), buttonY,
                         getWidth() - margin - (margin + 3 * (buttonW + gap)), buttonH);
 
-    detailsView.setBounds(margin, 228, getWidth() - margin * 2, getHeight() - 270);
+    detailsView.setBounds(margin, 292, getWidth() - margin * 2, getHeight() - 334);
 }
 
 void SmartImproviserARAEditor::setActivePanel(Panel panel)
@@ -578,20 +578,77 @@ void SmartImproviserARAEditor::timerCallback()
     const auto result = smartimproviser::harmony::analyzeImprovisation(cachedSituation);
     const auto debug = ARAContextDebugState::instance().getSnapshot();
 
-    if (result.valid)
-        summaryContext = localizeGeneratedText(utf8String(result.contextDescription));
-    else
-    {
-        summaryContext = chordDisplayName(timeline.currentChord);
-        if (timeline.nextChordAvailable)
-            summaryContext += " -> " + chordDisplayName(timeline.nextChord);
-    }
+    summaryContext = chordDisplayName(timeline.currentChord);
+    if (timeline.nextChordAvailable)
+        summaryContext += " -> " + chordDisplayName(timeline.nextChord);
 
     summaryMeta = ru("Тональность: ") + keyDisplayName(timeline.globalKey);
+    if (cachedSituation.harmonic.valid)
+        summaryMeta += ru("   •   Функция: ")
+            + harmonicFunctionNameRu(cachedSituation.harmonic.effectiveFunction);
     if (cachedSituation.localKey.valid)
         summaryMeta += ru("   •   Локальный центр: ") + centerKeyDisplayName(cachedSituation.localKey);
-    if (cachedSituation.resolution.available)
-        summaryMeta += ru("   •   Разрешение: ") + resolutionDisplay(cachedSituation);
+
+    const auto* activePattern = &cachedSituation.pattern;
+    if (cachedSituation.localPattern.recognized())
+        activePattern = &cachedSituation.localPattern;
+
+    summaryPattern = ru("Оборот: ");
+    if (activePattern->recognized())
+    {
+        summaryPattern += patternName(activePattern->type);
+        summaryPattern += ru("   •   Роль: ") + patternPositionDisplay(*activePattern);
+    }
+    else
+    {
+        summaryPattern += ru("не распознан");
+    }
+
+    summaryThinking = ru("Мышление: ");
+    if (! result.valid || result.strategies.empty())
+    {
+        summaryThinking += ru("—");
+    }
+    else
+    {
+        juce::StringArray thoughts;
+        for (const auto& strategy : result.strategies)
+        {
+            if (strategy.source.kind != smartimproviser::harmony::MaterialKind::scale)
+                continue;
+
+            juce::String item;
+            if (strategy.thinkingStructure.valid)
+                item = utf8String(smartimproviser::harmony::normalizedChordSymbol(strategy.thinkingStructure));
+            else
+                item = localizeGeneratedText(utf8String(strategy.source.name));
+
+            if (item.isNotEmpty())
+                thoughts.addIfNotAlreadyThere(item);
+        }
+
+        if (thoughts.isEmpty())
+            thoughts.add(ru("звуки аккорда + направляющие тоны"));
+
+        summaryThinking += thoughts.joinIntoString(ru(" • "));
+
+        const auto& strategy = result.strategies.front();
+        if (strategy.resolution.available && strategy.resolution.confirmed
+            && strategy.resolution.moveCount > 0)
+        {
+            summaryThinking += ru("   →   ");
+            for (std::size_t i = 0; i < strategy.resolution.moveCount; ++i)
+            {
+                if (i > 0)
+                    summaryThinking += "  ";
+                summaryThinking += juce::String(pitchClassName(strategy.resolution.moves[i].fromPitchClass))
+                    + "->" + pitchClassName(strategy.resolution.moves[i].toPitchClass);
+            }
+            if (strategy.resolution.targetChord.valid)
+                summaryThinking += ru(" в ")
+                    + utf8String(smartimproviser::harmony::normalizedChordSymbol(strategy.resolution.targetChord));
+        }
+    }
 
     materialText.clear();
     materialText += ru("МАТЕРИАЛ ДЛЯ ИМПРОВИЗАЦИИ\n\n");
@@ -819,22 +876,29 @@ void SmartImproviserARAEditor::paint(juce::Graphics& g)
                24, 47, getWidth() - 48, 22, juce::Justification::centredLeft);
 
     g.setColour(juce::Colour::fromRGB(42, 46, 53));
-    g.fillRoundedRectangle(24.0f, 82.0f, static_cast<float>(getWidth() - 48), 82.0f, 8.0f);
+    g.fillRoundedRectangle(24.0f, 82.0f, static_cast<float>(getWidth() - 48), 146.0f, 8.0f);
 
     g.setColour(juce::Colour::fromRGB(150, 156, 168));
     g.setFont(12.5f);
-    g.drawText(ru("ТЕКУЩИЙ КОНТЕКСТ"), 40, 93, getWidth() - 80, 18,
+    g.drawText(ru("ТЕКУЩИЙ КОНТЕКСТ"), 40, 92, getWidth() - 80, 18,
                juce::Justification::centredLeft);
 
     g.setColour(juce::Colour::fromRGB(240, 243, 247));
     g.setFont(juce::FontOptions(17.0f, juce::Font::bold));
-    g.drawText(summaryContext, 40, 113, getWidth() - 80, 24,
+    g.drawText(summaryContext, 40, 111, getWidth() - 80, 23,
                juce::Justification::centredLeft, true);
 
     g.setColour(juce::Colour::fromRGB(190, 196, 207));
-    g.setFont(13.5f);
-    g.drawText(summaryMeta, 40, 139, getWidth() - 80, 18,
+    g.setFont(13.2f);
+    g.drawText(summaryMeta, 40, 136, getWidth() - 80, 18,
                juce::Justification::centredLeft, true);
+    g.drawText(summaryPattern, 40, 157, getWidth() - 80, 18,
+               juce::Justification::centredLeft, true);
+
+    g.setColour(juce::Colour::fromRGB(220, 225, 234));
+    g.setFont(13.5f);
+    g.drawFittedText(summaryThinking, 40, 180, getWidth() - 80, 38,
+                     juce::Justification::topLeft, 2, 0.86f);
 
     g.setColour(juce::Colour::fromRGB(105, 110, 120));
     g.setFont(12.0f);
