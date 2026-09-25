@@ -236,6 +236,13 @@ add_executable(SmartImproviserTimelineContextTests
 target_link_libraries(SmartImproviserTimelineContextTests PRIVATE SmartImproviserContext)
 target_compile_features(SmartImproviserTimelineContextTests PRIVATE cxx_std_20)
 
+add_executable(SmartImproviserPatternWindowMapperTests
+    tests/PatternWindowMapperTests.cpp
+)
+
+target_link_libraries(SmartImproviserPatternWindowMapperTests PRIVATE SmartImproviserContext)
+target_compile_features(SmartImproviserPatternWindowMapperTests PRIVATE cxx_std_20)
+
 if(MSVC)
     target_compile_options(SmartImproviserCoreTests PRIVATE /utf-8)
     target_compile_options(SmartImproviserDataModelTests PRIVATE /utf-8)
@@ -245,6 +252,7 @@ if(MSVC)
     target_compile_options(SmartImproviserAmbiguityConfidenceTests PRIVATE /utf-8)
     target_compile_options(SmartImproviserIntegrationValidationTests PRIVATE /utf-8)
     target_compile_options(SmartImproviserTimelineContextTests PRIVATE /utf-8)
+    target_compile_options(SmartImproviserPatternWindowMapperTests PRIVATE /utf-8)
 endif()
 
 add_test(NAME SmartImproviserCoreTests COMMAND SmartImproviserCoreTests)
@@ -255,6 +263,7 @@ add_test(NAME SmartImproviserLocalKeyCenterTests COMMAND SmartImproviserLocalKey
 add_test(NAME SmartImproviserAmbiguityConfidenceTests COMMAND SmartImproviserAmbiguityConfidenceTests)
 add_test(NAME SmartImproviserIntegrationValidationTests COMMAND SmartImproviserIntegrationValidationTests)
 add_test(NAME SmartImproviserTimelineContextTests COMMAND SmartImproviserTimelineContextTests)
+add_test(NAME SmartImproviserPatternWindowMapperTests COMMAND SmartImproviserPatternWindowMapperTests)
 
 add_executable(SmartImproviserImprovisationTests tests/ImprovisationEngineTests.cpp)
 target_link_libraries(SmartImproviserImprovisationTests PRIVATE SmartImproviserCore)
