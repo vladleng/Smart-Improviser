@@ -167,15 +167,24 @@ int main()
     result = analyzeImprovisation(analyzeHarmonicSituation(snapshot));
     alt = rule(result,"boyko.melodic-minor.bII");
     expect(alt && alt->source.chordRelativeNotes[4].degree == 5 && alt->source.chordRelativeNotes[4].spelling == "D#","explicit #5 spelling survives parent source Eb");
-    snapshot.currentChord = makeChord(-5,{0,4,7,10});
-    for (bool minorTarget : {false,true})
+
+    // Explicit Db spelling and host-canonicalized C# spelling must converge on
+    // the same functional SubV notation when the real target is C.
+    for (const int subVRootFifths : {-5, 7})
     {
-        snapshot.nextChord = minorTarget ? makeChord(0,{0,3,7}) : makeChord(0,{0,4,7,11});
-        result = analyzeImprovisation(analyzeHarmonicSituation(snapshot));
-        auto sub = rule(result,"project.subv.melodic-minor.V");
-        expect(sub && sub->source.name == "Ab melodic minor" && !rule(result,"boyko.melodic-minor.bII"),"SubV separate lydian dominant rule for both target qualities");
-        expect(sub->source.chordRelativeNotes.back().spelling == "G","Db SubV #11 G");
+        snapshot.currentChord = makeChord(subVRootFifths,{0,4,7,10});
+        for (bool minorTarget : {false,true})
+        {
+            snapshot.nextChord = minorTarget ? makeChord(0,{0,3,7}) : makeChord(0,{0,4,7,11});
+            result = analyzeImprovisation(analyzeHarmonicSituation(snapshot));
+            auto sub = rule(result,"project.subv.melodic-minor.V");
+            expect(sub && sub->source.name == "Ab melodic minor" && !rule(result,"boyko.melodic-minor.bII"),"SubV separate lydian dominant rule for both target qualities");
+            expect(normalizedChordSymbol(sub->actualChord) == "Db7","confirmed SubV is functionally spelled Db7 over target C");
+            expect(sub->source.chordRelativeNotes.back().spelling == "G","Db SubV #11 G");
+            expect(result.contextDescription.rfind("Db7 -> C",0) == 0,"Stage 3 context uses functional Db spelling");
+        }
     }
+
     snapshot.currentChord = makeChord(1,{0,4,7,10});
     snapshot.nextChordAvailable = false;
     expect(analyzeImprovisation(analyzeHarmonicSituation(snapshot)).strategies.size()==1,"unresolved dominant no special source");
