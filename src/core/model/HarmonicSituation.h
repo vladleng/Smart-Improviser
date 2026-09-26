@@ -48,6 +48,19 @@ struct PatternContext
     std::uint8_t nestedPatternCount = 0;
 };
 
+// Functional alias for a chord whose explicit tones spell a dominant sonority
+// without its root. 0.3f fix3 uses this conservatively for diminished voicings
+// that match V7(b9) of the explicit global key. The written chord identity is
+// preserved; this is an interpretation, not destructive renaming.
+struct ImpliedDominantReading
+{
+    bool valid = false;
+    int rootPitchClass = -1;
+    bool flatNinth = false;
+    bool thirteenth = false;
+    AnalysisEvidence evidence;
+};
+
 // Accepted Stage 1 -> Stage 2 contract. Do not add arbitrary timeline history
 // here: PatternTimelineWindow is a separate Stage 3 analysis input.
 struct TimelineHarmonicSnapshot
@@ -87,6 +100,7 @@ struct HarmonicSituation
     HarmonicPattern pattern;
     HarmonicPattern localPattern;
     PatternContext patternContext;
+    ImpliedDominantReading impliedDominant;
     ResolutionTarget resolution;
     AnalysisEvidence evidence;
 
@@ -99,7 +113,7 @@ HarmonicSituation buildHarmonicSituation(const TimelineHarmonicSnapshot& snapsho
 
 // Stage 2/0.2d host-neutral local-center analyzer. It enriches an already
 // normalized HarmonicSituation without consulting JUCE, ARA or DAW state.
-// 0.3f fix2 may veto provisional cadence candidates when bounded future
+// 0.3f fix2+fix3 may veto provisional cadence candidates when bounded future
 // evidence already contradicts their expected tonic.
 void analyzeLocalKeyCenter(HarmonicSituation& situation,
                            bool allowIncompleteCadenceCandidates = true) noexcept;
