@@ -129,3 +129,19 @@ user acceptance
 ```
 
 Tension T1/T2/T3 остаётся Stage 4 и в 0.3g автоматически не назначается.
+
+## 0.3g fix1 — функциональная подпись Corcovado [IN PROGRESS]
+
+После live-разбора `D9/A → Ab°(♭13) → Gm7 → C7 → Fmaj7` двухзвенный
+`dominantChain` в верхнем summary показывается как
+`V/V (D9/A) → подразумеваемая V (Ab°)`, с янтарной второй ступенью.
+Написанные аккорды сохраняются. `Ab°(♭13)` допускает безосновное
+`G13(♭9)` при явной E, но следующий `Gm7` не подтверждает разрешение
+в глобальную C-тонику. `Gm7 → C7 → Fmaj7` остаётся самостоятельным
+локальным `ii–V–I` в F.
+
+Fix1 меняет presentation contract, не harmonic inference и не ranking.
+Regression проверяет обе позиции двухзвенной связи, фактическое
+минорное продолжение и отделение последующего `ii–V–I`.
+Нужны Windows artifact `Smart-Improviser-0.3g-fix1-Windows`, live-test
+в Studio Pro и acceptance пользователя перед merge.

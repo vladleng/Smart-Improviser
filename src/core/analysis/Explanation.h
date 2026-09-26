@@ -89,6 +89,54 @@ struct ExplanationResult
     std::vector<ExplanationItem> items;
 };
 
+// Presentation of the two-member V/V -> rootless V reading. The pattern and
+// implied dominant have already been inferred by HarmonicEngine; this only
+// exposes their provenance and the actual continuation to a host UI.
+struct ExplanationImpliedDominantLink
+{
+    bool valid = false;
+    int positionIndex = -1;
+    NormalizedChord firstChord;
+    NormalizedChord secondChord;
+    NormalizedChord actualContinuation;
+    bool continuationIsMinorOnImpliedRoot = false;
+};
+
+inline ExplanationImpliedDominantLink explainImpliedDominantLink(
+    const HarmonicSituation& situation) noexcept
+{
+    ExplanationImpliedDominantLink link;
+    if (! situation.valid
+        || situation.pattern.type != HarmonicPatternType::dominantChain
+        || situation.pattern.length != 2
+        || situation.pattern.positionIndex < 0
+        || situation.pattern.positionIndex > 1)
+        return link;
+
+    link.positionIndex = situation.pattern.positionIndex;
+    if (link.positionIndex == 0 && situation.nextChordAvailable)
+    {
+        link.firstChord = situation.currentChord;
+        link.secondChord = situation.nextChord;
+    }
+    else if (link.positionIndex == 1 && situation.previousChordAvailable
+             && situation.impliedDominant.valid)
+    {
+        link.firstChord = situation.previousChord;
+        link.secondChord = situation.currentChord;
+        if (situation.nextChordAvailable)
+        {
+            link.actualContinuation = situation.nextChord;
+            link.continuationIsMinorOnImpliedRoot =
+                situation.nextChord.rootPitchClass
+                    == situation.impliedDominant.rootPitchClass
+                && situation.nextChord.quality == ChordQuality::minor;
+        }
+    }
+    link.valid = link.firstChord.valid && link.secondChord.valid;
+    return link;
+}
+
 namespace explanation_detail
 {
 inline bool sameChordIdentity(const NormalizedChord& a, const NormalizedChord& b) noexcept
