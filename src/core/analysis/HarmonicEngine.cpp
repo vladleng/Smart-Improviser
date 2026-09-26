@@ -63,6 +63,50 @@ bool isSubstituteDominantForRoot(const NormalizedChord& dominant,
         && wrap12(dominant.rootPitchClass - targetRootPitchClass) == 1;
 }
 
+int impliedRootlessDominantRoot(const NormalizedChord& chord,
+                                const NormalizedKey& key) noexcept
+{
+    if (! chord.valid || ! key.valid || chord.quality != ChordQuality::diminished)
+        return -1;
+
+    // A fully diminished seventh built from b9-3-5-b7 of V is the classic
+    // rootless V7(b9) sonority. Anchor the alias to the explicit global key so
+    // symmetrical diminished spellings do not create four arbitrary winners.
+    const auto dominantRoot = wrap12(key.rootPitchClass + 7);
+    static constexpr int requiredIntervals[] = { 1, 4, 7, 10 };
+    for (const auto interval : requiredIntervals)
+    {
+        if (! chord.tones[static_cast<std::size_t>(wrap12(dominantRoot + interval))])
+            return -1;
+    }
+
+    return dominantRoot;
+}
+
+void applyImpliedDominantReading(HarmonicSituation& situation) noexcept
+{
+    const auto root = impliedRootlessDominantRoot(situation.currentChord,
+                                                  situation.globalKey.key);
+    if (root < 0)
+        return;
+
+    situation.impliedDominant.valid = true;
+    situation.impliedDominant.rootPitchClass = root;
+    situation.impliedDominant.flatNinth = true;
+    situation.impliedDominant.thirteenth =
+        situation.currentChord.tones[static_cast<std::size_t>(wrap12(root + 9))];
+    situation.impliedDominant.evidence.confidence = ConfidenceLevel::high;
+    situation.impliedDominant.evidence.markUnique();
+    situation.impliedDominant.evidence.add(EvidenceFlag::explicitKey);
+    situation.impliedDominant.evidence.add(EvidenceFlag::chromaticRelation);
+
+    // Preserve the written diminished chord, but expose its effective function
+    // to the rest of Stage 3. No tonic resolution is claimed here.
+    situation.harmonic.effectiveFunction = HarmonicFunction::dominant;
+    situation.harmonic.relation = HarmonicRelation::chromatic;
+    situation.evidence.add(EvidenceFlag::chromaticRelation);
+}
+
 HarmonicPattern makePattern(HarmonicPatternType type,
                             PatternMemberRole role,
                             int positionIndex,
@@ -101,6 +145,11 @@ HarmonicPattern recognizePattern(const HarmonicSituation& situation,
         return none;
 
     const auto& key = situation.globalKey.key;
+    const auto currentImpliedDominantRoot =
+        impliedRootlessDominantRoot(situation.currentChord, key);
+    const auto nextImpliedDominantRoot = situation.nextChordAvailable
+        ? impliedRootlessDominantRoot(situation.nextChord, key)
+        : -1;
 
     if (situation.previousChordAvailable
         && situation.nextChordAvailable
@@ -203,6 +252,37 @@ HarmonicPattern recognizePattern(const HarmonicSituation& situation,
                            true,
                            true,
                            true);
+    }
+
+    // Corcovado 0.3f fix3: D7/A -> Abdim is more usefully read as
+    // V/V -> rootless V7(b9) in C than as a diminished bridge to G minor.
+    if (situation.nextChordAvailable
+        && situation.currentChord.quality == ChordQuality::dominant
+        && nextImpliedDominantRoot >= 0
+        && isOrdinaryDominantForRoot(situation.currentChord,
+                                     nextImpliedDominantRoot))
+    {
+        return makePattern(HarmonicPatternType::dominantChain,
+                           PatternMemberRole::dominant,
+                           0,
+                           2,
+                           ConfidenceLevel::high,
+                           false,
+                           true);
+    }
+
+    if (situation.previousChordAvailable
+        && currentImpliedDominantRoot >= 0
+        && isOrdinaryDominantForRoot(situation.previousChord,
+                                     currentImpliedDominantRoot))
+    {
+        return makePattern(HarmonicPatternType::dominantChain,
+                           PatternMemberRole::dominant,
+                           1,
+                           2,
+                           ConfidenceLevel::high,
+                           true,
+                           false);
     }
 
     if (situation.previousChordAvailable
@@ -479,15 +559,6 @@ bool chordIsTonicForRoot(const NormalizedChord& chord,
     return false;
 }
 
-KeyMode tonicMode(const NormalizedChord& chord) noexcept
-{
-    if (chord.quality == ChordQuality::major)
-        return KeyMode::major;
-    if (isMinorFamily(chord))
-        return KeyMode::minor;
-    return KeyMode::undefined;
-}
-
 bool matchesMajorIiVI(const NormalizedChord& ii,
                       const NormalizedChord& v,
                       const NormalizedChord& tonic) noexcept
@@ -576,17 +647,6 @@ bool matchesMajorIiiViIiV(const NormalizedChord& iii,
         && ii.quality == ChordQuality::minor
         && isDegree(v, key, 5)
         && v.quality == ChordQuality::dominant;
-}
-
-bool matchesPassingDiminishedBridge(const NormalizedChord& dominant,
-                                    const NormalizedChord& diminished,
-                                    const NormalizedChord& tonic) noexcept
-{
-    return tonic.valid
-        && tonicMode(tonic) != KeyMode::undefined
-        && isDominantOf(dominant, tonic)
-        && diminished.quality == ChordQuality::diminished
-        && wrap12(diminished.rootPitchClass - tonic.rootPitchClass) == 1;
 }
 
 bool incompleteCadenceContradictedByWindow(const PatternTimelineWindow& window) noexcept
@@ -936,59 +996,6 @@ void applyPatternWindowContext(HarmonicSituation& situation,
         return;
     }
 
-    // Corcovado real-harmony case: V7 -> chromatic diminished -> local tonic.
-    // The middle diminished chord is an ornamental bridge and does not erase
-    // the dominant direction established by the first chord.
-    for (int start = 0; start + 2 < count; ++start)
-    {
-        if (current < start || current > start + 2)
-            continue;
-
-        const auto& dominant = chords[static_cast<std::size_t>(start)];
-        const auto& diminished = chords[static_cast<std::size_t>(start + 1)];
-        const auto& tonic = chords[static_cast<std::size_t>(start + 2)];
-        if (! matchesPassingDiminishedBridge(dominant, diminished, tonic))
-            continue;
-
-        const auto mode = tonicMode(tonic);
-        const auto position = current - start;
-        auto context = makePatternContext(
-            HarmonicPatternType::passingDiminished,
-            makePatternCenter(tonic, mode),
-            position,
-            3,
-            patternWindow.chords[static_cast<std::size_t>(start)].startPpq,
-            patternWindow.chords[static_cast<std::size_t>(start + 2)].startPpq);
-
-        if (position == 0)
-        {
-            addNestedPattern(context,
-                             makePattern(HarmonicPatternType::dominantToTonic,
-                                         PatternMemberRole::dominant,
-                                         0,
-                                         2,
-                                         ConfidenceLevel::confirmed,
-                                         false,
-                                         true,
-                                         false));
-        }
-        else if (position == 2)
-        {
-            addNestedPattern(context,
-                             makePattern(HarmonicPatternType::dominantToTonic,
-                                         PatternMemberRole::resolution,
-                                         1,
-                                         2,
-                                         ConfidenceLevel::confirmed,
-                                         true,
-                                         false,
-                                         true));
-        }
-
-        applyPatternContext(situation, context);
-        return;
-    }
-
     for (int start = 0; start + 2 < count; ++start)
     {
         if (current < start || current > start + 2)
@@ -1038,6 +1045,8 @@ HarmonicSituation analyzeBaseSituation(const TimelineHarmonicSnapshot& snapshot,
     auto result = buildHarmonicSituation(snapshot);
     if (! result.valid)
         return result;
+
+    applyImpliedDominantReading(result);
 
     const auto allowIncompleteCadenceCandidates = patternWindow == nullptr
         || ! incompleteCadenceContradictedByWindow(*patternWindow);
