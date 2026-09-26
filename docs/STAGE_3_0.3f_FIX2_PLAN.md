@@ -1,6 +1,8 @@
 # Stage 3 / 0.3f fix2 — Pattern evidence / false-positive guards
 
-База: принятый `0.3f fix1` (`PR #31`, Windows Build #310). Stable остаётся `0.3`. Этот refinement появился после real-harmony validation концертной гармонии **Corcovado** и должен быть принят до перехода к `0.3g`.
+> **Исторический статус:** Windows Build #328 прошёл regression/Windows gate, но live-разбор Corcovado после билда выявил ошибочную музыкальную трактовку `D7/A → Ab° → Gm7` как passing diminished к G minor. Этот единственный пункт fix2 **отменён и заменён** `0.3f fix3 — Rootless dominant / Corcovado diminished correction`. Остальные evidence guards и `iii–vi–ii–V` сохраняются. Fix2 не считается отдельным принятым checkpoint до acceptance fix3.
+
+База: принятый `0.3f fix1` (`PR #31`, Windows Build #310). Stable остаётся `0.3`. Этот refinement появился после real-harmony validation концертной гармонии **Corcovado** и должен быть принят вместе с последующим fix3 до перехода к `0.3g`.
 
 ## Причина fix2
 
@@ -31,12 +33,6 @@ C major: Em7 → Am7 → Dm7 → G7
 ```
 
 Это самостоятельный устойчивый оборот `iii–vi–ii–V`. Движок не должен реконструировать отсутствующий `I` и называть середину последовательности `I–VI–ii–V • 3/4`.
-
-```text
-C major: D7/A → Ab° → Gm7
-```
-
-Ab° — ornamental / passing diminished между доминантой и её целью. Он не должен стирать направленность `D7→Gm`.
 
 ## 1. Known-future veto для cadence candidates
 
@@ -92,31 +88,19 @@ G7  → iii–vi–ii–V • 4/4
 
 `iii–vi–ii–V` завершается на V, поэтому `4/4` означает completion самого pattern, **не confirmed tonic resolution**.
 
-## 4. Passing diminished bridge
+## 4. Passing diminished bridge — SUPERSEDED
 
-Для узкого подтверждённого кейса:
+Первоначальная гипотеза fix2:
 
 ```text
 D7/A → Ab° → Gm7
 ```
 
-вводится top-level `passingDiminished` bridge:
+как `passingDiminished • 1/3…3/3` к G minor оказалась музыкально неверной для реального Corcovado voicing.
 
-```text
-D7/A → Проходящий уменьшённый • 1/3
-Ab°  → Проходящий уменьшённый • 2/3
-Gm7  → Проходящий уменьшённый • 3/3
-```
+Правильная трактовка зафиксирована в [STAGE_3_0.3f_FIX3_PLAN.md](STAGE_3_0.3f_FIX3_PLAN.md): `Ab° = {Ab,B,D,F}` является rootless `G7(b9)` в C major, а при наличии E — rootless `G13(b9)`. Поэтому специальный bridge к G minor удаляется.
 
-Условия начальной версии:
-
-- первый chord — ordinary dominant реальной цели;
-- middle chord — diminished;
-- diminished root находится на полутон выше target root;
-- target — major/minor tonic-quality chord;
-- slash bass доминанты не меняет её root-function.
-
-Gm в этом случае является краткой tonicization target, а не автоматической модуляцией проекта.
+Сам тип `passingDiminished` остаётся в каталоге для будущих корректных случаев.
 
 ## 5. Presentation semantics для будущего 0.3g
 
@@ -130,16 +114,18 @@ Gm в этом случае является краткой tonicization target,
 
 ## 6. Scope fix2
 
-Входит:
+Сохраняется:
 
 - known-future veto false `ii–V–I / iiø–V–i / iv–V–i` candidates;
 - strict target-quality semantics;
 - самостоятельный `iii–vi–ii–V`;
 - full-window reconstruction настоящего `I–VI–ii–V` без fabricated earlier member;
-- `D7/A→Ab°→Gm7` passing-diminished bridge;
 - regression cases из Corcovado;
-- сохранение fix1 continuity и bounded deterministic reconstruction;
-- отдельный Windows artifact и повторный live-test.
+- сохранение fix1 continuity и bounded deterministic reconstruction.
+
+Заменено fix3:
+
+- специальная трактовка `D7/A→Ab°→Gm7` как passing diminished.
 
 Не входит:
 
@@ -152,7 +138,7 @@ Gm в этом случае является краткой tonicization target,
 
 ## 7. Regression / live gate
 
-Обязательные regression cases:
+Обязательные regression cases fix2:
 
 ```text
 Fm7 → Bb7 → Em7               => НЕ Eb-major ii–V–I
@@ -160,21 +146,12 @@ Em7 → A7 → D7                 => НЕ D-major ii–V–I / V–I
 Dm7 → G7 → D7/A               => НЕ C-major ii–V–I
 Em7 → Am7 → Dm7 → G7          => iii–vi–ii–V • 1/4…4/4
 Cmaj7 → Am7 → Dm7 → G7        => I–VI–ii–V • 1/4…4/4
-D7/A → Ab° → Gm7              => passing diminished • 1/3…3/3
 Em7b5 → A7b13 → Dm7           => fix1 minor iiø–V–i regression remains green
 Gm7 → C7 → Fmaj7              => fix1 local ii–V–I regression remains green
 ```
 
-Live-test в Studio Pro повторяет реальные участки Corcovado A1/A2.
+Diminished/Corcovado gate перенесён в fix3.
 
 ## Gate
 
-`0.3f fix2` принимается только после:
-
-1. зелёных regression tests;
-2. зелёного Windows artifact `Smart-Improviser-0.3f-fix2-Windows`;
-3. live-test Corcovado в Studio Pro;
-4. отсутствия regression в fix1 continuity / ambiguity / SubV;
-5. подтверждения пользователем.
-
-После acceptance продолжаем `0.3g — Explanation / usable output`.
+Build #328 подтвердил regression suite и Windows artifact для fix2, но музыкальное acceptance отложено до fix3. После acceptance fix3 продолжаем `0.3g — Explanation / usable output`.
