@@ -130,7 +130,7 @@ user acceptance
 
 Tension T1/T2/T3 остаётся Stage 4 и в 0.3g автоматически не назначается.
 
-## 0.3g fix1 — функциональная подпись Corcovado [IN PROGRESS]
+## 0.3g fix1 — функциональная подпись Corcovado [ACCEPTED]
 
 После live-разбора `D9/A → Ab°(♭13) → Gm7 → C7 → Fmaj7` двухзвенный
 `dominantChain` в верхнем summary показывается как
@@ -143,5 +143,7 @@ Tension T1/T2/T3 остаётся Stage 4 и в 0.3g автоматически 
 Fix1 меняет presentation contract, не harmonic inference и не ranking.
 Regression проверяет обе позиции двухзвенной связи, фактическое
 минорное продолжение и отделение последующего `ii–V–I`.
-Нужны Windows artifact `Smart-Improviser-0.3g-fix1-Windows`, live-test
-в Studio Pro и acceptance пользователя перед merge.
+Windows Build #349 — success, включая регрессию и VST3 artifact
+`Smart-Improviser-0.3g-fix1-Windows`. Live-test в Studio Pro по снимкам
+`D7/A` (1/2), `Abdim` (2/2) и `Gm7` (локальный ii–V–I в F) прошёл
+2026-09-26. Fix1 принят в рамках продолжающегося checkpoint 0.3g.
