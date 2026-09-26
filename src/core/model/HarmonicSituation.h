@@ -48,6 +48,34 @@ struct PatternContext
     std::uint8_t nestedPatternCount = 0;
 };
 
+// Functional alias for a chord whose explicit tones spell a dominant sonority
+// without its root. 0.3f fix3 uses this conservatively for diminished voicings
+// that match the b9-3-5 shell of V7(b9) of the explicit global key. Confidence
+// is medium/provisional without b7, high with b7; 13 requires an explicit tone.
+// The written chord identity is
+// preserved; this is an interpretation, not destructive renaming.
+struct ImpliedDominantReading
+{
+    bool valid = false;
+    int rootPitchClass = -1;
+    bool flatNinth = false;
+    bool thirteenth = false;
+    AnalysisEvidence evidence;
+};
+
+// A descriptive template, not an established key or a resolved cadence.
+// The two explicit members survive a known non-tonic continuation. The absent
+// I is displayed as missing (grey), never inserted into the actual timeline.
+struct IncompleteCadence
+{
+    bool valid = false;
+    int positionIndex = -1;
+    NormalizedChord ii;
+    NormalizedChord v;
+    std::int32_t missingTonicRootFifths = 0;
+    NormalizedChord actualContinuation;
+};
+
 // Accepted Stage 1 -> Stage 2 contract. Do not add arbitrary timeline history
 // here: PatternTimelineWindow is a separate Stage 3 analysis input.
 struct TimelineHarmonicSnapshot
@@ -87,6 +115,8 @@ struct HarmonicSituation
     HarmonicPattern pattern;
     HarmonicPattern localPattern;
     PatternContext patternContext;
+    ImpliedDominantReading impliedDominant;
+    IncompleteCadence incompleteCadence;
     ResolutionTarget resolution;
     AnalysisEvidence evidence;
 
@@ -99,7 +129,10 @@ HarmonicSituation buildHarmonicSituation(const TimelineHarmonicSnapshot& snapsho
 
 // Stage 2/0.2d host-neutral local-center analyzer. It enriches an already
 // normalized HarmonicSituation without consulting JUCE, ARA or DAW state.
-void analyzeLocalKeyCenter(HarmonicSituation& situation) noexcept;
+// 0.3f fix2+fix3 may veto provisional cadence candidates when bounded future
+// evidence already contradicts their expected tonic.
+void analyzeLocalKeyCenter(HarmonicSituation& situation,
+                           bool allowIncompleteCadenceCandidates = true) noexcept;
 
 // Stage 2/0.2e host-neutral ambiguity layer. It keeps multiple plausible
 // interpretations when evidence is insufficient for a single musical reading.

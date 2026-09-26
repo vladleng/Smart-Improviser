@@ -119,9 +119,9 @@ int main()
            "confirmed A7-Dm tonicization becomes local primary");
 
     const auto turnIi = analyzeHarmonicSituation(windowAt(cMajor, turnaround, 2));
-    expect(turnIi.pattern.type == HarmonicPatternType::turnaroundIVIiiV
+    expect(turnIi.pattern.type == HarmonicPatternType::majorIiVI
            && turnIi.pattern.role == PatternMemberRole::predominant,
-           "Dm keeps global turnaround predominant role");
+           "without bounded I evidence, Dm-G7 stays ii-V instead of fabricating turnaround");
     expect(turnIi.localKey.valid
            && turnIi.localKey.key.rootPitchClass == 2
            && turnIi.localKey.key.mode == KeyMode::minor

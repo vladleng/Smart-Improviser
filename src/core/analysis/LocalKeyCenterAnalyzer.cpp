@@ -68,9 +68,9 @@ KeyMode modeFromTargetChord(const NormalizedChord& chord) noexcept
         case ChordQuality::halfDiminished:
             return KeyMode::minor;
         case ChordQuality::major:
-        case ChordQuality::dominant:
         case ChordQuality::augmented:
             return KeyMode::major;
+        case ChordQuality::dominant:
         default:
             return KeyMode::undefined;
     }
@@ -119,6 +119,18 @@ bool isMinorSubdominantForRoot(const NormalizedChord& chord,
     return chord.valid
         && chord.quality == ChordQuality::minor
         && wrap12(chord.rootPitchClass - targetRoot) == 5;
+}
+
+bool knownNextSupportsExpectedTonic(const HarmonicSituation& situation,
+                                    int targetRoot,
+                                    KeyMode mode) noexcept
+{
+    if (! situation.nextChordAvailable)
+        return true;
+
+    return situation.nextChord.valid
+        && situation.nextChord.rootPitchClass == wrap12(targetRoot)
+        && modeFromTargetChord(situation.nextChord) == mode;
 }
 
 HarmonicPattern makeLocalPattern(HarmonicPatternType type,
@@ -228,15 +240,13 @@ bool isDiatonicTo(const NormalizedChord& chord, const NormalizedKey& key) noexce
 }
 }
 
-void analyzeLocalKeyCenter(HarmonicSituation& situation) noexcept
+void analyzeLocalKeyCenter(HarmonicSituation& situation,
+                           bool allowIncompleteCadenceCandidates) noexcept
 {
     situation.localKey = {};
     situation.localHarmonic = {};
     situation.localPattern = {};
 
-    // Seed the ambiguity layer after global pattern recognition even when no
-    // local center is eventually found. applyCenter() refreshes it whenever a
-    // local interpretation is added or deliberately rejected as redundant.
     analyzeAmbiguityAndConfidence(situation);
 
     if (! situation.valid || ! situation.globalKey.valid)
@@ -255,8 +265,6 @@ void analyzeLocalKeyCenter(HarmonicSituation& situation) noexcept
             && situation.nextChord.quality == ChordQuality::minor
             && isMinorSubdominantForRoot(situation.previousChord, targetRoot);
 
-        // ii / iiø may lead to V or SubV as before. iv is intentionally added
-        // only for the ordinary minor V-i cadence in 0.3f.
         if (((ordinary || substitute) && ordinaryPredominant)
             || (ordinary && minorIv))
         {
@@ -293,9 +301,8 @@ void analyzeLocalKeyCenter(HarmonicSituation& situation) noexcept
         }
     }
 
-    // Minor iv-V boundary. Derive the possible tonic from the ordinary V,
-    // rather than treating every minor chord as a major-key ii.
-    if (situation.nextChordAvailable
+    if (allowIncompleteCadenceCandidates
+        && situation.nextChordAvailable
         && situation.currentChord.quality == ChordQuality::minor
         && situation.nextChord.quality == ChordQuality::dominant)
     {
@@ -325,7 +332,7 @@ void analyzeLocalKeyCenter(HarmonicSituation& situation) noexcept
         }
     }
 
-    if (situation.nextChordAvailable)
+    if (allowIncompleteCadenceCandidates && situation.nextChordAvailable)
     {
         const auto mode = modeFromPredominant(situation.currentChord);
         if (mode != KeyMode::undefined)
@@ -364,9 +371,6 @@ void analyzeLocalKeyCenter(HarmonicSituation& situation) noexcept
         }
     }
 
-    // Minor iv-V boundary seen at V with previous iv available. It is only a
-    // candidate while the following tonic is unknown; a known next chord is
-    // handled by the full three-chord check above and may contradict C minor.
     if (situation.previousChordAvailable
         && ! situation.nextChordAvailable
         && situation.previousChord.quality == ChordQuality::minor
@@ -407,7 +411,10 @@ void analyzeLocalKeyCenter(HarmonicSituation& situation) noexcept
             const auto targetRoot = wrap12(situation.previousChord.rootPitchClass - 2);
             const auto ordinary = isOrdinaryDominantOfRoot(situation.currentChord, targetRoot);
             const auto substitute = isSubstituteDominantOfRoot(situation.currentChord, targetRoot);
-            if (ordinary || substitute)
+            const auto knownFutureCompatible = knownNextSupportsExpectedTonic(situation,
+                                                                               targetRoot,
+                                                                               mode);
+            if ((ordinary || substitute) && knownFutureCompatible)
             {
                 const auto key = makeKey(targetRoot, mode);
                 const auto type = substitute

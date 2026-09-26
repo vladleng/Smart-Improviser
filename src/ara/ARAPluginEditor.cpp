@@ -288,6 +288,7 @@ juce::String patternName(smartimproviser::harmony::HarmonicPatternType type)
         case HarmonicPatternType::minorIvVi: return ru("Минорный iv-V-i");
         case HarmonicPatternType::dominantToTonic: return "V-I";
         case HarmonicPatternType::turnaroundIVIiiV: return "I-VI-ii-V";
+        case HarmonicPatternType::majorIiiViIiV: return "iii-vi-ii-V";
         case HarmonicPatternType::majorCadentialChain: return ru("Расширенный каданс iii-VI7-ii-V-I");
         case HarmonicPatternType::secondaryDominant: return ru("Вторичная доминанта");
         case HarmonicPatternType::tritoneSubstitution: return ru("Тритоновая замена");
@@ -615,6 +616,32 @@ void SmartImproviserARAEditor::timerCallback()
         summaryPattern += ru("не распознан");
     }
 
+    summaryPatternDisplay.clear();
+    const juce::Font patternFont { juce::FontOptions(13.2f) };
+    const auto presentColour = juce::Colour::fromRGB(220, 225, 234);
+    const auto missingColour = juce::Colour::fromRGB(140, 146, 157);
+    const auto& incomplete = cachedSituation.incompleteCadence;
+    if (incomplete.valid)
+    {
+        const auto prefix = ru("Оборот: незавершённый   ii (")
+            + utf8String(smartimproviser::harmony::normalizedChordSymbol(incomplete.ii))
+            + ru(") – V (")
+            + utf8String(smartimproviser::harmony::normalizedChordSymbol(incomplete.v))
+            + ru(") – ");
+        const auto missing = "I (" + utf8String(fifthsName(incomplete.missingTonicRootFifths))
+            + ru(", отсутствует)");
+        const auto suffix = ru("   •   ") + juce::String(incomplete.positionIndex + 1) + " / 3";
+        summaryPattern = prefix + missing + suffix;
+        summaryPatternDisplay.append(prefix, patternFont, presentColour);
+        summaryPatternDisplay.append(missing, patternFont, missingColour);
+        summaryPatternDisplay.append(suffix, patternFont, presentColour);
+    }
+    else
+    {
+        summaryPatternDisplay.append(summaryPattern, patternFont, presentColour);
+    }
+    summaryPatternDisplay.setWordWrap(juce::AttributedString::none);
+
     summaryThinking = ru("Мышление: ");
     if (! result.valid || result.strategies.empty())
     {
@@ -813,6 +840,16 @@ void SmartImproviserARAEditor::timerCallback()
     harmonicText += ru("Позиция в обороте: ") + patternPositionDisplay(cachedSituation.pattern) + "\n";
     harmonicText += ru("Разрешение: ") + resolutionDisplay(cachedSituation) + "\n\n";
 
+    if (incomplete.valid)
+    {
+        harmonicText += ru("НЕЗАВЕРШЁННЫЙ ОБОРОТ\n") + summaryPattern + "\n";
+        harmonicText += ru("Серый I - отсутствующая тоника шаблона, не аккорд дорожки.\n");
+        harmonicText += ru("Фактическое продолжение после V: ")
+            + utf8String(smartimproviser::harmony::normalizedChordSymbol(incomplete.actualContinuation))
+            + ru(". Ожидаемое разрешение в I не состоялось.\n");
+        harmonicText += ru("Шаблон не устанавливает локальную тональность и не подтверждает разрешение.\n\n");
+    }
+
     harmonicText += ru("ЛОКАЛЬНЫЙ КОНТЕКСТ\n");
     harmonicText += ru("Центр: ") + localCenterDisplayName(cachedSituation.localKey) + "\n";
     harmonicText += ru("Функция: ") + harmonicDisplay(cachedSituation.localHarmonic) + "\n";
@@ -926,7 +963,7 @@ void SmartImproviserARAEditor::paint(juce::Graphics& g)
 
     g.setColour(juce::Colour::fromRGB(150, 156, 168));
     g.setFont(14.0f);
-    g.drawText(ru("0.3f fix1 • непрерывность кадансового контекста"),
+    g.drawText(ru("0.3f fix4 • незавершённые обороты / отсутствующие ступени"),
                24, 47, getWidth() - 48, 22, juce::Justification::centredLeft);
 
     g.setColour(juce::Colour::fromRGB(42, 46, 53));
@@ -946,8 +983,8 @@ void SmartImproviserARAEditor::paint(juce::Graphics& g)
     g.setFont(13.2f);
     g.drawText(summaryMeta, 40, 136, getWidth() - 80, 18,
                juce::Justification::centredLeft, true);
-    g.drawText(summaryPattern, 40, 157, getWidth() - 80, 18,
-               juce::Justification::centredLeft, true);
+    summaryPatternDisplay.draw(g, juce::Rectangle<float>(40.0f, 157.0f,
+                                static_cast<float>(getWidth() - 80), 20.0f));
 
     g.setColour(juce::Colour::fromRGB(220, 225, 234));
     g.setFont(13.5f);
