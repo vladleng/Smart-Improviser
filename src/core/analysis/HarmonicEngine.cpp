@@ -87,11 +87,12 @@ int impliedRootlessDominantRoot(const NormalizedChord& chord,
     if (! chord.valid || ! key.valid || chord.quality != ChordQuality::diminished)
         return -1;
 
-    // A fully diminished seventh built from b9-3-5-b7 of V is the classic
-    // rootless V7(b9) sonority. Anchor the alias to the explicit global key so
+    // Studio Pro may supply only the diminished b9-3-5 shell of rootless V7(b9).
+    // The absent b7 lowers confidence; it is never added to the written chord.
+    // Anchor the alias to the explicit global key so
     // symmetrical diminished spellings do not create four arbitrary winners.
     const auto dominantRoot = wrap12(key.rootPitchClass + 7);
-    static constexpr int requiredIntervals[] = { 1, 4, 7, 10 };
+    static constexpr int requiredIntervals[] = { 1, 4, 7 };
     for (const auto interval : requiredIntervals)
     {
         if (! chordContainsPitchClass(chord, dominantRoot + interval))
@@ -99,6 +100,13 @@ int impliedRootlessDominantRoot(const NormalizedChord& chord,
     }
 
     return dominantRoot;
+}
+
+ConfidenceLevel rootlessDominantConfidence(const NormalizedChord& chord,
+                                           int dominantRoot) noexcept
+{
+    return chordContainsPitchClass(chord, dominantRoot + 10)
+        ? ConfidenceLevel::high : ConfidenceLevel::medium;
 }
 
 void applyImpliedDominantReading(HarmonicSituation& situation) noexcept
@@ -113,7 +121,8 @@ void applyImpliedDominantReading(HarmonicSituation& situation) noexcept
     situation.impliedDominant.flatNinth = true;
     situation.impliedDominant.thirteenth =
         chordContainsPitchClass(situation.currentChord, root + 9);
-    situation.impliedDominant.evidence.confidence = ConfidenceLevel::high;
+    situation.impliedDominant.evidence.confidence =
+        rootlessDominantConfidence(situation.currentChord, root);
     situation.impliedDominant.evidence.markUnique();
     situation.impliedDominant.evidence.add(EvidenceFlag::explicitKey);
     situation.impliedDominant.evidence.add(EvidenceFlag::chromaticRelation);
@@ -284,7 +293,8 @@ HarmonicPattern recognizePattern(const HarmonicSituation& situation,
                            PatternMemberRole::dominant,
                            0,
                            2,
-                           ConfidenceLevel::high,
+                           rootlessDominantConfidence(situation.nextChord,
+                                                      nextImpliedDominantRoot),
                            false,
                            true);
     }
@@ -298,7 +308,8 @@ HarmonicPattern recognizePattern(const HarmonicSituation& situation,
                            PatternMemberRole::dominant,
                            1,
                            2,
-                           ConfidenceLevel::high,
+                           rootlessDominantConfidence(situation.currentChord,
+                                                      currentImpliedDominantRoot),
                            true,
                            false);
     }

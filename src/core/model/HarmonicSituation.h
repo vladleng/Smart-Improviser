@@ -50,7 +50,9 @@ struct PatternContext
 
 // Functional alias for a chord whose explicit tones spell a dominant sonority
 // without its root. 0.3f fix3 uses this conservatively for diminished voicings
-// that match V7(b9) of the explicit global key. The written chord identity is
+// that match the b9-3-5 shell of V7(b9) of the explicit global key. Confidence
+// is medium/provisional without b7, high with b7; 13 requires an explicit tone.
+// The written chord identity is
 // preserved; this is an interpretation, not destructive renaming.
 struct ImpliedDominantReading
 {

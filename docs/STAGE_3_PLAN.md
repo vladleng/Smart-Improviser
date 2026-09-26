@@ -116,6 +116,8 @@ Windows Build #310 — success; live-test принят Владом 2026-09-25.
 - [x] Удалить специальный Corcovado `passingDiminished` bridge к G minor.
 - [x] Добавить host-neutral `ImpliedDominantReading`, не меняющий written chord identity.
 - [x] В C major читать `Ab° = Ab–B–D–F` как contextual rootless `G7(b9)`.
+- [x] Studio Pro shell `Ab–B–D` без F: provisional/implied G7(b9), medium confidence; явная F повышает до high.
+- [x] Confidence dominant chain `1/2 → 2/2` соответствует shell/full voicing; written Abdim identity сохранена.
 - [x] При явной E фиксировать дополнительную 13: rootless `G13(b9)`.
 - [x] `D7/A → Ab°` трактовать как `V/V → implied V` / dominant chain.
 - [x] Не создавать local G minor на `D7/A` или `Ab°`.

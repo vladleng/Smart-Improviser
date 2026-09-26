@@ -329,6 +329,72 @@ int main()
            && colouredDominant.impliedDominant.thirteenth,
            "explicit E color upgrades the alias to G13(b9) without changing rootless function");
 
+    // Host chord-track triad and full voicing, each with/without explicit E.
+    const std::array rootlessVoicings {
+        makeChord(-4, { 0, 3, 6 }, 4.0),
+        makeChord(-4, { 0, 3, 6, 8 }, 4.0),
+        abDim,
+        abDimWithE
+    };
+    for (std::size_t variant = 0; variant < rootlessVoicings.size(); ++variant)
+    {
+        const auto& written = rootlessVoicings[variant];
+        const auto normalized = normalizeChord(written);
+        const auto confidence = variant < 2 ? ConfidenceLevel::medium
+                                             : ConfidenceLevel::high;
+        const std::array progression {
+            d7OverAAt0, written, gMin7At8, c7At12, fMaj7At16
+        };
+        for (int position = 0; position < 2; ++position)
+        {
+            const auto situation = analyzeWindow(cMajor, progression, position);
+            expect(situation.pattern.type == HarmonicPatternType::dominantChain
+                   && situation.pattern.positionIndex == position
+                   && situation.pattern.length == 2,
+                   "shell/full voicing keeps dominant chain 1/2 through 2/2");
+            expect(situation.pattern.evidence.confidence == confidence,
+                   "both chain positions inherit shell/full-voicing confidence");
+            expect(! situation.localKey.valid
+                   && ! situation.pattern.evidence.has(EvidenceFlag::confirmedResolution),
+                   "implied dominant chain invents neither local G minor nor tonic resolution");
+        }
+        const auto situation = analyzeWindow(cMajor, progression, 1);
+        expect(situation.impliedDominant.valid
+               && situation.impliedDominant.rootPitchClass == 7
+               && situation.impliedDominant.flatNinth
+               && situation.impliedDominant.evidence.confidence == confidence,
+               "b9-3-5 shell implies G7(b9), provisional until b7 is explicit");
+        expect(situation.impliedDominant.thirteenth == (variant % 2 == 1),
+               "thirteenth is true only for explicit E, independently of b7");
+        expect(situation.harmonic.effectiveFunction == HarmonicFunction::dominant
+               && situation.currentChord.quality == ChordQuality::diminished
+               && situation.currentChord.rootFifths == -4
+               && situation.currentChord.bassFifths == normalized.bassFifths
+               && situation.currentChord.tones == normalized.tones
+               && normalizedChordSymbol(situation.currentChord) == normalizedChordSymbol(normalized),
+               "functional alias preserves written Abdim identity and all explicit tones");
+        for (int position = 2; position < 5; ++position)
+        {
+            const auto local = analyzeWindow(cMajor, progression, position);
+            expect(local.localKey.valid
+                   && local.localKey.key.rootPitchClass == 5
+                   && local.localKey.key.mode == KeyMode::major
+                   && local.localPattern.type == HarmonicPatternType::majorIiVI
+                   && local.localPattern.positionIndex == position - 2
+                   && local.localPattern.length == 3,
+                   "following Gm7-C7-Fmaj7 remains separate local F-major 1/3 through 3/3");
+        }
+    }
+
+    const std::array shellOnly { rootlessVoicings[0] };
+    expect(! analyzeWindow(KeyContext {}, shellOnly, 0).impliedDominant.valid,
+           "diminished shell without explicit key does not invent a dominant root");
+    expect(! analyzeWindow(makeKey(2, false), shellOnly, 0).impliedDominant.valid,
+           "diminished shell must match the explicit key's dominant");
+    const std::array incompleteShell { makeChord(-4, { 0, 3 }, 0.0) };
+    expect(! analyzeWindow(cMajor, incompleteShell, 0).impliedDominant.valid,
+           "missing fifth of implied dominant does not qualify as b9-3-5 shell");
+
     std::cout << "SmartImproviser PatternContextTests: OK\n";
     return 0;
 }
