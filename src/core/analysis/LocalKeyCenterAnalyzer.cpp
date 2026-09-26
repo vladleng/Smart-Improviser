@@ -68,9 +68,9 @@ KeyMode modeFromTargetChord(const NormalizedChord& chord) noexcept
         case ChordQuality::halfDiminished:
             return KeyMode::minor;
         case ChordQuality::major:
-        case ChordQuality::dominant:
         case ChordQuality::augmented:
             return KeyMode::major;
+        case ChordQuality::dominant:
         default:
             return KeyMode::undefined;
     }
@@ -228,7 +228,8 @@ bool isDiatonicTo(const NormalizedChord& chord, const NormalizedKey& key) noexce
 }
 }
 
-void analyzeLocalKeyCenter(HarmonicSituation& situation) noexcept
+void analyzeLocalKeyCenter(HarmonicSituation& situation,
+                           bool allowIncompleteCadenceCandidates) noexcept
 {
     situation.localKey = {};
     situation.localHarmonic = {};
@@ -294,8 +295,11 @@ void analyzeLocalKeyCenter(HarmonicSituation& situation) noexcept
     }
 
     // Minor iv-V boundary. Derive the possible tonic from the ordinary V,
-    // rather than treating every minor chord as a major-key ii.
-    if (situation.nextChordAvailable
+    // rather than treating every minor chord as a major-key ii. When bounded
+    // lookahead already contradicts the expected tonic, 0.3f fix2 suppresses
+    // this provisional candidate instead of presenting a false 1/3 pattern.
+    if (allowIncompleteCadenceCandidates
+        && situation.nextChordAvailable
         && situation.currentChord.quality == ChordQuality::minor
         && situation.nextChord.quality == ChordQuality::dominant)
     {
@@ -325,7 +329,7 @@ void analyzeLocalKeyCenter(HarmonicSituation& situation) noexcept
         }
     }
 
-    if (situation.nextChordAvailable)
+    if (allowIncompleteCadenceCandidates && situation.nextChordAvailable)
     {
         const auto mode = modeFromPredominant(situation.currentChord);
         if (mode != KeyMode::undefined)
