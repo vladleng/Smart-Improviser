@@ -215,12 +215,100 @@ int main()
     // Chord edit invalidates the five-member chain immediately; there is no
     // stale runtime memory. The surviving Gm7-C7-Fmaj7 sub-cadence is still
     // recognized as a normal local ii-V-I.
-    const auto dMin7 = makeChord(2, { 0, 3, 7, 10 }, 4.0);
-    const std::array editedChain { aMin7, dMin7, chainGMin7, chainC7, chainFMaj7 };
+    const auto dMin7At4 = makeChord(2, { 0, 3, 7, 10 }, 4.0);
+    const std::array editedChain { aMin7, dMin7At4, chainGMin7, chainC7, chainFMaj7 };
     const auto afterEdit = analyzeWindow(cMajor, editedChain, 4);
     expect(afterEdit.localPattern.type == HarmonicPatternType::majorIiVI
            && afterEdit.localPattern.positionIndex == 2,
            "chord edit removes stale extended cadence but keeps valid nested cadence");
+
+    // ---------------------------------------------------------------------
+    // 0.3f fix2 real-harmony regression cases from Corcovado.
+
+    const auto bFlat7 = makeChord(-2, { 0, 4, 7, 10 }, 4.0);
+    const auto eMin7 = makeChord(4, { 0, 3, 7, 10 }, 8.0);
+    const std::array falseEbCadence { fMin7, bFlat7, eMin7 };
+    const auto falseEb = analyzeWindow(cMajor, falseEbCadence, 0);
+    expect(! falseEb.localKey.valid,
+           "Fm7-Bb7-Em7 known future vetoes false Eb-major candidate");
+    expect(falseEb.pattern.type != HarmonicPatternType::majorIiVI
+           && falseEb.localPattern.type != HarmonicPatternType::majorIiVI,
+           "contradicted ii-V does not present major ii-V-I 1/3");
+
+    const auto eMin7At0 = makeChord(4, { 0, 3, 7, 10 }, 0.0);
+    const auto a7At4 = makeChord(3, { 0, 4, 7, 10 }, 4.0);
+    const auto d7At8 = makeChord(2, { 0, 4, 7, 10 }, 8.0);
+    const std::array falseDMajor { eMin7At0, a7At4, d7At8 };
+    const auto falseDStart = analyzeWindow(cMajor, falseDMajor, 0);
+    expect(! falseDStart.localKey.valid,
+           "Em7-A7-D7 does not invent D-major ii-V-I from dominant target");
+    const auto falseDDominant = analyzeWindow(cMajor, falseDMajor, 1);
+    expect(! falseDDominant.localKey.valid
+           && falseDDominant.localPattern.type != HarmonicPatternType::majorIiVI,
+           "A7-D7 keeps applied-dominant logic without treating D7 as tonic major");
+
+    auto d7OverA = makeChord(2, { 0, 4, 7, 10 }, 8.0);
+    d7OverA.bass = 3; // A in circle-of-fifths coordinates.
+    const auto dMin7At0 = makeChord(2, { 0, 3, 7, 10 }, 0.0);
+    const auto g7At4 = makeChord(1, { 0, 4, 7, 10 }, 4.0);
+    const std::array falseCResolution { dMin7At0, g7At4, d7OverA };
+    const auto falseC = analyzeWindow(cMajor, falseCResolution, 0);
+    expect(falseC.pattern.type != HarmonicPatternType::majorIiVI,
+           "Dm7-G7-D7/A known future vetoes false C-major ii-V-I");
+
+    // iii-vi-ii-V is a first-class stable cycle, not an I-VI-ii-V with an
+    // imagined missing tonic.
+    const auto aMin7At4 = makeChord(3, { 0, 3, 7, 10 }, 4.0);
+    const auto dMin7At8 = makeChord(2, { 0, 3, 7, 10 }, 8.0);
+    const auto g7At12 = makeChord(1, { 0, 4, 7, 10 }, 12.0);
+    const std::array iiiViIiV { eMin7At0, aMin7At4, dMin7At8, g7At12 };
+    for (int index = 0; index < 4; ++index)
+    {
+        const auto situation = analyzeWindow(cMajor, iiiViIiV, index);
+        expect(situation.pattern.type == HarmonicPatternType::majorIiiViIiV,
+               "Em7-Am7-Dm7-G7 is recognized as iii-vi-ii-V");
+        expect(situation.pattern.positionIndex == index
+               && situation.pattern.length == 4,
+               "iii-vi-ii-V exposes stable 1/4 through 4/4 positions");
+        expect(situation.patternContext.valid
+               && situation.patternContext.center.rootPitchClass == 0,
+               "iii-vi-ii-V remains centered on global C major");
+    }
+    const auto iiiViIiVEnd = analyzeWindow(cMajor, iiiViIiV, 3);
+    expect(iiiViIiVEnd.patternContext.status == PatternContextStatus::completed
+           && ! iiiViIiVEnd.pattern.evidence.has(EvidenceFlag::confirmedResolution),
+           "iii-vi-ii-V completes on V without fabricating tonic resolution");
+
+    // The original I-VI-ii-V still exists when the actual I is present.
+    const auto cMaj7At0 = makeChord(0, { 0, 4, 7, 11 }, 0.0);
+    const std::array fullTurnaround { cMaj7At0, aMin7At4, dMin7At8, g7At12 };
+    const auto fullTurnaroundIi = analyzeWindow(cMajor, fullTurnaround, 2);
+    expect(fullTurnaroundIi.pattern.type == HarmonicPatternType::turnaroundIVIiiV
+           && fullTurnaroundIi.pattern.positionIndex == 2,
+           "actual Cmaj7-Am7-Dm7-G7 remains I-VI-ii-V 3/4");
+
+    // D7/A -> Abdim -> Gm7 keeps its dominant direction through the ornamental
+    // diminished chord instead of resetting the harmonic context.
+    auto d7OverAAt0 = makeChord(2, { 0, 4, 7, 10 }, 0.0);
+    d7OverAAt0.bass = 3;
+    const auto abDim = makeChord(-4, { 0, 3, 6, 9 }, 4.0);
+    const auto gMin7At8 = makeChord(1, { 0, 3, 7, 10 }, 8.0);
+    const std::array passingBridge { d7OverAAt0, abDim, gMin7At8 };
+    for (int index = 0; index < 3; ++index)
+    {
+        const auto situation = analyzeWindow(cMajor, passingBridge, index);
+        expect(situation.localPattern.type == HarmonicPatternType::passingDiminished,
+               "D7/A-Abdim-Gm7 keeps one passing-diminished bridge context");
+        expect(situation.localPattern.positionIndex == index
+               && situation.localPattern.length == 3,
+               "passing diminished bridge exposes 1/3 through 3/3");
+        expect(situation.localKey.valid
+               && situation.localKey.key.rootPitchClass == 7
+               && situation.localKey.key.mode == KeyMode::minor,
+               "passing diminished bridge preserves G-minor target center");
+        expect(situation.localKey.status == KeyCenterStatus::tonicized,
+               "ornamental bridge tonicizes G minor without overclaiming modulation");
+    }
 
     std::cout << "SmartImproviser PatternContextTests: OK\n";
     return 0;
