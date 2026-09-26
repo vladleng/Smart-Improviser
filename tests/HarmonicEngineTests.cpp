@@ -200,20 +200,23 @@ int main()
            && minorIvTonic.pattern.role == PatternMemberRole::resolution,
            "final minor tonic does not invent ii-half-diminished or iv predominant");
 
-    // I-VI-ii-V turnaround.
+    // I-VI-ii-V turnaround. With only the Stage-1 previous/current/next
+    // snapshot, 0.3f fix2 must not reconstruct a missing I from VI-ii-V.
+    // Full four-member continuity is covered by PatternContextTests, where the
+    // bounded Stage-3 timeline is available.
     const auto turnaroundVI = analyzeHarmonicSituation(
         makeSnapshot(cMajor, cMaj7, a7, dMin7));
     expect(turnaroundVI.pattern.type == HarmonicPatternType::turnaroundIVIiiV
            && turnaroundVI.pattern.role == PatternMemberRole::preparation
            && turnaroundVI.pattern.positionIndex == 1,
-           "turnaround VI is position 2/4 preparation");
+           "turnaround VI is position 2/4 preparation while explicit I is visible");
 
     const auto turnaroundIi = analyzeHarmonicSituation(
         makeSnapshot(cMajor, a7, dMin7, g7));
-    expect(turnaroundIi.pattern.type == HarmonicPatternType::turnaroundIVIiiV
+    expect(turnaroundIi.pattern.type == HarmonicPatternType::majorIiVI
            && turnaroundIi.pattern.role == PatternMemberRole::predominant
-           && turnaroundIi.pattern.positionIndex == 2,
-           "turnaround ii is position 3/4 predominant");
+           && turnaroundIi.pattern.positionIndex == 0,
+           "VI-ii-V fragment does not fabricate I; Dm-G7 remains ii-V candidate");
 
     const auto turnaroundI = analyzeHarmonicSituation(
         makeCurrentNextSnapshot(cMajor, cMaj7, aMin7));
@@ -226,10 +229,8 @@ int main()
 
     const auto turnaroundV = analyzeHarmonicSituation(
         makePreviousCurrentSnapshot(cMajor, dMin7, g7));
-    expect(turnaroundV.pattern.type == HarmonicPatternType::turnaroundIVIiiV
-           && turnaroundV.pattern.role == PatternMemberRole::dominant
-           && turnaroundV.pattern.positionIndex == 3,
-           "turnaround end is position 4/4 dominant");
+    expect(turnaroundV.pattern.type != HarmonicPatternType::turnaroundIVIiiV,
+           "ii-V fragment without explicit I does not fabricate turnaround context");
 
     // Dominant chain wins over a single secondary-dominant interpretation.
     const auto dominantChain = analyzeHarmonicSituation(
