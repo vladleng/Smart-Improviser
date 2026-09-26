@@ -1,9 +1,11 @@
 #pragma once
 
+#include "core/model/AnalysisEvidence.h"
 #include "core/model/ImprovisationContracts.h"
 
 #include <algorithm>
 #include <cstddef>
+#include <cstdint>
 #include <string>
 #include <utility>
 #include <vector>
@@ -31,6 +33,13 @@ enum class ExplanationEvidenceState : std::uint8_t
     ambiguous
 };
 
+enum class ExplanationContextScope : std::uint8_t
+{
+    global = 0,
+    local,
+    modal
+};
+
 struct ExplanationEvidenceItem
 {
     ExplanationEvidenceKind kind = ExplanationEvidenceKind::interpretation;
@@ -43,6 +52,15 @@ struct ExplanationEvidenceItem
     AnalysisEvidence evidence;
 };
 
+struct ExplanationContextLayer
+{
+    ExplanationContextScope scope = ExplanationContextScope::global;
+    int interpretationIndex = -1;
+    KeyCenter center;
+    HarmonicAnalysis harmonic;
+    AnalysisEvidence evidence;
+};
+
 struct ExplanationItem
 {
     std::vector<std::size_t> strategyIndices;
@@ -50,6 +68,8 @@ struct ExplanationItem
     bool interpretationIndependent = false;
 
     std::string idea;
+    std::string conditions;
+    std::string usageHint;
     SourceMaterial source;
     NormalizedChord actualChord;
     NormalizedChord thinkingStructure;
@@ -65,6 +85,7 @@ struct ExplanationItem
 struct ExplanationResult
 {
     bool valid = false;
+    std::vector<ExplanationContextLayer> contextLayers;
     std::vector<ExplanationItem> items;
 };
 
@@ -77,6 +98,10 @@ inline bool sameChordIdentity(const NormalizedChord& a, const NormalizedChord& b
     if (! a.valid)
         return true;
     return a.rootPitchClass == b.rootPitchClass
+        && a.rootFifths == b.rootFifths
+        && a.bassPitchClass == b.bassPitchClass
+        && a.bassFifths == b.bassFifths
+        && a.slashBass == b.slashBass
         && a.quality == b.quality
         && a.extensions == b.extensions
         && a.alterations == b.alterations;
@@ -93,7 +118,8 @@ inline bool sameNotes(const std::vector<MaterialNote>& a,
             || a[i].semitonesFromRoot != b[i].semitonesFromRoot
             || a[i].degree != b[i].degree
             || a[i].role != b[i].role
-            || a[i].characteristic != b[i].characteristic)
+            || a[i].characteristic != b[i].characteristic
+            || a[i].spelling != b[i].spelling)
             return false;
     }
     return true;
@@ -103,6 +129,7 @@ inline bool sameSource(const SourceMaterial& a, const SourceMaterial& b) noexcep
 {
     return a.kind == b.kind
         && a.mode == b.mode
+        && a.rootFifths == b.rootFifths
         && a.rootPitchClass == b.rootPitchClass
         && a.name == b.name
         && sameNotes(a.notes, b.notes)
@@ -113,6 +140,8 @@ inline bool visuallySameMaterial(const ExplanationItem& item,
                                  const ImprovisationStrategy& strategy) noexcept
 {
     return item.idea == strategy.idea
+        && item.conditions == strategy.conditions
+        && item.usageHint == strategy.usageHint
         && sameSource(item.source, strategy.source)
         && sameChordIdentity(item.actualChord, strategy.actualChord)
         && sameChordIdentity(item.thinkingStructure, strategy.thinkingStructure)
@@ -139,7 +168,8 @@ inline std::vector<MaterialNote> importantNotes(const ImprovisationStrategy& str
         {
             const auto duplicate = std::any_of(notes.begin(), notes.end(), [&](const auto& present)
             {
-                return present.pitchClass == note.pitchClass;
+                return present.pitchClass == note.pitchClass
+                    && present.spelling == note.spelling;
             });
             if (! duplicate)
                 notes.push_back(note);
@@ -165,6 +195,101 @@ inline ExplanationEvidenceState patternState(PatternContextStatus status) noexce
         case PatternContextStatus::none:
         default:
             return ExplanationEvidenceState::neutral;
+    }
+}
+
+inline bool sameCenter(const KeyCenter& a, const KeyCenter& b) noexcept
+{
+    if (a.valid != b.valid)
+        return false;
+    if (! a.valid)
+        return true;
+    return a.key.rootPitchClass == b.key.rootPitchClass
+        && a.key.rootFifths == b.key.rootFifths
+        && a.key.mode == b.key.mode
+        && a.scope == b.scope;
+}
+
+inline void appendContextLayer(ExplanationResult& explanation,
+                               ExplanationContextScope scope,
+                               int interpretationIndex,
+                               const KeyCenter& center,
+                               const HarmonicAnalysis& harmonic,
+                               const AnalysisEvidence& evidence)
+{
+    if (! center.valid || ! harmonic.valid)
+        return;
+
+    const auto duplicate = std::any_of(explanation.contextLayers.begin(),
+                                       explanation.contextLayers.end(),
+        [&](const auto& present)
+        {
+            return present.scope == scope
+                && sameCenter(present.center, center)
+                && present.harmonic.rootScaleDegree == harmonic.rootScaleDegree
+                && present.harmonic.effectiveFunction == harmonic.effectiveFunction;
+        });
+    if (duplicate)
+        return;
+
+    ExplanationContextLayer layer;
+    layer.scope = scope;
+    layer.interpretationIndex = interpretationIndex;
+    layer.center = center;
+    layer.harmonic = harmonic;
+    layer.evidence = evidence;
+    explanation.contextLayers.push_back(std::move(layer));
+}
+
+inline void appendContextLayers(ExplanationResult& explanation,
+                                const HarmonicSituation& context)
+{
+    appendContextLayer(explanation,
+                       ExplanationContextScope::global,
+                       -1,
+                       context.globalKey,
+                       context.harmonic,
+                       context.harmonic.valid ? context.evidence : AnalysisEvidence{});
+
+    if (context.localKey.valid && context.localHarmonic.valid)
+    {
+        appendContextLayer(explanation,
+                           ExplanationContextScope::local,
+                           -1,
+                           context.localKey,
+                           context.localHarmonic,
+                           context.localKey.evidence);
+    }
+
+    for (std::uint8_t index = 0; index < context.interpretationCount
+         && index < context.interpretations.size(); ++index)
+    {
+        const auto& interpretation = context.interpretations[index];
+        if (! interpretation.valid)
+            continue;
+
+        ExplanationContextScope scope = ExplanationContextScope::global;
+        switch (interpretation.kind)
+        {
+            case HarmonicInterpretationKind::localCenter:
+                scope = ExplanationContextScope::local;
+                break;
+            case HarmonicInterpretationKind::modalInterchange:
+                scope = ExplanationContextScope::modal;
+                break;
+            case HarmonicInterpretationKind::globalContext:
+            case HarmonicInterpretationKind::undefined:
+            default:
+                scope = ExplanationContextScope::global;
+                break;
+        }
+
+        appendContextLayer(explanation,
+                           scope,
+                           static_cast<int>(index),
+                           interpretation.center,
+                           interpretation.harmonic,
+                           interpretation.evidence);
     }
 }
 
@@ -258,12 +383,15 @@ inline void appendContextEvidence(ExplanationItem& item,
 // Stage 3 / 0.3g host-neutral presentation model. It consumes only the already
 // analyzed ImprovisationResult and never re-runs harmony/history analysis.
 // Visually identical material is collapsed while interpretation provenance is
-// retained in interpretationIndices.
+// retained in interpretationIndices. Enharmonic spelling is part of visual
+// identity, so Db and C# material are not accidentally merged.
 inline ExplanationResult buildExplanation(const ImprovisationResult& result)
 {
     ExplanationResult explanation;
     if (! result.valid || result.strategies.empty())
         return explanation;
+
+    explanation_detail::appendContextLayers(explanation, result.context);
 
     for (std::size_t index = 0; index < result.strategies.size(); ++index)
     {
@@ -282,6 +410,8 @@ inline ExplanationResult buildExplanation(const ImprovisationResult& result)
             explanation_detail::addUniqueInterpretation(item.interpretationIndices,
                                                         strategy.interpretationIndex);
             item.idea = strategy.idea;
+            item.conditions = strategy.conditions;
+            item.usageHint = strategy.usageHint;
             item.source = strategy.source;
             item.actualChord = strategy.actualChord;
             item.thinkingStructure = strategy.thinkingStructure;
