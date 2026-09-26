@@ -1,4 +1,5 @@
 #include "core/analysis/HarmonicConcepts.h"
+#include "core/analysis/ExplanationText.h"
 #include <algorithm>
 #include <cstdlib>
 #include <utility>
@@ -193,6 +194,10 @@ void addHarmonicConcepts(ImprovisationResult& result)
 std::string harmonicConceptsText(const ImprovisationResult& result)
 {
     std::ostringstream out;
+    const auto explanationText = explanationDiagnosticText(result);
+    if (! explanationText.empty())
+        out << explanationText << "\n";
+
     const auto degreeText = [](const MaterialNote& note)
     {
         if (note.degree <= 0) return std::string("?");
