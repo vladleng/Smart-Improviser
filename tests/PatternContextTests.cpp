@@ -281,26 +281,53 @@ int main()
            && fullTurnaroundIi.pattern.positionIndex == 2,
            "actual Cmaj7-Am7-Dm7-G7 remains I-VI-ii-V 3/4");
 
+    // ---------------------------------------------------------------------
+    // 0.3f fix3 correction: Abdim in this Corcovado voicing is the rootless
+    // global V7(b9) sonority (B-D-F-Ab over implied G), not a bridge to G minor.
     auto d7OverAAt0 = makeChord(2, { 0, 4, 7, 10 }, 0.0);
     d7OverAAt0.bass = 3;
     const auto abDim = makeChord(-4, { 0, 3, 6, 9 }, 4.0);
     const auto gMin7At8 = makeChord(1, { 0, 3, 7, 10 }, 8.0);
-    const std::array passingBridge { d7OverAAt0, abDim, gMin7At8 };
-    for (int index = 0; index < 3; ++index)
-    {
-        const auto situation = analyzeWindow(cMajor, passingBridge, index);
-        expect(situation.localPattern.type == HarmonicPatternType::passingDiminished,
-               "D7/A-Abdim-Gm7 keeps one passing-diminished bridge context");
-        expect(situation.localPattern.positionIndex == index
-               && situation.localPattern.length == 3,
-               "passing diminished bridge exposes 1/3 through 3/3");
-        expect(situation.localKey.valid
-               && situation.localKey.key.rootPitchClass == 7
-               && situation.localKey.key.mode == KeyMode::minor,
-               "passing diminished bridge preserves G-minor target center");
-        expect(situation.localKey.status == KeyCenterStatus::tonicized,
-               "ornamental bridge tonicizes G minor without overclaiming modulation");
-    }
+    const auto c7At12 = makeChord(0, { 0, 4, 7, 10 }, 12.0);
+    const auto fMaj7At16 = makeChord(-1, { 0, 4, 7, 11 }, 16.0);
+    const std::array corcovadoStart { d7OverAAt0, abDim, gMin7At8, c7At12, fMaj7At16 };
+
+    const auto corcovadoD7 = analyzeWindow(cMajor, corcovadoStart, 0);
+    expect(corcovadoD7.pattern.type == HarmonicPatternType::dominantChain
+           && corcovadoD7.pattern.positionIndex == 0
+           && corcovadoD7.pattern.length == 2,
+           "D7/A starts V/V to rootless-V dominant chain");
+    expect(! corcovadoD7.localKey.valid,
+           "D7/A does not pre-assign a false G-minor local center");
+
+    const auto corcovadoAbDim = analyzeWindow(cMajor, corcovadoStart, 1);
+    expect(corcovadoAbDim.pattern.type == HarmonicPatternType::dominantChain
+           && corcovadoAbDim.pattern.positionIndex == 1
+           && corcovadoAbDim.pattern.length == 2,
+           "Abdim completes D7 to implied-G7 dominant chain");
+    expect(corcovadoAbDim.impliedDominant.valid
+           && corcovadoAbDim.impliedDominant.rootPitchClass == 7
+           && corcovadoAbDim.impliedDominant.flatNinth,
+           "Abdim is exposed as rootless G7(b9) in explicit C major");
+    expect(corcovadoAbDim.harmonic.effectiveFunction == HarmonicFunction::dominant,
+           "rootless G7(b9) keeps dominant effective function");
+    expect(! corcovadoAbDim.localKey.valid,
+           "rootless global dominant does not invent G-minor tonicization");
+
+    const auto corcovadoGm = analyzeWindow(cMajor, corcovadoStart, 2);
+    expect(corcovadoGm.localPattern.type == HarmonicPatternType::majorIiVI
+           && corcovadoGm.localPattern.positionIndex == 0
+           && corcovadoGm.localKey.valid
+           && corcovadoGm.localKey.key.rootPitchClass == 5
+           && corcovadoGm.localKey.key.mode == KeyMode::major,
+           "Gm7 cleanly starts the following ii-V-I in F major");
+
+    const auto abDimWithE = makeChord(-4, { 0, 3, 6, 8, 9 }, 4.0);
+    const std::array colouredRootlessV { d7OverAAt0, abDimWithE, gMin7At8 };
+    const auto colouredDominant = analyzeWindow(cMajor, colouredRootlessV, 1);
+    expect(colouredDominant.impliedDominant.valid
+           && colouredDominant.impliedDominant.thirteenth,
+           "explicit E color upgrades the alias to G13(b9) without changing rootless function");
 
     std::cout << "SmartImproviser PatternContextTests: OK\n";
     return 0;
