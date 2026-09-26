@@ -121,6 +121,18 @@ bool isMinorSubdominantForRoot(const NormalizedChord& chord,
         && wrap12(chord.rootPitchClass - targetRoot) == 5;
 }
 
+bool knownNextSupportsExpectedTonic(const HarmonicSituation& situation,
+                                    int targetRoot,
+                                    KeyMode mode) noexcept
+{
+    if (! situation.nextChordAvailable)
+        return true;
+
+    return situation.nextChord.valid
+        && situation.nextChord.rootPitchClass == wrap12(targetRoot)
+        && modeFromTargetChord(situation.nextChord) == mode;
+}
+
 HarmonicPattern makeLocalPattern(HarmonicPatternType type,
                                  PatternMemberRole role,
                                  int position,
@@ -235,9 +247,6 @@ void analyzeLocalKeyCenter(HarmonicSituation& situation,
     situation.localHarmonic = {};
     situation.localPattern = {};
 
-    // Seed the ambiguity layer after global pattern recognition even when no
-    // local center is eventually found. applyCenter() refreshes it whenever a
-    // local interpretation is added or deliberately rejected as redundant.
     analyzeAmbiguityAndConfidence(situation);
 
     if (! situation.valid || ! situation.globalKey.valid)
@@ -256,8 +265,6 @@ void analyzeLocalKeyCenter(HarmonicSituation& situation,
             && situation.nextChord.quality == ChordQuality::minor
             && isMinorSubdominantForRoot(situation.previousChord, targetRoot);
 
-        // ii / iiø may lead to V or SubV as before. iv is intentionally added
-        // only for the ordinary minor V-i cadence in 0.3f.
         if (((ordinary || substitute) && ordinaryPredominant)
             || (ordinary && minorIv))
         {
@@ -294,10 +301,6 @@ void analyzeLocalKeyCenter(HarmonicSituation& situation,
         }
     }
 
-    // Minor iv-V boundary. Derive the possible tonic from the ordinary V,
-    // rather than treating every minor chord as a major-key ii. When bounded
-    // lookahead already contradicts the expected tonic, 0.3f fix2 suppresses
-    // this provisional candidate instead of presenting a false 1/3 pattern.
     if (allowIncompleteCadenceCandidates
         && situation.nextChordAvailable
         && situation.currentChord.quality == ChordQuality::minor
@@ -368,9 +371,6 @@ void analyzeLocalKeyCenter(HarmonicSituation& situation,
         }
     }
 
-    // Minor iv-V boundary seen at V with previous iv available. It is only a
-    // candidate while the following tonic is unknown; a known next chord is
-    // handled by the full three-chord check above and may contradict C minor.
     if (situation.previousChordAvailable
         && ! situation.nextChordAvailable
         && situation.previousChord.quality == ChordQuality::minor
@@ -411,7 +411,10 @@ void analyzeLocalKeyCenter(HarmonicSituation& situation,
             const auto targetRoot = wrap12(situation.previousChord.rootPitchClass - 2);
             const auto ordinary = isOrdinaryDominantOfRoot(situation.currentChord, targetRoot);
             const auto substitute = isSubstituteDominantOfRoot(situation.currentChord, targetRoot);
-            if (ordinary || substitute)
+            const auto knownFutureCompatible = knownNextSupportsExpectedTonic(situation,
+                                                                               targetRoot,
+                                                                               mode);
+            if ((ordinary || substitute) && knownFutureCompatible)
             {
                 const auto key = makeKey(targetRoot, mode);
                 const auto type = substitute
