@@ -38,6 +38,14 @@ bool isDominantOf(const NormalizedChord& dominant,
         && wrap12(dominant.rootPitchClass - target.rootPitchClass) == 7;
 }
 
+bool isOrdinaryDominantForRoot(const NormalizedChord& dominant,
+                               int targetRootPitchClass) noexcept
+{
+    return dominant.valid
+        && dominant.quality == ChordQuality::dominant
+        && wrap12(dominant.rootPitchClass - targetRootPitchClass) == 7;
+}
+
 bool isSubstituteDominantOf(const NormalizedChord& dominant,
                             const NormalizedChord& target) noexcept
 {
@@ -83,7 +91,8 @@ HarmonicPattern makePattern(HarmonicPatternType type,
     return pattern;
 }
 
-HarmonicPattern recognizePattern(const HarmonicSituation& situation) noexcept
+HarmonicPattern recognizePattern(const HarmonicSituation& situation,
+                                 bool allowIncompleteCadenceCandidates) noexcept
 {
     HarmonicPattern none;
     none.type = HarmonicPatternType::none;
@@ -211,6 +220,8 @@ HarmonicPattern recognizePattern(const HarmonicSituation& situation) noexcept
                            true);
     }
 
+    // A partial I-VI-ii-V is allowed only while the explicit I is still in the
+    // Stage-1 window. 0.3f fix2 no longer reconstructs a missing I from VI-ii-V.
     if (key.mode == KeyMode::major
         && situation.previousChordAvailable
         && situation.nextChordAvailable
@@ -229,25 +240,8 @@ HarmonicPattern recognizePattern(const HarmonicSituation& situation) noexcept
                            true);
     }
 
-    if (key.mode == KeyMode::major
-        && situation.previousChordAvailable
-        && situation.nextChordAvailable
-        && isTurnaroundSix(situation.previousChord, key)
-        && isDegree(situation.currentChord, key, 2)
-        && situation.currentChord.quality == ChordQuality::minor
-        && isDegree(situation.nextChord, key, 5)
-        && situation.nextChord.quality == ChordQuality::dominant)
-    {
-        return makePattern(HarmonicPatternType::turnaroundIVIiiV,
-                           PatternMemberRole::predominant,
-                           2,
-                           4,
-                           ConfidenceLevel::high,
-                           true,
-                           true);
-    }
-
-    if (key.mode == KeyMode::major
+    if (allowIncompleteCadenceCandidates
+        && key.mode == KeyMode::major
         && situation.nextChordAvailable
         && isDegree(situation.currentChord, key, 2)
         && situation.currentChord.quality == ChordQuality::minor
@@ -263,7 +257,8 @@ HarmonicPattern recognizePattern(const HarmonicSituation& situation) noexcept
                            true);
     }
 
-    if (key.mode == KeyMode::minor
+    if (allowIncompleteCadenceCandidates
+        && key.mode == KeyMode::minor
         && situation.nextChordAvailable
         && isDegree(situation.currentChord, key, 2)
         && situation.currentChord.quality == ChordQuality::halfDiminished
@@ -279,7 +274,8 @@ HarmonicPattern recognizePattern(const HarmonicSituation& situation) noexcept
                            true);
     }
 
-    if (key.mode == KeyMode::minor
+    if (allowIncompleteCadenceCandidates
+        && key.mode == KeyMode::minor
         && situation.nextChordAvailable
         && isDegree(situation.currentChord, key, 4)
         && situation.currentChord.quality == ChordQuality::minor
@@ -312,7 +308,8 @@ HarmonicPattern recognizePattern(const HarmonicSituation& situation) noexcept
                            true);
     }
 
-    if (key.mode == KeyMode::major
+    if (allowIncompleteCadenceCandidates
+        && key.mode == KeyMode::major
         && situation.nextChordAvailable
         && isDegree(situation.currentChord, key, 2)
         && situation.currentChord.quality == ChordQuality::minor
@@ -327,7 +324,8 @@ HarmonicPattern recognizePattern(const HarmonicSituation& situation) noexcept
                            true);
     }
 
-    if (key.mode == KeyMode::minor
+    if (allowIncompleteCadenceCandidates
+        && key.mode == KeyMode::minor
         && situation.nextChordAvailable
         && isDegree(situation.currentChord, key, 2)
         && situation.currentChord.quality == ChordQuality::halfDiminished
@@ -370,23 +368,6 @@ HarmonicPattern recognizePattern(const HarmonicSituation& situation) noexcept
                            ConfidenceLevel::medium,
                            false,
                            true);
-    }
-
-    if (key.mode == KeyMode::major
-        && situation.previousChordAvailable
-        && ! situation.nextChordAvailable
-        && isDegree(situation.previousChord, key, 2)
-        && situation.previousChord.quality == ChordQuality::minor
-        && isDegree(situation.currentChord, key, 5)
-        && situation.currentChord.quality == ChordQuality::dominant)
-    {
-        return makePattern(HarmonicPatternType::turnaroundIVIiiV,
-                           PatternMemberRole::dominant,
-                           3,
-                           4,
-                           ConfidenceLevel::medium,
-                           true,
-                           false);
     }
 
     if (situation.harmonic.substituteDominantConfirmed)
@@ -485,6 +466,28 @@ bool rootIs(const NormalizedChord& chord, const NormalizedChord& tonic, int semi
         && wrap12(chord.rootPitchClass - tonic.rootPitchClass) == semitones;
 }
 
+bool chordIsTonicForRoot(const NormalizedChord& chord,
+                         int targetRoot,
+                         KeyMode mode) noexcept
+{
+    if (! chord.valid || chord.rootPitchClass != wrap12(targetRoot))
+        return false;
+    if (mode == KeyMode::major)
+        return chord.quality == ChordQuality::major;
+    if (mode == KeyMode::minor)
+        return isMinorFamily(chord);
+    return false;
+}
+
+KeyMode tonicMode(const NormalizedChord& chord) noexcept
+{
+    if (chord.quality == ChordQuality::major)
+        return KeyMode::major;
+    if (isMinorFamily(chord))
+        return KeyMode::minor;
+    return KeyMode::undefined;
+}
+
 bool matchesMajorIiVI(const NormalizedChord& ii,
                       const NormalizedChord& v,
                       const NormalizedChord& tonic) noexcept
@@ -540,9 +543,108 @@ bool matchesMajorCadentialChain(const NormalizedChord& iii,
         && isDominantOf(viDominant, ii);
 }
 
-PatternMemberRole cadenceRole(int position, int length) noexcept
+bool matchesMajorTurnaround(const NormalizedChord& tonic,
+                            const NormalizedChord& vi,
+                            const NormalizedChord& ii,
+                            const NormalizedChord& v,
+                            const NormalizedKey& key) noexcept
 {
-    if (length == 5)
+    return key.valid
+        && key.mode == KeyMode::major
+        && isDegree(tonic, key, 1)
+        && tonic.quality == ChordQuality::major
+        && isTurnaroundSix(vi, key)
+        && isDegree(ii, key, 2)
+        && ii.quality == ChordQuality::minor
+        && isDegree(v, key, 5)
+        && v.quality == ChordQuality::dominant;
+}
+
+bool matchesMajorIiiViIiV(const NormalizedChord& iii,
+                          const NormalizedChord& vi,
+                          const NormalizedChord& ii,
+                          const NormalizedChord& v,
+                          const NormalizedKey& key) noexcept
+{
+    return key.valid
+        && key.mode == KeyMode::major
+        && isDegree(iii, key, 3)
+        && iii.quality == ChordQuality::minor
+        && isDegree(vi, key, 6)
+        && vi.quality == ChordQuality::minor
+        && isDegree(ii, key, 2)
+        && ii.quality == ChordQuality::minor
+        && isDegree(v, key, 5)
+        && v.quality == ChordQuality::dominant;
+}
+
+bool matchesPassingDiminishedBridge(const NormalizedChord& dominant,
+                                    const NormalizedChord& diminished,
+                                    const NormalizedChord& tonic) noexcept
+{
+    return tonic.valid
+        && tonicMode(tonic) != KeyMode::undefined
+        && isDominantOf(dominant, tonic)
+        && diminished.quality == ChordQuality::diminished
+        && wrap12(diminished.rootPitchClass - tonic.rootPitchClass) == 1;
+}
+
+bool incompleteCadenceContradictedByWindow(const PatternTimelineWindow& window) noexcept
+{
+    const auto count = static_cast<int>(window.chordCount);
+    const auto current = window.currentIndex;
+    if (current < 0 || current + 2 >= count)
+        return false;
+
+    const auto first = normalizeChord(window.chords[static_cast<std::size_t>(current)]);
+    const auto dominant = normalizeChord(window.chords[static_cast<std::size_t>(current + 1)]);
+    const auto future = normalizeChord(window.chords[static_cast<std::size_t>(current + 2)]);
+    if (! first.valid || ! dominant.valid || ! future.valid
+        || dominant.quality != ChordQuality::dominant)
+        return false;
+
+    bool candidateFound = false;
+    bool futureSupportsCandidate = false;
+
+    if (first.quality == ChordQuality::minor)
+    {
+        const auto majorTarget = wrap12(first.rootPitchClass - 2);
+        if (isOrdinaryDominantForRoot(dominant, majorTarget)
+            || isSubstituteDominantForRoot(dominant, majorTarget))
+        {
+            candidateFound = true;
+            futureSupportsCandidate = futureSupportsCandidate
+                || chordIsTonicForRoot(future, majorTarget, KeyMode::major);
+        }
+
+        const auto minorTarget = wrap12(first.rootPitchClass - 5);
+        if (isOrdinaryDominantForRoot(dominant, minorTarget))
+        {
+            candidateFound = true;
+            futureSupportsCandidate = futureSupportsCandidate
+                || chordIsTonicForRoot(future, minorTarget, KeyMode::minor);
+        }
+    }
+    else if (first.quality == ChordQuality::halfDiminished)
+    {
+        const auto minorTarget = wrap12(first.rootPitchClass - 2);
+        if (isOrdinaryDominantForRoot(dominant, minorTarget)
+            || isSubstituteDominantForRoot(dominant, minorTarget))
+        {
+            candidateFound = true;
+            futureSupportsCandidate = futureSupportsCandidate
+                || chordIsTonicForRoot(future, minorTarget, KeyMode::minor);
+        }
+    }
+
+    return candidateFound && ! futureSupportsCandidate;
+}
+
+PatternMemberRole patternRole(HarmonicPatternType type,
+                              int position,
+                              int length) noexcept
+{
+    if (type == HarmonicPatternType::majorCadentialChain && length == 5)
     {
         switch (position)
         {
@@ -555,6 +657,41 @@ PatternMemberRole cadenceRole(int position, int length) noexcept
         }
     }
 
+    if (type == HarmonicPatternType::turnaroundIVIiiV && length == 4)
+    {
+        switch (position)
+        {
+            case 0: return PatternMemberRole::tonic;
+            case 1: return PatternMemberRole::preparation;
+            case 2: return PatternMemberRole::predominant;
+            case 3: return PatternMemberRole::dominant;
+            default: return PatternMemberRole::undefined;
+        }
+    }
+
+    if (type == HarmonicPatternType::majorIiiViIiV && length == 4)
+    {
+        switch (position)
+        {
+            case 0: return PatternMemberRole::preparation;
+            case 1: return PatternMemberRole::preparation;
+            case 2: return PatternMemberRole::predominant;
+            case 3: return PatternMemberRole::dominant;
+            default: return PatternMemberRole::undefined;
+        }
+    }
+
+    if (type == HarmonicPatternType::passingDiminished && length == 3)
+    {
+        switch (position)
+        {
+            case 0: return PatternMemberRole::dominant;
+            case 1: return PatternMemberRole::passing;
+            case 2: return PatternMemberRole::resolution;
+            default: return PatternMemberRole::undefined;
+        }
+    }
+
     switch (position)
     {
         case 0: return PatternMemberRole::predominant;
@@ -562,6 +699,12 @@ PatternMemberRole cadenceRole(int position, int length) noexcept
         case 2: return PatternMemberRole::resolution;
         default: return PatternMemberRole::undefined;
     }
+}
+
+bool patternEndsInResolution(HarmonicPatternType type) noexcept
+{
+    return type != HarmonicPatternType::turnaroundIVIiiV
+        && type != HarmonicPatternType::majorIiiViIiV;
 }
 
 void addNestedPattern(PatternContext& context, const HarmonicPattern& pattern) noexcept
@@ -586,14 +729,16 @@ PatternContext makePatternContext(HarmonicPatternType type,
         : PatternContextStatus::confirmed;
     context.startPpq = startPpq;
     context.resolutionPpq = resolutionPpq;
+    const auto resolutionEvidence = position == length - 1
+        && patternEndsInResolution(type);
     context.topLevel = makePattern(type,
-                                   cadenceRole(position, length),
+                                   patternRole(type, position, length),
                                    position,
                                    length,
                                    ConfidenceLevel::confirmed,
                                    position > 0,
                                    position + 1 < length,
-                                   position == length - 1);
+                                   resolutionEvidence);
     return context;
 }
 
@@ -611,16 +756,25 @@ void applyPatternContext(HarmonicSituation& situation, const PatternContext& con
         return;
     }
 
+    const auto tonicizationOnly = context.topLevel.type == HarmonicPatternType::passingDiminished;
+
     situation.localKey.valid = true;
     situation.localKey.key = context.center;
-    situation.localKey.scope = KeyCenterScope::local;
-    situation.localKey.status = KeyCenterStatus::established;
+    situation.localKey.scope = tonicizationOnly
+        ? KeyCenterScope::temporary
+        : KeyCenterScope::local;
+    situation.localKey.status = tonicizationOnly
+        ? KeyCenterStatus::tonicized
+        : KeyCenterStatus::established;
     situation.localKey.evidence.confidence = ConfidenceLevel::confirmed;
     situation.localKey.evidence.markUnique();
     situation.localKey.evidence.add(EvidenceFlag::inferredLocalCenter);
-    situation.localKey.evidence.add(EvidenceFlag::localCadence);
     situation.localKey.evidence.add(EvidenceFlag::patternMatch);
-    if (context.topLevel.positionIndex == context.topLevel.length - 1)
+    if (tonicizationOnly)
+        situation.localKey.evidence.add(EvidenceFlag::tonicization);
+    else
+        situation.localKey.evidence.add(EvidenceFlag::localCadence);
+    if (context.topLevel.evidence.has(EvidenceFlag::confirmedResolution))
         situation.localKey.evidence.add(EvidenceFlag::confirmedResolution);
 
     situation.localPattern = context.topLevel;
@@ -633,9 +787,12 @@ void applyPatternContext(HarmonicSituation& situation, const PatternContext& con
                                                           context.center);
 
     situation.evidence.add(EvidenceFlag::inferredLocalCenter);
-    situation.evidence.add(EvidenceFlag::localCadence);
     situation.evidence.add(EvidenceFlag::patternMatch);
-    if (context.topLevel.positionIndex == context.topLevel.length - 1)
+    if (tonicizationOnly)
+        situation.evidence.add(EvidenceFlag::tonicization);
+    else
+        situation.evidence.add(EvidenceFlag::localCadence);
+    if (context.topLevel.evidence.has(EvidenceFlag::confirmedResolution))
         situation.evidence.add(EvidenceFlag::confirmedResolution);
 
     analyzeAmbiguityAndConfidence(situation);
@@ -654,6 +811,8 @@ void applyPatternWindowContext(HarmonicSituation& situation,
         chords[static_cast<std::size_t>(index)] =
             normalizeChord(patternWindow.chords[static_cast<std::size_t>(index)]);
 
+    // Existing 0.3f fix1 five-member local cadence remains the most specific
+    // top-level event and therefore wins over shorter nested relations.
     for (int start = 0; start + 4 < count; ++start)
     {
         if (current < start || current > start + 4)
@@ -737,6 +896,99 @@ void applyPatternWindowContext(HarmonicSituation& situation,
         return;
     }
 
+    // Full four-member cycles are reconstructed only when every member is
+    // actually present in the bounded timeline. This prevents VI-ii-V from
+    // fabricating a missing I and gives iii-vi-ii-V first-class identity.
+    for (int start = 0; start + 3 < count; ++start)
+    {
+        if (current < start || current > start + 3)
+            continue;
+
+        const auto& first = chords[static_cast<std::size_t>(start)];
+        const auto& second = chords[static_cast<std::size_t>(start + 1)];
+        const auto& third = chords[static_cast<std::size_t>(start + 2)];
+        const auto& fourth = chords[static_cast<std::size_t>(start + 3)];
+
+        HarmonicPatternType type = HarmonicPatternType::undefined;
+        if (matchesMajorTurnaround(first, second, third, fourth,
+                                   situation.globalKey.key))
+        {
+            type = HarmonicPatternType::turnaroundIVIiiV;
+        }
+        else if (matchesMajorIiiViIiV(first, second, third, fourth,
+                                      situation.globalKey.key))
+        {
+            type = HarmonicPatternType::majorIiiViIiV;
+        }
+
+        if (type == HarmonicPatternType::undefined)
+            continue;
+
+        const auto position = current - start;
+        const auto context = makePatternContext(
+            type,
+            situation.globalKey.key,
+            position,
+            4,
+            patternWindow.chords[static_cast<std::size_t>(start)].startPpq,
+            -1.0);
+        applyPatternContext(situation, context);
+        return;
+    }
+
+    // Corcovado real-harmony case: V7 -> chromatic diminished -> local tonic.
+    // The middle diminished chord is an ornamental bridge and does not erase
+    // the dominant direction established by the first chord.
+    for (int start = 0; start + 2 < count; ++start)
+    {
+        if (current < start || current > start + 2)
+            continue;
+
+        const auto& dominant = chords[static_cast<std::size_t>(start)];
+        const auto& diminished = chords[static_cast<std::size_t>(start + 1)];
+        const auto& tonic = chords[static_cast<std::size_t>(start + 2)];
+        if (! matchesPassingDiminishedBridge(dominant, diminished, tonic))
+            continue;
+
+        const auto mode = tonicMode(tonic);
+        const auto position = current - start;
+        auto context = makePatternContext(
+            HarmonicPatternType::passingDiminished,
+            makePatternCenter(tonic, mode),
+            position,
+            3,
+            patternWindow.chords[static_cast<std::size_t>(start)].startPpq,
+            patternWindow.chords[static_cast<std::size_t>(start + 2)].startPpq);
+
+        if (position == 0)
+        {
+            addNestedPattern(context,
+                             makePattern(HarmonicPatternType::dominantToTonic,
+                                         PatternMemberRole::dominant,
+                                         0,
+                                         2,
+                                         ConfidenceLevel::confirmed,
+                                         false,
+                                         true,
+                                         false));
+        }
+        else if (position == 2)
+        {
+            addNestedPattern(context,
+                             makePattern(HarmonicPatternType::dominantToTonic,
+                                         PatternMemberRole::resolution,
+                                         1,
+                                         2,
+                                         ConfidenceLevel::confirmed,
+                                         true,
+                                         false,
+                                         true));
+        }
+
+        applyPatternContext(situation, context);
+        return;
+    }
+
     for (int start = 0; start + 2 < count; ++start)
     {
         if (current < start || current > start + 2)
@@ -780,22 +1032,26 @@ void applyPatternWindowContext(HarmonicSituation& situation,
     }
 }
 
-HarmonicSituation analyzeBaseSituation(const TimelineHarmonicSnapshot& snapshot) noexcept
+HarmonicSituation analyzeBaseSituation(const TimelineHarmonicSnapshot& snapshot,
+                                       const PatternTimelineWindow* patternWindow) noexcept
 {
     auto result = buildHarmonicSituation(snapshot);
     if (! result.valid)
         return result;
 
-    result.pattern = recognizePattern(result);
+    const auto allowIncompleteCadenceCandidates = patternWindow == nullptr
+        || ! incompleteCadenceContradictedByWindow(*patternWindow);
+
+    result.pattern = recognizePattern(result, allowIncompleteCadenceCandidates);
     mergePatternEvidence(result);
-    analyzeLocalKeyCenter(result);
+    analyzeLocalKeyCenter(result, allowIncompleteCadenceCandidates);
     return result;
 }
 }
 
 HarmonicSituation analyzeHarmonicSituation(const TimelineHarmonicSnapshot& snapshot) noexcept
 {
-    auto result = analyzeBaseSituation(snapshot);
+    auto result = analyzeBaseSituation(snapshot, nullptr);
     if (result.valid && result.evidence.interpretation == InterpretationStatus::unknown)
         result.evidence.markUnique();
     return result;
@@ -804,7 +1060,7 @@ HarmonicSituation analyzeHarmonicSituation(const TimelineHarmonicSnapshot& snaps
 HarmonicSituation analyzeHarmonicSituation(const TimelineHarmonicSnapshot& snapshot,
                                            const PatternTimelineWindow& patternWindow) noexcept
 {
-    auto result = analyzeBaseSituation(snapshot);
+    auto result = analyzeBaseSituation(snapshot, &patternWindow);
     if (! result.valid)
         return result;
 
