@@ -41,6 +41,7 @@ Stage 3 описывает допустимый материал и страте
 0.3f fix3 — Rootless dominant / Corcovado diminished correction
 0.3f fix4 — Незавершённые обороты / отсутствующие ступени
 0.3g — Explanation / usable output
+0.3g fix1 — Corcovado V/V → implied V presentation
 0.3h — Integration / musical validation
 0.4  — Stage 3 complete
 ```

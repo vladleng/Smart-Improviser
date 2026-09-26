@@ -633,6 +633,7 @@ void SmartImproviserARAEditor::timerCallback()
     cachedSituation = smartimproviser::harmony::analyzeHarmonicSituation(timeline, patternWindow);
     const auto result = smartimproviser::harmony::analyzeImprovisation(cachedSituation);
     const auto explanation = smartimproviser::harmony::explainImprovisation(result);
+    const auto impliedLink = smartimproviser::harmony::explainImpliedDominantLink(cachedSituation);
     const auto debug = ARAContextDebugState::instance().getSnapshot();
 
     summaryContext = chordDisplayName(timeline.currentChord);
@@ -705,6 +706,20 @@ void SmartImproviserARAEditor::timerCallback()
         summaryPattern = prefix + missing + suffix;
         summaryPatternDisplay.append(prefix, patternFont, presentColour);
         summaryPatternDisplay.append(missing, patternFont, missingColour);
+        summaryPatternDisplay.append(suffix, patternFont, presentColour);
+    }
+    else if (impliedLink.valid)
+    {
+        const auto prefix = ru("Оборот: V/V (")
+            + utf8String(smartimproviser::harmony::normalizedChordSymbol(impliedLink.firstChord))
+            + ru(") → ");
+        const auto implied = ru("подразумеваемая V (")
+            + utf8String(smartimproviser::harmony::normalizedChordSymbol(impliedLink.secondChord))
+            + ")";
+        const auto suffix = ru("   •   ") + juce::String(impliedLink.positionIndex + 1) + " / 2";
+        summaryPattern = prefix + implied + suffix;
+        summaryPatternDisplay.append(prefix, patternFont, presentColour);
+        summaryPatternDisplay.append(implied, patternFont, impliedColour);
         summaryPatternDisplay.append(suffix, patternFont, presentColour);
     }
     else if (! cachedSituation.patternContext.valid
@@ -936,9 +951,24 @@ void SmartImproviserARAEditor::timerCallback()
             ? harmonicRelationNameRu(cachedSituation.harmonic.relation)
             : juce::String("-")) + "\n";
     harmonicText += ru("Глобальный оборот: ")
-        + (cachedSituation.valid ? patternName(cachedSituation.pattern.type) : juce::String("-")) + "\n";
+        + (impliedLink.valid ? ru("V/V → подразумеваемая V")
+           : cachedSituation.valid ? patternName(cachedSituation.pattern.type)
+                                   : juce::String("-")) + "\n";
     harmonicText += ru("Позиция в обороте: ") + patternPositionDisplay(cachedSituation.pattern) + "\n";
     harmonicText += ru("Разрешение: ") + resolutionDisplay(cachedSituation) + "\n\n";
+
+    if (impliedLink.valid)
+    {
+        harmonicText += ru("ДВОЙНАЯ ДОМИНАНТА / ПОДРАЗУМЕВАЕМАЯ V\n") + summaryPattern + "\n";
+        harmonicText += ru("Второй записанный аккорд сохраняет своё имя: это возможное ")
+            + ru("безосновное доминантовое прочтение, без подтверждённого разрешения в глобальную тонику.\n");
+        if (impliedLink.continuationIsMinorOnImpliedRoot)
+            harmonicText += ru("Далее звучит ")
+                + utf8String(smartimproviser::harmony::normalizedChordSymbol(
+                    impliedLink.actualContinuation))
+                + ru(": минорный аккорд на том же звуке; доминантовое разрешение в глобальную тонику не состоялось.\n");
+        harmonicText += "\n";
+    }
 
     if (incomplete.valid)
     {
@@ -1063,7 +1093,7 @@ void SmartImproviserARAEditor::paint(juce::Graphics& g)
 
     g.setColour(juce::Colour::fromRGB(150, 156, 168));
     g.setFont(14.0f);
-    g.drawText(ru("0.3g • объяснение материала и гармонического контекста"),
+    g.drawText(ru("0.3g fix1 • объяснение материала и гармонического контекста"),
                24, 47, getWidth() - 48, 22, juce::Justification::centredLeft);
 
     g.setColour(juce::Colour::fromRGB(42, 46, 53));
