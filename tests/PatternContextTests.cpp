@@ -228,6 +228,58 @@ int main()
            && falseEbDominant.localPattern.type != HarmonicPatternType::majorIiVI,
            "Bb7 with known Em7 future does not keep false Eb-major 2/3 candidate");
 
+    // fix4: retain ii-V as an incomplete template without undoing fix2's veto.
+    for (int position = 0; position < 2; ++position)
+    {
+        const auto situation = analyzeWindow(cMajor, falseEbCadence, position);
+        const auto& incomplete = situation.incompleteCadence;
+        expect(incomplete.valid && incomplete.positionIndex == position
+               && incomplete.ii.rootPitchClass == 5
+               && incomplete.v.rootPitchClass == 10
+               && incomplete.missingTonicRootFifths == -3
+               && incomplete.actualContinuation.rootPitchClass == 4
+               && incomplete.actualContinuation.quality == ChordQuality::minor,
+               "Fm7-Bb7 retains 1/3 and 2/3 with missing Eb I and actual Em7 continuation");
+        expect(! situation.localKey.valid && ! situation.patternContext.valid
+               && ! situation.harmonic.dominantResolutionConfirmed
+               && ! situation.pattern.evidence.has(EvidenceFlag::confirmedResolution),
+               "missing tonic is descriptive only, never an established Eb key or resolution");
+    }
+    expect(! analyzeWindow(cMajor, falseEbCadence, 2).incompleteCadence.valid,
+           "actual Em7 is not the absent I or a fictitious 3/3 member");
+
+    const std::array unknownEbFuture { fMin7, bFlat7 };
+    expect(! analyzeWindow(cMajor, unknownEbFuture, 0).incompleteCadence.valid
+           && ! analyzeWindow(cMajor, unknownEbFuture, 1).incompleteCadence.valid,
+           "unknown future is not declared an absent tonic");
+    const auto ebMaj7 = makeChord(-3, { 0, 4, 7, 11 }, 8.0);
+    const std::array completedEb { fMin7, bFlat7, ebMaj7 };
+    for (int position = 0; position < 3; ++position)
+    {
+        const auto completed = analyzeWindow(cMajor, completedEb, position);
+        expect(! completed.incompleteCadence.valid
+               && completed.localKey.valid
+               && completed.localKey.key.rootPitchClass == 3
+               && completed.localPattern.positionIndex == position,
+               "editing Em7 to Ebmaj7 restores full ii-V-I without stale missing-I description");
+    }
+    // The rule follows interval/quality evidence, not Corcovado chord names.
+    for (int tonicFifths = -5; tonicFifths < 7; ++tonicFifths)
+    {
+        const std::array transposed {
+            makeChord(tonicFifths + 2, { 0, 3, 7, 10 }, 0.0),
+            makeChord(tonicFifths + 1, { 0, 4, 7, 10 }, 4.0),
+            makeChord(tonicFifths + 7, { 0, 3, 7, 10 }, 8.0)
+        };
+        for (int position = 0; position < 2; ++position)
+        {
+            const auto transposedSituation = analyzeWindow(makeKey(tonicFifths, false), transposed, position);
+            expect(transposedSituation.incompleteCadence.valid
+                   && transposedSituation.incompleteCadence.missingTonicRootFifths == tonicFifths,
+                   "incomplete ii-V template and expected tonic spelling work in all 12 keys");
+        }
+    }
+
     const auto eMin7At0 = makeChord(4, { 0, 3, 7, 10 }, 0.0);
     const auto a7At4 = makeChord(3, { 0, 4, 7, 10 }, 4.0);
     const auto d7At8 = makeChord(2, { 0, 4, 7, 10 }, 8.0);
@@ -235,6 +287,9 @@ int main()
     const auto falseDStart = analyzeWindow(cMajor, falseDMajor, 0);
     expect(! falseDStart.localKey.valid,
            "Em7-A7-D7 does not invent D-major ii-V-I from dominant target");
+    expect(falseDStart.incompleteCadence.valid
+           && falseDStart.incompleteCadence.actualContinuation.quality == ChordQuality::dominant,
+           "D7 is kept as actual continuation, not accepted as missing tonic D major");
     const auto falseDDominant = analyzeWindow(cMajor, falseDMajor, 1);
     expect(! falseDDominant.localKey.valid
            && falseDDominant.localPattern.type != HarmonicPatternType::majorIiVI,
@@ -262,6 +317,8 @@ int main()
         const auto situation = analyzeWindow(cMajor, iiiViIiV, index);
         expect(situation.pattern.type == HarmonicPatternType::majorIiiViIiV,
                "Em7-Am7-Dm7-G7 is recognized as iii-vi-ii-V");
+        expect(! situation.incompleteCadence.valid,
+               "first-class iii-vi-ii-V does not acquire a fabricated missing I");
         expect(situation.pattern.positionIndex == index
                && situation.pattern.length == 4,
                "iii-vi-ii-V exposes stable 1/4 through 4/4 positions");

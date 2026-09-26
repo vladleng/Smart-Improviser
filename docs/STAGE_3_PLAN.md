@@ -1,6 +1,6 @@
 # Stage 3 — Improvisation Engine: рабочий план
 
-> Обновлено 2026-09-26. База: stable 0.3, Stage 2 принят. `0.3a–0.3f` и `0.3f fix1` приняты. `0.3f fix2` прошёл технический gate Build #328, но один diminished-кейс Corcovado оказался музыкально неверным; текущий refinement — **`0.3f fix3 Rootless dominant / Corcovado diminished correction`**. После его acceptance переходим к `0.3g Explanation / usable output`. Stable остаётся 0.3.
+> Обновлено 2026-09-26. База: stable 0.3, Stage 2 принят. `0.3a–0.3f` и `0.3f fix1` приняты. Fix3 прошёл Windows Build #330 и показанные live-точки rootless chain. Текущий refinement - **`0.3f fix4 Незавершённые обороты / отсутствующие ступени`**. 0.3g не начат. Stable остаётся 0.3.
 > Начальная методика и текстовая форма подсказки согласованы: [IMPROVISATION_METHOD.md](IMPROVISATION_METHOD.md). См. [PRODUCT_WORKFLOW.md](PRODUCT_WORKFLOW.md).
 
 ## Результат Stage
@@ -38,6 +38,7 @@ Stage 3 описывает допустимый материал и страте
 0.3f fix1 — Pattern continuity / hierarchical cadence context
 0.3f fix2 — Pattern evidence / false-positive guards
 0.3f fix3 — Rootless dominant / Corcovado diminished correction
+0.3f fix4 — Незавершённые обороты / отсутствующие ступени
 0.3g — Explanation / usable output
 0.3h — Integration / musical validation
 0.4  — Stage 3 complete
@@ -109,7 +110,7 @@ Windows Build #310 — success; live-test принят Владом 2026-09-25.
 
 - [x] ~~`D7/A→Ab°→Gm7` как passingDiminished bridge к G minor~~ — музыкальная гипотеза отвергнута после live-разбора.
 
-### 0.3f fix3 — Rootless dominant / Corcovado diminished correction [CURRENT]
+### 0.3f fix3 — Rootless dominant / Corcovado diminished correction [СОХРАНЕНО В FIX4]
 
 Полный scope: [STAGE_3_0.3f_FIX3_PLAN.md](STAGE_3_0.3f_FIX3_PLAN.md).
 
@@ -131,7 +132,18 @@ Windows Build #310 — success; live-test принят Владом 2026-09-25.
 
 **Gate:** regression tests + отдельный Windows artifact + live-test начала Corcovado + отсутствие regression fix1/fix2.
 
-### 0.3g — Explanation / usable output [AFTER FIX3]
+### 0.3f fix4 - Незавершённые обороты / отсутствующие ступени [CURRENT]
+
+Scope: [STAGE_3_0.3f_FIX4_PLAN.md](STAGE_3_0.3f_FIX4_PLAN.md).
+
+- [x] Отдельное описание незавершённого ii-V-I без ложной локальной тональности.
+- [x] Fm7/Bb7: позиции 1/3 и 2/3; отсутствующая I (Eb) показана серым.
+- [x] Фактический Em7 сохранён; отсутствующий I не становится реальным аккордом.
+- [x] Полные/carried обороты и самостоятельный iii-vi-ii-V сохраняют приоритет.
+- [ ] Windows Build и regression suite green.
+- [ ] Live-проверка серой I в Studio Pro и acceptance пользователя.
+
+### 0.3g — Explanation / usable output [AFTER FIX4]
 
 - [ ] Показать цепочку: идея → source → важные ноты → target/resolution → почему.
 - [ ] Использовать детерминированные explanations, согласованные с evidence и ограничениями; подготовить Why? data.

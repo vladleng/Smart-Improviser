@@ -63,6 +63,19 @@ struct ImpliedDominantReading
     AnalysisEvidence evidence;
 };
 
+// A descriptive template, not an established key or a resolved cadence.
+// The two explicit members survive a known non-tonic continuation. The absent
+// I is displayed as missing (grey), never inserted into the actual timeline.
+struct IncompleteCadence
+{
+    bool valid = false;
+    int positionIndex = -1;
+    NormalizedChord ii;
+    NormalizedChord v;
+    std::int32_t missingTonicRootFifths = 0;
+    NormalizedChord actualContinuation;
+};
+
 // Accepted Stage 1 -> Stage 2 contract. Do not add arbitrary timeline history
 // here: PatternTimelineWindow is a separate Stage 3 analysis input.
 struct TimelineHarmonicSnapshot
@@ -103,6 +116,7 @@ struct HarmonicSituation
     HarmonicPattern localPattern;
     PatternContext patternContext;
     ImpliedDominantReading impliedDominant;
+    IncompleteCadence incompleteCadence;
     ResolutionTarget resolution;
     AnalysisEvidence evidence;
 

@@ -729,6 +729,46 @@ bool incompleteCadenceContradictedByWindow(const PatternTimelineWindow& window) 
     return candidateFound && ! futureSupportsCandidate;
 }
 
+void describeIncompleteCadence(HarmonicSituation& situation,
+                               const PatternTimelineWindow& window) noexcept
+{
+    // Completed/carried patterns and first-class turnarounds have priority.
+    // This description must not feed key inference, ranking or resolution.
+    situation.incompleteCadence = {};
+    if (! situation.valid || situation.patternContext.valid)
+        return;
+
+    const auto count = static_cast<int>(window.chordCount);
+    const auto current = window.currentIndex;
+    if (count > static_cast<int>(window.chords.size()) || current < 0 || current >= count)
+        return;
+
+    for (int position = 0; position < 2; ++position)
+    {
+        const auto start = current - position;
+        if (start < 0 || start + 2 >= count)
+            continue;
+        const auto ii = normalizeChord(window.chords[static_cast<std::size_t>(start)]);
+        const auto v = normalizeChord(window.chords[static_cast<std::size_t>(start + 1)]);
+        const auto continuation = normalizeChord(window.chords[static_cast<std::size_t>(start + 2)]);
+        const auto tonicRoot = wrap12(ii.rootPitchClass - 2);
+        if (! ii.valid || ! v.valid || ! continuation.valid
+            || ii.quality != ChordQuality::minor
+            || ! isOrdinaryDominantForRoot(v, tonicRoot)
+            || chordIsTonicForRoot(continuation, tonicRoot, KeyMode::major))
+            continue;
+
+        auto& description = situation.incompleteCadence;
+        description.valid = true;
+        description.positionIndex = position;
+        description.ii = ii;
+        description.v = v;
+        description.missingTonicRootFifths = ii.rootFifths - 2;
+        description.actualContinuation = continuation;
+        return;
+    }
+}
+
 PatternMemberRole patternRole(HarmonicPatternType type,
                               int position,
                               int length) noexcept
@@ -1103,6 +1143,7 @@ HarmonicSituation analyzeHarmonicSituation(const TimelineHarmonicSnapshot& snaps
         return result;
 
     applyPatternWindowContext(result, patternWindow);
+    describeIncompleteCadence(result, patternWindow);
 
     if (result.evidence.interpretation == InterpretationStatus::unknown)
         result.evidence.markUnique();
