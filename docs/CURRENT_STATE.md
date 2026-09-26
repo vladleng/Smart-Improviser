@@ -1,6 +1,6 @@
 # Smart Improviser — Current State
 
-> Обновлено 2026-09-26: `0.3a–0.3f` и `0.3f fix1` приняты. После real-harmony validation Corcovado открыт **`0.3f fix2 — Pattern evidence / false-positive guards`**. `0.3g` начинается только после acceptance fix2. Последняя stable — `0.3`.
+> Обновлено 2026-09-26: `0.3a–0.3f` и `0.3f fix1` приняты. `0.3f fix2` прошёл Windows Build #328, но real-harmony validation Corcovado выявил неверную diminished-трактовку; текущий refinement — **`0.3f fix3 — Rootless dominant / Corcovado diminished correction`**. `0.3g` начинается только после acceptance fix3. Последняя stable — `0.3`.
 
 > Короткая точка входа для нового чата или рабочей сессии. Подробная архитектура — в `PROJECT_CONTEXT.md`, этапы — в `ROADMAP.md`, правила версий — в `VERSIONING.md`, фактический прогресс — в GitHub Issues.
 
@@ -17,10 +17,11 @@
 - **PR #30:** merged — базовый `0.3f`
 - **PR #31:** merged — `0.3f fix1`, squash commit `1117502220887fe05e294b3b6a4af3037c7b5d88`
 - **Windows Build #310:** success; финальный code/live gate fix1
-- **Рабочая ветка:** `stage-3-context-ranking-fix2`
-- **PR #32:** draft — `0.3f fix2`
-- **Текущий checkpoint:** `0.3f fix2 — Pattern evidence / false-positive guards`
-- **После fix2:** `0.3g — Explanation / usable output`
+- **0.3f fix2:** code/regression gate Build #328 success, но музыкально не принят из-за неверной трактовки Corcovado diminished
+- **PR #32:** draft fix2; будет superseded fix3, не должен сливаться как финальное состояние
+- **Рабочая ветка:** `stage-3-context-ranking-fix3`
+- **Текущий checkpoint:** `0.3f fix3 — Rootless dominant / Corcovado diminished correction`
+- **После fix3:** `0.3g — Explanation / usable output`
 
 ## Архитектурная граница
 
@@ -33,9 +34,11 @@ next chord
 global key
 ```
 
-Для длиннее-живущего harmonic context Stage 3 использует отдельный host-neutral `PatternContext / RecognizedPatternInstance`, реконструируемый детерминированно из bounded `PatternTimelineWindow`. Это не arbitrary history и не расширение Stage 1 до `previousN`.
+Для длиннее-живущего harmonic context Stage 3 использует отдельный host-neutral `PatternContext`, реконструируемый детерминированно из bounded `PatternTimelineWindow`. Это не arbitrary history и не расширение Stage 1 до `previousN`.
 
-`0.3f fix2` усиливает evidence semantics именно на bounded timeline: уже известный future member может **опровергнуть** provisional cadence candidate. Это veto ложной гипотезы, а не скрытый выбор другой трактовки.
+`0.3f fix2` усилил evidence semantics: уже известный future member может **опровергнуть** provisional cadence candidate. Это veto ложной гипотезы, а не скрытый выбор другой трактовки.
+
+`0.3f fix3` добавляет отдельную functional alias-модель `ImpliedDominantReading`: написанный chord symbol не переписывается, но pitch content diminished chord может получить contextual rootless-dominant reading, если это подтверждается явным global key.
 
 Project key в DAW автоматически не меняется. Core не зависит от JUCE / ARA / Studio Pro.
 
@@ -47,6 +50,8 @@ Global harmonic analysis
 Pattern Recognizer
         ↓
 PatternContext / bounded timeline evidence
+        ↓
+Rootless/implied functional reading
         ↓
 Tritone Substitution
         ↓
@@ -119,41 +124,67 @@ Windows Build #310 — success; финальный live-test принят Вла
 
 Acceptance: [STAGE_3_0.3f_FIX1_PLAN.md](STAGE_3_0.3f_FIX1_PLAN.md).
 
-## Текущий refinement — 0.3f fix2
+## 0.3f fix2 — evidence guards [TECHNICALLY GREEN, SUPERSEDED IN ONE MUSICAL RULE]
 
-Real-harmony validation **Corcovado** показал, что continuity fix1 работает, но provisional recognizer иногда принимает шаблон несмотря на уже известное противоречащее продолжение.
+Windows Build #328 — success.
 
-Основные реальные FAIL-кейсы:
+Сохраняемые результаты fix2:
 
 ```text
 Fm7 → Bb7 → Em7        != Eb-major ii–V–I
 Em7 → A7 → D7          != D-major ii–V–I / V–I
 Dm7 → G7 → D7/A        != C-major ii–V–I
+Em7 → Am7 → Dm7 → G7   = iii–vi–ii–V • 1/4…4/4
 ```
 
-Кроме false-positive guards, fix2 добавляет два музыкально нужных first-class случая:
+Также target quality теперь обязана соответствовать tonic reading, а `I–VI–ii–V` нельзя достраивать без реального I в bounded evidence.
+
+Первоначальный пункт `D7/A→Ab°→Gm7 = passing diminished to G minor` **отменён**. История и причина: [STAGE_3_0.3f_FIX2_PLAN.md](STAGE_3_0.3f_FIX2_PLAN.md).
+
+## Текущий refinement — 0.3f fix3
+
+Real-harmony review уточнил фактическую функцию Corcovado voicing:
 
 ```text
-C major: Em7 → Am7 → Dm7 → G7
-         iii     vi     ii     V
-
-D7/A → Ab° → Gm7
- V     passing   target
+Ab° = Ab–B–D–F
+    = b9–3–5–b7 от G
+    ≈ rootless G7(b9) в C major
 ```
 
-`iii–vi–ii–V` считается самостоятельным устойчивым оборотом — отсутствующий I не реконструируется как обязательная замена. `D7/A→Ab°→Gm7` использует узкий `passingDiminished` bridge и сохраняет dominant direction через ornamental diminished.
+Если сверху присутствует E:
 
-Полный scope и acceptance gate: [STAGE_3_0.3f_FIX2_PLAN.md](STAGE_3_0.3f_FIX2_PLAN.md).
+```text
+Ab–B–D–F–E ≈ rootless G13(b9)
+```
 
-### Presentation semantics, зафиксированные для 0.3g
+Поэтому ожидаемая модель:
 
-- серый — неявный/отсутствующий member шаблона;
-- янтарный/оранжевый — implied/provisional member или гипотеза;
-- красный — известное продолжение опровергает ожидаемый member / конфликт.
+```text
+D7/A → Ab°                  = V/V → implied V (dominant chain)
+Ab°                          = written diminished + implied rootless G7(b9)
+Gm7 → C7 → Fmaj7            = новый local ii–V–I in F
+```
 
-При этом `iii–vi–ii–V` не показывает missing I как «дыру»: это самостоятельный pattern.
+Инварианты fix3:
 
-## После fix2 — 0.3g
+- written chord identity сохраняется;
+- implied functional root не превращается в новый chord symbol;
+- `D7/A` и `Ab°` не получают ложный local G minor;
+- rootless dominant не считается автоматически разрешённым, если фактический C не наступил;
+- `Gm7` начинает следующий подтверждённый F-major cadence;
+- generic `passingDiminished` остаётся в каталоге, но Corcovado-специализация удалена.
+
+Полный scope и gate: [STAGE_3_0.3f_FIX3_PLAN.md](STAGE_3_0.3f_FIX3_PLAN.md).
+
+### Presentation semantics, обязательные для 0.3g
+
+- **серый** — неявный/отсутствующий member шаблона;
+- **янтарный/оранжевый** — implied/provisional member или гипотеза;
+- **красный** — известное продолжение опровергает ожидаемый member / конфликт.
+
+Rootless G у `Ab°` в будущем presentation может быть показан как implied/amber, а не как error. `iii–vi–ii–V` не показывает missing I как «дыру»: это самостоятельный pattern.
+
+## После fix3 — 0.3g
 
 `0.3g — Explanation / usable output` должен завершить объяснимую пользовательскую цепочку:
 
@@ -174,11 +205,10 @@ D7/A → Ab° → Gm7
 
 1. `docs/CURRENT_STATE.md`;
 2. `docs/STAGE_3_PLAN.md`;
-3. `docs/STAGE_3_0.3f_FIX2_PLAN.md` — текущий refinement;
-4. `docs/STAGE_3_0.3f_FIX1_PLAN.md` — принятый continuity refinement;
-5. `docs/STAGE_3_0.3f_LIVE_TEST.md` — принятый базовый 0.3f;
+3. `docs/STAGE_3_0.3f_FIX3_PLAN.md` — текущий refinement;
+4. `docs/STAGE_3_0.3f_FIX2_PLAN.md` — evidence guards и история superseded diminished rule;
+5. `docs/STAGE_3_0.3f_FIX1_PLAN.md` — принятый continuity refinement;
 6. `docs/STAGE_1_TO_STAGE_2_CONTRACT.md`;
 7. `docs/ARCHITECTURAL_DECISIONS.md`;
 8. `docs/IMPROVISATION_METHOD.md`;
-9. Issue #4 — Stage 3;
-10. PR #32 — текущая реализация fix2.
+9. Issue #4 — Stage 3.
