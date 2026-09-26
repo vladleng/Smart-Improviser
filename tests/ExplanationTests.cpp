@@ -1,4 +1,5 @@
 #include "core/analysis/HarmonicEngine.h"
+#include "core/analysis/HarmonicFunction.h"
 #include "core/analysis/ImprovisationEngine.h"
 
 #include <cstdlib>
@@ -68,6 +69,19 @@ bool hasEvidence(const ExplanationItem& item,
             return true;
     return false;
 }
+
+bool hasContextLayer(const ExplanationResult& explanation,
+                     ExplanationContextScope scope,
+                     int rootFifths)
+{
+    for (const auto& layer : explanation.contextLayers)
+    {
+        if (layer.scope == scope && layer.center.valid
+            && layer.center.key.rootFifths == rootFifths)
+            return true;
+    }
+    return false;
+}
 }
 
 int main()
@@ -86,6 +100,8 @@ int main()
     expect(hasEvidence(explanation.items.front(), ExplanationEvidenceKind::resolution,
                        ExplanationEvidenceState::confirmed),
            "confirmed resolution exposed as Why evidence");
+    expect(hasContextLayer(explanation, ExplanationContextScope::global, 0),
+           "global C layer exposed explicitly");
 
     // Identical presentation material from two interpretations must collapse,
     // while provenance remains explicit.
@@ -112,6 +128,39 @@ int main()
     expect(hasEvidence(collapsed.items.front(), ExplanationEvidenceKind::interpretation,
                        ExplanationEvidenceState::ambiguous),
            "unresolved ambiguity exposed without hidden winner");
+
+    // Visually different enharmonic spellings must not be merged merely because
+    // the pitch class is the same. This protects accepted SubV spelling rules.
+    auto dbMaterial = first;
+    auto csMaterial = first;
+    dbMaterial.actualChord.rootPitchClass = 1;
+    dbMaterial.actualChord.rootFifths = -5;
+    dbMaterial.source.rootPitchClass = 1;
+    dbMaterial.source.rootFifths = -5;
+    csMaterial.actualChord.rootPitchClass = 1;
+    csMaterial.actualChord.rootFifths = 7;
+    csMaterial.source.rootPitchClass = 1;
+    csMaterial.source.rootFifths = 7;
+    ImprovisationResult enharmonic;
+    enharmonic.valid = true;
+    enharmonic.context = result.context;
+    enharmonic.strategies = {dbMaterial, csMaterial};
+    expect(explainImprovisation(enharmonic).items.size() == 2,
+           "Db and C# presentation remain distinct");
+
+    // 0.3g context contract: the UI receives global/local levels separately.
+    // Synthetic setup mirrors the real Gm7 case: global C, local F.
+    auto gm7Result = analyzeImprovisation(analyzeHarmonicSituation(
+        currentNext(cMajor, makeChord(1, {0, 3, 7, 10}), makeChord(0, {0, 4, 7, 10}))));
+    gm7Result.context.localKey = makeGlobalKeyCenter(normalizeKey(makeKey(-1)));
+    gm7Result.context.localKey.scope = KeyCenterScope::local;
+    gm7Result.context.localHarmonic = analyzeHarmonicFunction(
+        gm7Result.context.currentChord, gm7Result.context.localKey.key, gm7Result.context.nextChord);
+    const auto layered = explainImprovisation(gm7Result);
+    expect(hasContextLayer(layered, ExplanationContextScope::global, 0),
+           "Gm7 keeps global C context layer");
+    expect(hasContextLayer(layered, ExplanationContextScope::local, -1),
+           "Gm7 exposes local F context layer separately");
 
     // Fix4 semantics: missing tonic stays a distinct grey/missing fact, while
     // the known actual continuation is a separate contradicted fact.
