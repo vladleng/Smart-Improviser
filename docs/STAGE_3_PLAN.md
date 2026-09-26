@@ -1,6 +1,6 @@
 # Stage 3 — Improvisation Engine: рабочий план
 
-> Обновлено 2026-09-25. База: stable 0.3, Stage 2 принят. `0.3a–0.3f` и `0.3f fix1` приняты; текущий checkpoint — **`0.3g Explanation / usable output`**. Stable остаётся 0.3.
+> Обновлено 2026-09-26. База: stable 0.3, Stage 2 принят. `0.3a–0.3f` и `0.3f fix1` приняты; после real-harmony validation Corcovado текущий refinement — **`0.3f fix2 Pattern evidence / false-positive guards`**. После его acceptance переходим к `0.3g Explanation / usable output`. Stable остаётся 0.3.
 > Начальная методика и текстовая форма подсказки согласованы: [IMPROVISATION_METHOD.md](IMPROVISATION_METHOD.md). См. [PRODUCT_WORKFLOW.md](PRODUCT_WORKFLOW.md).
 
 ## Результат Stage
@@ -17,9 +17,11 @@ Stage 3 описывает допустимый материал и страте
 - Global/local/modal interpretation и unresolved primary сохраняют свою семантику.
 - Confidence гармонического вывода отделён от recommendation priority.
 - Explicit chord information имеет приоритет над inferred source.
-- Stage 1 contract сохраняется: `previous/current/next`; fix1 не добавляет скрытый `previousN`.
+- Stage 1 contract сохраняется: `previous/current/next`; fix1/fix2 не добавляют скрытый `previousN`.
 - Подтверждённый harmonic pattern сохраняется как отдельный host-neutral `PatternContext / RecognizedPatternInstance`.
 - PatternContext реконструируется детерминированно из bounded timeline window и не хранит stale runtime history.
+- Bounded future evidence может опровергать provisional cadence candidate; известное противоречие нельзя скрывать под прежним шаблоном.
+- Target root без совместимой tonic quality недостаточен для tonicization.
 - Source/degree/target data должны подходить для будущих Phrase metadata, не требуя ранней реализации библиотеки.
 - Вычисления и форматирование отделяются от paint; UI отображает результат.
 
@@ -33,6 +35,7 @@ Stage 3 описывает допустимый материал и страте
 0.3e — Harmonic concepts
 0.3f — Context-aware ranking / ambiguity
 0.3f fix1 — Pattern continuity / hierarchical cadence context
+0.3f fix2 — Pattern evidence / false-positive guards
 0.3g — Explanation / usable output
 0.3h — Integration / musical validation
 0.4  — Stage 3 complete
@@ -85,13 +88,35 @@ Windows Build #310 — success; live-test принят Владом 2026-09-25.
 - [x] Regression suite зелёный в Windows Build #310.
 - [x] Live-test принят пользователем 2026-09-25.
 
-### 0.3g — Explanation / usable output [CURRENT]
+### 0.3f fix2 — Pattern evidence / false-positive guards [CURRENT]
+
+Полный scope: [STAGE_3_0.3f_FIX2_PLAN.md](STAGE_3_0.3f_FIX2_PLAN.md). Основание — real-harmony validation концертной версии Corcovado.
+
+- [ ] Known-future veto: `Fm7→Bb7→Em7` не создаёт ложный Eb-major `ii–V–I`.
+- [ ] Known-future veto: `Em7→A7→D7` не создаёт ложный D-major `ii–V–I`.
+- [ ] Known-future veto: `Dm7→G7→D7/A` не создаёт ложный C-major `ii–V–I`.
+- [ ] Target-quality guard: dominant target (`D7`) не считается tonic major только из-за совпадения root.
+- [ ] Не достраивать отсутствующий `I` в `I–VI–ii–V`; полный turnaround требует реального earlier evidence/bounded full pattern.
+- [ ] Добавить самостоятельный first-class `iii–vi–ii–V • 1/4…4/4` для `Em7→Am7→Dm7→G7` в C major.
+- [ ] Сохранить настоящий `I–VI–ii–V • 1/4…4/4`, если I реально присутствует.
+- [ ] Добавить узкий `passingDiminished` bridge для `D7/A→Ab°→Gm7`, сохранив dominant direction через ornamental chord.
+- [ ] Passing diminished tonicizes target, но не объявляет автоматическую modulation.
+- [ ] Сохранить `Gm7→C7→Fmaj7` local `ii–V–I` и `Em7b5→A7b13→Dm7` minor `iiø–V–i` из fix1.
+- [ ] Stage 1 contract остаётся `previous/current/next`; bounded window остаётся отдельным Stage 3 input.
+- [ ] Цветовая семантика для `0.3g` зафиксирована: серый=implicit/missing, янтарный=provisional/implied, красный=contradicted; `iii–vi–ii–V` не показывает missing I как обязательную дыру.
+- [ ] Regression suite + `Smart-Improviser-0.3f-fix2-Windows` зелёные.
+- [ ] Повторный live-test Corcovado A1/A2 принят пользователем.
+
+**Gate:** regression tests + отдельный Windows artifact + live-test Corcovado + отсутствие regression fix1/ambiguity/SubV.
+
+### 0.3g — Explanation / usable output [AFTER FIX2]
 
 - [ ] Показать цепочку: идея → source → важные ноты → target/resolution → почему.
 - [ ] Использовать детерминированные explanations, согласованные с evidence и ограничениями; подготовить Why? data.
 - [ ] Отделить вычисление результата от paint; диагностический UI читает готовые данные, Core не зависит от JUCE/ARA.
 - [ ] Определить, как показывать одинаковый музыкальный материал, возникающий из нескольких interpretations, без потери provenance и без визуального дублирования.
 - [ ] Использовать top-level/nested PatternContext как источник Why?-данных, не переанализируя историю в UI.
+- [ ] Реализовать presentation semantics для implied/provisional/contradicted pattern members без превращения самостоятельных patterns в «неполные версии» других patterns.
 
 **Gate:** regression tests + отдельный build artifact + live-test в Studio Pro.
 
@@ -99,13 +124,13 @@ Windows Build #310 — success; live-test принят Владом 2026-09-25.
 
 - [ ] Проверить major/minor ii–V–I, V→major/minor, secondary dominants, SubV, borrowed/modal ambiguity и boundary cases Stage 2.
 - [ ] Проверить детерминированность, все 12 тональностей и enharmonic spelling; сохранить regression Stage 1–2.
-- [ ] Провести live-test PLAY/STOP/seek/chord edits/reopen в Studio Pro и музыкальную проверку материала перед stable 0.4.
+- [ ] Провести live-test PLAY/STOP/seek/chord edits/reopen в Studio Pro и музыкальную проверку материала перед stable `0.4`.
 
 **Gate:** regression tests + отдельный build artifact + live-test перед стабильной `0.4`.
 
 ## Общие правила
 
-Минимальные explanation, diagnostics и тесты появляются с первого checkpoint; fixN исправляет контекстную семантику принятой буквы и получает собственный regression/live gate. `0.3g` завершает подачу, `0.3h` — интеграцию.
+Минимальные explanation, diagnostics и тесты появляются с первого checkpoint; fixN исправляет контекстную семантику принятой буквы и получает собственный regression/live gate. Real-harmony validation может открыть новый fix-checkpoint до presentation layer, если выявляет системные false-positive/continuity ошибки. `0.3g` завершает подачу, `0.3h` — интеграцию.
 
 ## Stable 0.4
 
@@ -113,5 +138,6 @@ Windows Build #310 — success; live-test принят Владом 2026-09-25.
 - Для согласованных базовых контекстов есть осмысленные стратегии, chord/guide/target notes и объяснимые разрешения.
 - Недостаток данных и неоднозначность отражаются явно.
 - Confirmed harmonic event сохраняет continuity до resolution member без stale history.
+- Known future evidence не допускает уверенных patterns, уже опровергнутых фактическим продолжением.
 - Все regression/integration checks проходят, live musical validation завершён.
 - Релиз фиксирует принятое состояние без новой музыкальной логики.
