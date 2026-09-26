@@ -83,10 +83,10 @@ Presentation-state:
 - [x] Покрыть Explanation API regression-тестами.
 - [x] Подключить ExplanationResult к существующей текстовой панели «Материал» без повторного анализа.
 - [x] Добавить промежуточный output `идея → source → важные ноты → target/resolution → почему`.
-- [ ] Явно разделить global/local/modal уровень функции в верхнем summary UI.
-- [ ] Реализовать настоящие цвета missing/implied/contradicted в presentation.
+- [x] Явно разделить global/local/modal уровень функции в верхнем summary UI.
+- [x] Реализовать настоящие цвета missing/implied/contradicted в presentation.
 - [x] Обновить build label и Windows artifact на `0.3g`.
-- [ ] Актуальный regression suite после presentation commit green.
+- [x] Актуальный regression suite после presentation commit green (Build #346: 15/15).
 - [ ] Live-test Studio Pro.
 - [ ] Acceptance пользователя.
 
@@ -108,7 +108,9 @@ Presentation-state:
 ## CI
 
 - Windows Build #338 — success для первого Explanation API/test commit-set.
-- После добавления context layers и diagnostic Material output запущен следующий Windows gate (#342 на момент обновления документа).
+- После добавления context layers и Material output выполнялись промежуточные Windows gates.
+- Windows Build #345 — ошибка компиляции: `ExplanationText.h` не видел `explainImprovisation`; зависимость исправлена.
+- Windows Build #346 — success: компиляция, 15/15 тестовых целей, VST3 artifact `Smart-Improviser-0.3g-Windows`.
 
 ## Gate
 
