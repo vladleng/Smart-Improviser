@@ -87,8 +87,8 @@ Presentation-state:
 - [x] Реализовать настоящие цвета missing/implied/contradicted в presentation.
 - [x] Обновить build label и Windows artifact на `0.3g`.
 - [x] Актуальный regression suite после presentation commit green (Build #346: 15/15).
-- [ ] Live-test Studio Pro.
-- [ ] Acceptance пользователя.
+- [x] Live-test Studio Pro: major ii–V–I, incomplete/missing, provisional candidate, ambiguity, Corcovado и global/local presentation.
+- [x] Acceptance пользователя 2026-09-26.
 
 ## Regression matrix
 
@@ -112,6 +112,9 @@ Presentation-state:
 - После добавления context layers и Material output выполнялись промежуточные Windows gates.
 - Windows Build #345 — ошибка компиляции: `ExplanationText.h` не видел `explainImprovisation`; зависимость исправлена.
 - Windows Build #346 — success: компиляция, 15/15 тестовых целей, VST3 artifact `Smart-Improviser-0.3g-Windows`.
+- Windows Build #348 — success после уточнения provisional ii–V.
+- Windows Build #349 — success: fix1, 15/15 тестовых целей, VST3 artifact `Smart-Improviser-0.3g-fix1-Windows`.
+- Windows Build #351 — success на итоговом head PR #35 после включения fix1.
 - После live-наблюдения `Fm7 → Bb7 → Em7` и `Em7 → A7` уточнён верхний summary: известное противоречие даёт серую отсутствующую Eb, неизвестное продолжение — янтарную ожидаемую D. Локальный тест `PatternContextTests` пройден; Windows gate для этого UI-изменения ожидается.
 
 ## Gate
@@ -146,4 +149,4 @@ Regression проверяет обе позиции двухзвенной св�
 Windows Build #349 — success, включая регрессию и VST3 artifact
 `Smart-Improviser-0.3g-fix1-Windows`. Live-test в Studio Pro по снимкам
 `D7/A` (1/2), `Abdim` (2/2) и `Gm7` (локальный ii–V–I в F) прошёл
-2026-09-26. Fix1 принят в рамках продолжающегося checkpoint 0.3g.
+2026-09-26. Fix1 и общий checkpoint 0.3g приняты пользователем.
