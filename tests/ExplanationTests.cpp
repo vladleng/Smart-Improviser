@@ -1,3 +1,4 @@
+#include "core/analysis/ExplanationText.h"
 #include "core/analysis/HarmonicEngine.h"
 #include "core/analysis/HarmonicFunction.h"
 #include "core/analysis/ImprovisationEngine.h"
@@ -103,6 +104,14 @@ int main()
     expect(hasContextLayer(explanation, ExplanationContextScope::global, 0),
            "global C layer exposed explicitly");
 
+    const auto basicText = explanationDiagnosticText(result);
+    expect(basicText.find("ПОЧЕМУ / КОНТЕКСТ") != std::string::npos,
+           "diagnostic text has explanation header");
+    expect(basicText.find("GLOBAL: C major") != std::string::npos,
+           "diagnostic text exposes global C layer");
+    expect(basicText.find("ЦЕЛЬ: Cmaj7 [OK]") != std::string::npos,
+           "diagnostic text exposes confirmed target");
+
     // Identical presentation material from two interpretations must collapse,
     // while provenance remains explicit.
     ImprovisationResult duplicate;
@@ -128,6 +137,8 @@ int main()
     expect(hasEvidence(collapsed.items.front(), ExplanationEvidenceKind::interpretation,
                        ExplanationEvidenceState::ambiguous),
            "unresolved ambiguity exposed without hidden winner");
+    expect(explanationDiagnosticText(duplicate).find("[AMBIGUOUS]") != std::string::npos,
+           "diagnostic text marks unresolved ambiguity");
 
     // Visually different enharmonic spellings must not be merged merely because
     // the pitch class is the same. This protects accepted SubV spelling rules.
@@ -161,6 +172,10 @@ int main()
            "Gm7 keeps global C context layer");
     expect(hasContextLayer(layered, ExplanationContextScope::local, -1),
            "Gm7 exposes local F context layer separately");
+    const auto layeredText = explanationDiagnosticText(gm7Result);
+    expect(layeredText.find("GLOBAL: C major") != std::string::npos
+           && layeredText.find("LOCAL: F major") != std::string::npos,
+           "diagnostic text separates global C and local F");
 
     // Fix4 semantics: missing tonic stays a distinct grey/missing fact, while
     // the known actual continuation is a separate contradicted fact.
@@ -177,6 +192,10 @@ int main()
     expect(hasEvidence(incompleteExplanation.items.front(), ExplanationEvidenceKind::continuationConflict,
                        ExplanationEvidenceState::contradicted),
            "actual continuation exposed as contradiction");
+    const auto incompleteText = explanationDiagnosticText(incomplete);
+    expect(incompleteText.find("[MISSING]") != std::string::npos
+           && incompleteText.find("[CONFLICT]") != std::string::npos,
+           "diagnostic text keeps missing and conflict separate");
 
     // Fix3 semantics: rootless functional alias is implied, not an error and
     // does not overwrite written chord identity.
@@ -192,10 +211,13 @@ int main()
     expect(impliedExplanation.items.front().actualChord.rootPitchClass
            == result.strategies.front().actualChord.rootPitchClass,
            "written chord identity preserved");
+    expect(explanationDiagnosticText(implied).find("[IMPLIED]") != std::string::npos,
+           "diagnostic text marks rootless dominant as implied");
 
     // Invalid material must not produce a fake explanation.
     ImprovisationResult invalid;
     expect(! explainImprovisation(invalid).valid, "invalid result yields no explanation");
+    expect(explanationDiagnosticText(invalid).empty(), "invalid result yields no diagnostic text");
 
     std::cout << "Explanation tests passed\n";
 }
