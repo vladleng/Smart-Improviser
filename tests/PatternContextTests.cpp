@@ -1,4 +1,5 @@
 #include "core/analysis/HarmonicEngine.h"
+#include "core/analysis/Explanation.h"
 
 #include <array>
 #include <cstdlib>
@@ -282,6 +283,20 @@ int main()
 
     const auto eMin7At0 = makeChord(4, { 0, 3, 7, 10 }, 0.0);
     const auto a7At4 = makeChord(3, { 0, 4, 7, 10 }, 4.0);
+    const std::array pendingD { eMin7At0, a7At4 };
+    for (int position = 0; position < 2; ++position)
+    {
+        const auto pending = analyzeWindow(cMajor, pendingD, position);
+        expect(pending.localKey.valid
+               && pending.localKey.status == KeyCenterStatus::candidate
+               && pending.localKey.key.rootPitchClass == 2
+               && pending.localPattern.type == HarmonicPatternType::majorIiVI
+               && pending.localPattern.positionIndex == position
+               && ! pending.patternContext.valid
+               && ! pending.incompleteCadence.valid
+               && ! pending.localPattern.evidence.has(EvidenceFlag::confirmedResolution),
+               "Em7-A7 without a known continuation stays a provisional D-major ii-V candidate");
+    }
     const auto d7At8 = makeChord(2, { 0, 4, 7, 10 }, 8.0);
     const std::array falseDMajor { eMin7At0, a7At4, d7At8 };
     const auto falseDStart = analyzeWindow(cMajor, falseDMajor, 0);
@@ -356,6 +371,12 @@ int main()
            "D7/A starts V/V to rootless-V dominant chain");
     expect(! corcovadoD7.localKey.valid,
            "D7/A does not pre-assign a false G-minor local center");
+    const auto firstLink = explainImpliedDominantLink(corcovadoD7);
+    expect(firstLink.valid && firstLink.positionIndex == 0
+           && firstLink.firstChord.rootPitchClass == 2
+           && firstLink.secondChord.rootPitchClass == 8
+           && ! firstLink.continuationIsMinorOnImpliedRoot,
+           "V/V presentation preserves D7/A and the written diminished second member");
 
     const auto corcovadoAbDim = analyzeWindow(cMajor, corcovadoStart, 1);
     expect(corcovadoAbDim.pattern.type == HarmonicPatternType::dominantChain
@@ -370,6 +391,11 @@ int main()
            "rootless G7(b9) keeps dominant effective function");
     expect(! corcovadoAbDim.localKey.valid,
            "rootless global dominant does not invent G-minor tonicization");
+    const auto secondLink = explainImpliedDominantLink(corcovadoAbDim);
+    expect(secondLink.valid && secondLink.positionIndex == 1
+           && secondLink.continuationIsMinorOnImpliedRoot
+           && secondLink.actualContinuation.rootPitchClass == 7,
+           "presentation reports actual Gm7 instead of claiming a G7 resolution");
 
     const auto corcovadoGm = analyzeWindow(cMajor, corcovadoStart, 2);
     expect(corcovadoGm.localPattern.type == HarmonicPatternType::majorIiVI
@@ -378,6 +404,8 @@ int main()
            && corcovadoGm.localKey.key.rootPitchClass == 5
            && corcovadoGm.localKey.key.mode == KeyMode::major,
            "Gm7 cleanly starts the following ii-V-I in F major");
+    expect(! explainImpliedDominantLink(corcovadoGm).valid,
+           "following F-major ii-V-I is separate from the implied dominant link");
 
     const auto abDimWithE = makeChord(-4, { 0, 3, 6, 8, 9 }, 4.0);
     const std::array colouredRootlessV { d7OverAAt0, abDimWithE, gMin7At8 };

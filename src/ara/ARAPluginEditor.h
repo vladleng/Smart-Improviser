@@ -38,6 +38,7 @@ private:
 
     juce::String summaryContext;
     juce::String summaryMeta;
+    juce::String summaryLocal;
     juce::String summaryPattern;
     juce::AttributedString summaryPatternDisplay;
     juce::String summaryThinking;

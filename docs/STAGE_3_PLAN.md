@@ -1,6 +1,6 @@
 # Stage 3 — Improvisation Engine: рабочий план
 
-> Обновлено 2026-09-26. База: stable 0.3, Stage 2 принят. `0.3a–0.3f`, `0.3f fix1` и refinement `fix2–fix4` приняты в итоговом состоянии fix4. Windows Build #331 и live-test fix4 зелёные. Текущий checkpoint — **`0.3g Explanation / usable output`**. Stable остаётся 0.3.
+> Обновлено 2026-09-26. База: stable 0.3, Stage 2 принят. `0.3a–0.3g`, включая `0.3f fix1–fix4` и `0.3g fix1`, приняты после regression и Studio Pro live-test. Текущий checkpoint — **`0.3h Integration / musical validation`**. Stable остаётся 0.3.
 > Начальная методика и текстовая форма подсказки согласованы: [IMPROVISATION_METHOD.md](IMPROVISATION_METHOD.md). См. [PRODUCT_WORKFLOW.md](PRODUCT_WORKFLOW.md).
 
 ## Результат Stage
@@ -41,6 +41,7 @@ Stage 3 описывает допустимый материал и страте
 0.3f fix3 — Rootless dominant / Corcovado diminished correction
 0.3f fix4 — Незавершённые обороты / отсутствующие ступени
 0.3g — Explanation / usable output
+0.3g fix1 — Corcovado V/V → implied V presentation
 0.3h — Integration / musical validation
 0.4  — Stage 3 complete
 ```
@@ -140,21 +141,21 @@ Windows Build #331 — success; 14/14 test targets green; live-test принят
 - [x] Rootless chain fix3 и настоящий F-major `ii–V–I` сохранены.
 - [x] Live-проверка серой I в Studio Pro и acceptance пользователя.
 
-### 0.3g — Explanation / usable output [CURRENT]
+### 0.3g — Explanation / usable output [ACCEPTED]
 
-- [ ] Показать цепочку: идея → source → важные ноты → target/resolution → почему.
-- [ ] Использовать детерминированные explanations, согласованные с evidence и ограничениями; подготовить Why? data.
-- [ ] Отделить вычисление результата от paint; диагностический UI читает готовые данные, Core не зависит от JUCE/ARA.
-- [ ] Определить, как показывать одинаковый музыкальный материал, возникающий из нескольких interpretations, без потери provenance и без визуального дублирования.
-- [ ] Использовать top-level/nested PatternContext как источник Why?-данных, не переанализируя историю в UI.
-- [ ] Реализовать presentation semantics: серый implicit/missing, янтарный implied/provisional, красный contradicted.
-- [ ] Rootless implied note/root отображается как implied, а не error.
-- [ ] Самостоятельные patterns (`iii–vi–ii–V`) не превращаются в «неполные версии» других patterns.
-- [ ] Явно маркировать уровень функции/центра в случаях вроде Gm7: global function и local F-major center не должны визуально смешиваться.
+- [x] Показать цепочку: идея → source → важные ноты → target/resolution → почему.
+- [x] Использовать детерминированные explanations, согласованные с evidence и ограничениями; подготовить Why? data.
+- [x] Отделить вычисление результата от paint; диагностический UI читает готовые данные, Core не зависит от JUCE/ARA.
+- [x] Схлопывать одинаковый материал из нескольких interpretations без потери provenance и не склеивать Db/C#.
+- [x] Использовать top-level/nested PatternContext как источник Why?-данных, не переанализируя историю в UI.
+- [x] Реализовать presentation semantics: серый implicit/missing, янтарный implied/provisional, красный contradicted.
+- [x] Rootless implied note/root отображается как implied, а не error.
+- [x] Самостоятельные patterns (`iii–vi–ii–V`) не превращаются в «неполные версии» других patterns.
+- [x] Явно маркировать уровень функции/центра в случаях вроде Gm7: global function и local F-major center не смешиваются.
 
-**Gate:** regression tests + отдельный build artifact + live-test в Studio Pro.
+**Gate:** Windows Build #351 green на итоговом head; live-test в Studio Pro и acceptance пользователя 2026-09-26. Fix1 принят и включён в 0.3g.
 
-### 0.3h — Integration / musical validation
+### 0.3h — Integration / musical validation [CURRENT]
 
 - [ ] Проверить major/minor ii–V–I, V→major/minor, secondary dominants, SubV, borrowed/modal ambiguity и boundary cases Stage 2.
 - [ ] Проверить детерминированность, все 12 тональностей и enharmonic spelling; сохранить regression Stage 1–2.

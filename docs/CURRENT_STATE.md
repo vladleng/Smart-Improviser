@@ -1,6 +1,6 @@
 # Smart Improviser — Current State
 
-> Обновлено 2026-09-26: `0.3a–0.3f`, `0.3f fix1` и refinement `fix2–fix4` приняты в итоговом состоянии fix4. Windows Build #331 и live-test fix4 — PASS. Текущий checkpoint — **`0.3g — Explanation / usable output`**. Последняя stable — `0.3`.
+> Обновлено 2026-09-26: `0.3a–0.3g`, включая `0.3f fix1–fix4` и `0.3g fix1`, приняты. 0.3g прошёл regression, Windows Build #351 и Studio Pro live-test. Текущий checkpoint — **`0.3h — Integration / musical validation`**. Последняя stable — `0.3`.
 
 > Короткая точка входа для нового чата или рабочей сессии. Подробная архитектура — в `PROJECT_CONTEXT.md`, этапы — в `ROADMAP.md`, правила версий — в `VERSIONING.md`, фактический прогресс — в GitHub Issues.
 
@@ -13,15 +13,16 @@
 - **Итог Stage 3:** `0.4`
 - **Stage 2 Issue:** #3 — закрыт стабильной `0.3`
 - **Stage 3 Issue:** #4 — активен
-- **Принято Stage 3:** `0.3a–0.3f` + `0.3f fix1` + итоговый refinement `0.3f fix4`
+- **Принято Stage 3:** `0.3a–0.3g` + `0.3f fix1–fix4` + `0.3g fix1`
 - **PR #30:** merged — базовый `0.3f`
 - **PR #31:** merged — `0.3f fix1`, squash commit `1117502220887fe05e294b3b6a4af3037c7b5d88`
 - **PR #32:** superseded, closed without merge
 - **PR #33:** superseded by fix4, closed without merge
-- **PR #34:** accepted fix4, готов к merge
+- **PR #34:** accepted fix4, merged в main (`a6d8b43`)
+- **PR #36:** accepted 0.3g fix1, merged в рабочую ветку PR #35
+- **PR #35:** accepted 0.3g, merge в main после финального CI и документации
 - **Windows Build #331:** success; 14/14 test targets green
-- **Текущий checkpoint:** `0.3g — Explanation / usable output`
-- **После 0.3g:** `0.3h — Integration / musical validation`
+- **Текущий checkpoint:** `0.3h — Integration / musical validation`
 
 ## Архитектурная граница
 
@@ -167,9 +168,9 @@ Em7  = фактическое продолжение, не 3/3
 
 Самостоятельный `iii–vi–ii–V` не показывается как «неполный ii–V–I». Rootless implied root не показывается как error.
 
-## Текущий checkpoint — 0.3g
+## Принятый checkpoint — 0.3g
 
-`0.3g — Explanation / usable output` должен завершить объяснимую пользовательскую цепочку:
+`0.3g — Explanation / usable output` завершил объяснимую пользовательскую цепочку:
 
 ```text
 идея → source → важные ноты → target/resolution → почему
@@ -184,6 +185,8 @@ Em7  = фактическое продолжение, не 3/3
 - presentation для missing/implied/contradicted evidence использует принятую цветовую семантику;
 - функция и tonal center должны маркироваться по уровню, чтобы случаи вроде Gm7 в global C / local F не выглядели как смешение двух разных выводов;
 - T1/T2/T3 policy остаётся Stage 4.
+
+Windows Build #351 — success на итоговом head с fix1; Studio Pro live-test основных сценариев и acceptance пользователя — 2026-09-26. Corcovado `V/V → подразумеваемая V` сохраняет написанные аккорды и не выдаёт `Gm7` за подтверждённое разрешение в C. Следующий checkpoint: `0.3h`.
 
 ## Что читать при продолжении
 
