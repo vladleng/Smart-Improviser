@@ -4,5 +4,6 @@
 
 namespace smartimproviser::harmony
 {
-void analyzeLocalKeyCenter(HarmonicSituation& situation) noexcept;
+void analyzeLocalKeyCenter(HarmonicSituation& situation,
+                           bool allowIncompleteCadenceCandidates = true) noexcept;
 }
