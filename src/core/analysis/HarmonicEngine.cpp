@@ -63,6 +63,24 @@ bool isSubstituteDominantForRoot(const NormalizedChord& dominant,
         && wrap12(dominant.rootPitchClass - targetRootPitchClass) == 1;
 }
 
+bool chordContainsPitchClass(const NormalizedChord& chord,
+                             int pitchClass) noexcept
+{
+    if (! chord.valid)
+        return false;
+
+    pitchClass = wrap12(pitchClass);
+    for (int interval = 0; interval < kPitchClassCount; ++interval)
+    {
+        if (chord.tones[static_cast<std::size_t>(interval)]
+            && wrap12(chord.rootPitchClass + interval) == pitchClass)
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
 int impliedRootlessDominantRoot(const NormalizedChord& chord,
                                 const NormalizedKey& key) noexcept
 {
@@ -76,7 +94,7 @@ int impliedRootlessDominantRoot(const NormalizedChord& chord,
     static constexpr int requiredIntervals[] = { 1, 4, 7, 10 };
     for (const auto interval : requiredIntervals)
     {
-        if (! chord.tones[static_cast<std::size_t>(wrap12(dominantRoot + interval))])
+        if (! chordContainsPitchClass(chord, dominantRoot + interval))
             return -1;
     }
 
@@ -94,7 +112,7 @@ void applyImpliedDominantReading(HarmonicSituation& situation) noexcept
     situation.impliedDominant.rootPitchClass = root;
     situation.impliedDominant.flatNinth = true;
     situation.impliedDominant.thirteenth =
-        situation.currentChord.tones[static_cast<std::size_t>(wrap12(root + 9))];
+        chordContainsPitchClass(situation.currentChord, root + 9);
     situation.impliedDominant.evidence.confidence = ConfidenceLevel::high;
     situation.impliedDominant.evidence.markUnique();
     situation.impliedDominant.evidence.add(EvidenceFlag::explicitKey);
