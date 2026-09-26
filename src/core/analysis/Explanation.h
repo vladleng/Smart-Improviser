@@ -217,7 +217,7 @@ inline void appendContextLayer(ExplanationResult& explanation,
                                const HarmonicAnalysis& harmonic,
                                const AnalysisEvidence& evidence)
 {
-    if (! center.valid || ! harmonic.valid)
+    if (! center.valid)
         return;
 
     const auto duplicate = std::any_of(explanation.contextLayers.begin(),
@@ -251,7 +251,7 @@ inline void appendContextLayers(ExplanationResult& explanation,
                        context.harmonic,
                        context.harmonic.valid ? context.evidence : AnalysisEvidence{});
 
-    if (context.localKey.valid && context.localHarmonic.valid)
+    if (context.localKey.valid)
     {
         appendContextLayer(explanation,
                            ExplanationContextScope::local,

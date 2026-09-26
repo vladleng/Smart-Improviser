@@ -156,6 +156,28 @@ juce::String localizeGeneratedText(juce::String text)
     text = text.replace(" | resolution unconfirmed", ru(" | разрешение не подтверждено"));
     text = text.replace(" | secondary", ru(" | вторичная доминанта"));
     text = text.replace(" | interpretation unresolved", ru(" | трактовка не определена"));
+    text = text.replace("ПОЧЕМУ / КОНТЕКСТ", ru("ОБЪЯСНЕНИЕ / КОНТЕКСТ"));
+    text = text.replace("GLOBAL: ", ru("Глобальная тональность: "));
+    text = text.replace("LOCAL: ", ru("Локальный центр: "));
+    text = text.replace("MODAL: ", ru("Модальная трактовка: "));
+    text = text.replace("ИДЕЯ ", ru("ИДЕЯ "));
+    text = text.replace("ИСТОЧНИК: ", ru("ИСТОЧНИК: "));
+    text = text.replace("ВАЖНЫЕ НОТЫ: ", ru("ВАЖНЫЕ НОТЫ: "));
+    text = text.replace("СЛЕДУЮЩИЙ АККОРД: ", ru("СЛЕДУЮЩИЙ АККОРД: "));
+    text = text.replace("[OK]", ru("[подтверждено]"));
+    text = text.replace("[EXPECTED]", ru("[ожидается]"));
+    text = text.replace("[MISSING]", ru("[отсутствует]"));
+    text = text.replace("[IMPLIED]", ru("[подразумевается]"));
+    text = text.replace("[CONFLICT]", ru("[противоречие]"));
+    text = text.replace("[AMBIGUOUS]", ru("[неоднозначно]"));
+    text = text.replace("[INFO]", ru("[информация]"));
+    text = text.replace("why.pattern-context", ru("гармонический оборот"));
+    text = text.replace("why.nested-pattern", ru("вложенный оборот"));
+    text = text.replace("why.confirmed-resolution", ru("подтверждённое разрешение"));
+    text = text.replace("why.implied-dominant", ru("подразумеваемая доминанта"));
+    text = text.replace("why.missing-tonic", ru("отсутствующая тоника"));
+    text = text.replace("why.actual-continuation-conflicts", ru("фактическое продолжение не совпало с ожидаемым"));
+    text = text.replace("why.interpretation-ambiguous", ru("несколько допустимых трактовок"));
     return text;
 }
 
@@ -508,7 +530,7 @@ void SmartImproviserARAEditor::resized()
 {
     const int margin = 24;
     const int gap = 8;
-    const int buttonY = 244;
+    const int buttonY = 264;
     const int buttonH = 36;
     const int available = getWidth() - margin * 2 - gap * 3;
     const int buttonW = available / 4;
@@ -519,7 +541,7 @@ void SmartImproviserARAEditor::resized()
     araButton.setBounds(margin + 3 * (buttonW + gap), buttonY,
                         getWidth() - margin - (margin + 3 * (buttonW + gap)), buttonH);
 
-    detailsView.setBounds(margin, 292, getWidth() - margin * 2, getHeight() - 334);
+    detailsView.setBounds(margin, 312, getWidth() - margin * 2, getHeight() - 354);
 }
 
 void SmartImproviserARAEditor::setActivePanel(Panel panel)
@@ -571,7 +593,31 @@ void SmartImproviserARAEditor::refreshPanelView(bool resetScroll)
 
     if (detailsView.getText() != *text)
     {
-        detailsView.setText(*text, false);
+        detailsView.setText({}, false);
+        const auto ordinary = juce::Colour::fromRGB(225, 230, 238);
+        const auto missing = juce::Colour::fromRGB(150, 156, 168);
+        const auto implied = juce::Colour::fromRGB(238, 181, 85);
+        const auto contradicted = juce::Colour::fromRGB(244, 108, 108);
+        // TextEditor stores the current text colour on each inserted run.
+        // Only the ready-made explanation state markers drive this styling.
+        int start = 0;
+        while (start < text->length())
+        {
+            const int newline = text->indexOfChar(start, '\n');
+            const int end = newline < 0 ? text->length() : newline + 1;
+            const auto line = text->substring(start, end);
+            auto colour = ordinary;
+            if (activePanel == Panel::material)
+            {
+                if (line.contains(ru("[отсутствует]"))) colour = missing;
+                else if (line.contains(ru("[подразумевается]")) || line.contains(ru("[ожидается]"))) colour = implied;
+                else if (line.contains(ru("[противоречие]"))) colour = contradicted;
+            }
+            detailsView.setColour(juce::TextEditor::textColourId, colour);
+            detailsView.insertTextAtCaret(line);
+            start = end;
+        }
+        detailsView.setColour(juce::TextEditor::textColourId, ordinary);
         if (resetScroll)
             detailsView.moveCaretToTop(false);
     }
@@ -586,18 +632,40 @@ void SmartImproviserARAEditor::timerCallback()
     const auto context = smartimproviser::harmony::mapHarmonicContext(cachedShared, ppq);
     cachedSituation = smartimproviser::harmony::analyzeHarmonicSituation(timeline, patternWindow);
     const auto result = smartimproviser::harmony::analyzeImprovisation(cachedSituation);
+    const auto explanation = smartimproviser::harmony::explainImprovisation(result);
     const auto debug = ARAContextDebugState::instance().getSnapshot();
 
     summaryContext = chordDisplayName(timeline.currentChord);
     if (timeline.nextChordAvailable)
         summaryContext += " -> " + chordDisplayName(timeline.nextChord);
 
-    summaryMeta = ru("Тональность: ") + keyDisplayName(timeline.globalKey);
-    if (cachedSituation.harmonic.valid)
-        summaryMeta += ru("   •   Функция: ")
-            + harmonicFunctionNameRu(cachedSituation.harmonic.effectiveFunction);
-    if (cachedSituation.localKey.valid)
-        summaryMeta += ru("   •   Локальный центр: ") + centerKeyDisplayName(cachedSituation.localKey);
+    summaryMeta = ru("Глобальная тональность: ") + keyDisplayName(timeline.globalKey);
+    summaryLocal.clear();
+    for (const auto& layer : explanation.contextLayers)
+    {
+        using Scope = smartimproviser::harmony::ExplanationContextScope;
+        if (layer.scope == Scope::global && layer.interpretationIndex < 0)
+        {
+            if (layer.harmonic.valid)
+                summaryMeta += ru("   •   Глобальная функция: ")
+                    + harmonicFunctionNameRu(layer.harmonic.effectiveFunction);
+        }
+        else if (layer.scope == Scope::local && layer.interpretationIndex < 0)
+        {
+            summaryLocal = ru("Локальный центр: ") + centerKeyDisplayName(layer.center);
+            if (layer.harmonic.valid)
+                summaryLocal += ru("   •   Локальная функция: ")
+                    + harmonicFunctionNameRu(layer.harmonic.effectiveFunction);
+        }
+        else if (layer.scope == Scope::modal)
+        {
+            if (summaryLocal.isNotEmpty())
+                summaryLocal += ru("   •   ");
+            summaryLocal += ru("Модальная трактовка: ") + centerKeyDisplayName(layer.center);
+            if (layer.harmonic.valid)
+                summaryLocal += ru(" (") + harmonicFunctionNameRu(layer.harmonic.effectiveFunction) + ")";
+        }
+    }
 
     const auto* activePattern = &cachedSituation.pattern;
     if (cachedSituation.localPattern.recognized())
@@ -963,11 +1031,11 @@ void SmartImproviserARAEditor::paint(juce::Graphics& g)
 
     g.setColour(juce::Colour::fromRGB(150, 156, 168));
     g.setFont(14.0f);
-    g.drawText(ru("0.3f fix4 • незавершённые обороты / отсутствующие ступени"),
+    g.drawText(ru("0.3g • объяснение материала и гармонического контекста"),
                24, 47, getWidth() - 48, 22, juce::Justification::centredLeft);
 
     g.setColour(juce::Colour::fromRGB(42, 46, 53));
-    g.fillRoundedRectangle(24.0f, 82.0f, static_cast<float>(getWidth() - 48), 146.0f, 8.0f);
+    g.fillRoundedRectangle(24.0f, 82.0f, static_cast<float>(getWidth() - 48), 166.0f, 8.0f);
 
     g.setColour(juce::Colour::fromRGB(150, 156, 168));
     g.setFont(12.5f);
@@ -983,12 +1051,14 @@ void SmartImproviserARAEditor::paint(juce::Graphics& g)
     g.setFont(13.2f);
     g.drawText(summaryMeta, 40, 136, getWidth() - 80, 18,
                juce::Justification::centredLeft, true);
-    summaryPatternDisplay.draw(g, juce::Rectangle<float>(40.0f, 157.0f,
+    g.drawText(summaryLocal, 40, 155, getWidth() - 80, 18,
+               juce::Justification::centredLeft, true);
+    summaryPatternDisplay.draw(g, juce::Rectangle<float>(40.0f, 177.0f,
                                 static_cast<float>(getWidth() - 80), 20.0f));
 
     g.setColour(juce::Colour::fromRGB(220, 225, 234));
     g.setFont(13.5f);
-    g.drawFittedText(summaryThinking, 40, 180, getWidth() - 80, 38,
+    g.drawFittedText(summaryThinking, 40, 200, getWidth() - 80, 38,
                      juce::Justification::topLeft, 2, 0.86f);
 
     g.setColour(juce::Colour::fromRGB(105, 110, 120));

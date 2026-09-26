@@ -1,6 +1,6 @@
 #pragma once
 
-#include "core/analysis/Explanation.h"
+#include "core/analysis/ImprovisationEngine.h"
 #include "core/analysis/HarmonicFunction.h"
 #include "core/model/KeyModel.h"
 
