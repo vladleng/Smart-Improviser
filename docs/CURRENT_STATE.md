@@ -20,7 +20,7 @@
 - **PR #33:** superseded by fix4, closed without merge
 - **PR #34:** accepted fix4, merged в main (`a6d8b43`)
 - **PR #36:** accepted 0.3g fix1, merged в рабочую ветку PR #35
-- **PR #35:** accepted 0.3g, merge в main после финального CI и документации
+- **PR #35:** accepted 0.3g, merged в main (`85337ff`)
 - **Windows Build #331:** success; 14/14 test targets green
 - **Текущий checkpoint:** `0.3h — Integration / musical validation`
 
