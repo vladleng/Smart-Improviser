@@ -288,6 +288,7 @@ juce::String patternName(smartimproviser::harmony::HarmonicPatternType type)
         case HarmonicPatternType::minorIvVi: return ru("Минорный iv-V-i");
         case HarmonicPatternType::dominantToTonic: return "V-I";
         case HarmonicPatternType::turnaroundIVIiiV: return "I-VI-ii-V";
+        case HarmonicPatternType::majorIiiViIiV: return "iii-vi-ii-V";
         case HarmonicPatternType::majorCadentialChain: return ru("Расширенный каданс iii-VI7-ii-V-I");
         case HarmonicPatternType::secondaryDominant: return ru("Вторичная доминанта");
         case HarmonicPatternType::tritoneSubstitution: return ru("Тритоновая замена");
@@ -926,7 +927,7 @@ void SmartImproviserARAEditor::paint(juce::Graphics& g)
 
     g.setColour(juce::Colour::fromRGB(150, 156, 168));
     g.setFont(14.0f);
-    g.drawText(ru("0.3f fix1 • непрерывность кадансового контекста"),
+    g.drawText(ru("0.3f fix2 • evidence guards / реальные обороты"),
                24, 47, getWidth() - 48, 22, juce::Justification::centredLeft);
 
     g.setColour(juce::Colour::fromRGB(42, 46, 53));
