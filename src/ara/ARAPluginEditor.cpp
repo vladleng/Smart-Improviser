@@ -653,6 +653,8 @@ void SmartImproviserARAEditor::timerCallback()
         else if (layer.scope == Scope::local && layer.interpretationIndex < 0)
         {
             summaryLocal = ru("Локальный центр: ") + centerKeyDisplayName(layer.center);
+            if (layer.center.status == smartimproviser::harmony::KeyCenterStatus::candidate)
+                summaryLocal += ru(" (кандидат)");
             if (layer.harmonic.valid)
                 summaryLocal += ru("   •   Локальная функция: ")
                     + harmonicFunctionNameRu(layer.harmonic.effectiveFunction);
@@ -688,6 +690,7 @@ void SmartImproviserARAEditor::timerCallback()
     const juce::Font patternFont { juce::FontOptions(13.2f) };
     const auto presentColour = juce::Colour::fromRGB(220, 225, 234);
     const auto missingColour = juce::Colour::fromRGB(140, 146, 157);
+    const auto impliedColour = juce::Colour::fromRGB(224, 172, 85);
     const auto& incomplete = cachedSituation.incompleteCadence;
     if (incomplete.valid)
     {
@@ -702,6 +705,35 @@ void SmartImproviserARAEditor::timerCallback()
         summaryPattern = prefix + missing + suffix;
         summaryPatternDisplay.append(prefix, patternFont, presentColour);
         summaryPatternDisplay.append(missing, patternFont, missingColour);
+        summaryPatternDisplay.append(suffix, patternFont, presentColour);
+    }
+    else if (! cachedSituation.patternContext.valid
+             && cachedSituation.localKey.valid
+             && cachedSituation.localKey.status
+                 == smartimproviser::harmony::KeyCenterStatus::candidate
+             && cachedSituation.localPattern.type
+                 == smartimproviser::harmony::HarmonicPatternType::majorIiVI
+             && cachedSituation.localPattern.positionIndex >= 0
+             && cachedSituation.localPattern.positionIndex < 2)
+    {
+        // A visible ii–V without a known I is only a candidate. The expected
+        // tonic is not a played chord or an established local center.
+        const auto& candidate = cachedSituation.localPattern;
+        const auto& ii = candidate.positionIndex == 0
+            ? cachedSituation.currentChord : cachedSituation.previousChord;
+        const auto& v = candidate.positionIndex == 0
+            ? cachedSituation.nextChord : cachedSituation.currentChord;
+        const auto prefix = ru("Оборот: предполагаемый   ii (")
+            + utf8String(smartimproviser::harmony::normalizedChordSymbol(ii))
+            + ru(") – V (")
+            + utf8String(smartimproviser::harmony::normalizedChordSymbol(v))
+            + ru(") – ");
+        const auto expected = "I (" + utf8String(fifthsName(cachedSituation.localKey.key.rootFifths))
+            + ru(", не подтверждён)");
+        const auto suffix = ru("   •   ") + juce::String(candidate.positionIndex + 1) + " / 3";
+        summaryPattern = prefix + expected + suffix;
+        summaryPatternDisplay.append(prefix, patternFont, presentColour);
+        summaryPatternDisplay.append(expected, patternFont, impliedColour);
         summaryPatternDisplay.append(suffix, patternFont, presentColour);
     }
     else

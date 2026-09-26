@@ -104,6 +104,7 @@ Presentation-state:
 8. `Fm7 → Bb7 → Em7` — missing I отдельно от contradicted actual continuation;
 9. invalid result не создаёт ложное explanation;
 10. все прежние Stage 1/2/0.3f regression targets должны оставаться green.
+11. `Em7 → A7` без известного продолжения — только кандидат `ii–V–I` в D: ожидаемая I показана янтарным как неподтверждённая, локальный центр отмечен кандидатом; это не `IncompleteCadence` с отсутствующей I, пока неизвестен следующий аккорд.
 
 ## CI
 
@@ -111,6 +112,7 @@ Presentation-state:
 - После добавления context layers и Material output выполнялись промежуточные Windows gates.
 - Windows Build #345 — ошибка компиляции: `ExplanationText.h` не видел `explainImprovisation`; зависимость исправлена.
 - Windows Build #346 — success: компиляция, 15/15 тестовых целей, VST3 artifact `Smart-Improviser-0.3g-Windows`.
+- После live-наблюдения `Fm7 → Bb7 → Em7` и `Em7 → A7` уточнён верхний summary: известное противоречие даёт серую отсутствующую Eb, неизвестное продолжение — янтарную ожидаемую D. Локальный тест `PatternContextTests` пройден; Windows gate для этого UI-изменения ожидается.
 
 ## Gate
 

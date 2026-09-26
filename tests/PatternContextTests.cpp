@@ -282,6 +282,20 @@ int main()
 
     const auto eMin7At0 = makeChord(4, { 0, 3, 7, 10 }, 0.0);
     const auto a7At4 = makeChord(3, { 0, 4, 7, 10 }, 4.0);
+    const std::array pendingD { eMin7At0, a7At4 };
+    for (int position = 0; position < 2; ++position)
+    {
+        const auto pending = analyzeWindow(cMajor, pendingD, position);
+        expect(pending.localKey.valid
+               && pending.localKey.status == KeyCenterStatus::candidate
+               && pending.localKey.key.rootPitchClass == 2
+               && pending.localPattern.type == HarmonicPatternType::majorIiVI
+               && pending.localPattern.positionIndex == position
+               && ! pending.patternContext.valid
+               && ! pending.incompleteCadence.valid
+               && ! pending.localPattern.evidence.has(EvidenceFlag::confirmedResolution),
+               "Em7-A7 without a known continuation stays a provisional D-major ii-V candidate");
+    }
     const auto d7At8 = makeChord(2, { 0, 4, 7, 10 }, 8.0);
     const std::array falseDMajor { eMin7At0, a7At4, d7At8 };
     const auto falseDStart = analyzeWindow(cMajor, falseDMajor, 0);
