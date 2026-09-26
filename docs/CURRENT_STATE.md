@@ -1,6 +1,6 @@
 # Smart Improviser — Current State
 
-> Обновлено 2026-09-25: `0.3a–0.3f` и `0.3f fix1` приняты. Текущий checkpoint — **`0.3g — Explanation / usable output`**. Последняя stable — `0.3`.
+> Обновлено 2026-09-26: `0.3a–0.3f` и `0.3f fix1` приняты. После real-harmony validation Corcovado открыт **`0.3f fix2 — Pattern evidence / false-positive guards`**. `0.3g` начинается только после acceptance fix2. Последняя stable — `0.3`.
 
 > Короткая точка входа для нового чата или рабочей сессии. Подробная архитектура — в `PROJECT_CONTEXT.md`, этапы — в `ROADMAP.md`, правила версий — в `VERSIONING.md`, фактический прогресс — в GitHub Issues.
 
@@ -17,8 +17,10 @@
 - **PR #30:** merged — базовый `0.3f`
 - **PR #31:** merged — `0.3f fix1`, squash commit `1117502220887fe05e294b3b6a4af3037c7b5d88`
 - **Windows Build #310:** success; финальный code/live gate fix1
-- **Текущий checkpoint:** `0.3g — Explanation / usable output`
-- **После 0.3g:** `0.3h — Integration / musical validation`
+- **Рабочая ветка:** `stage-3-context-ranking-fix2`
+- **PR #32:** draft — `0.3f fix2`
+- **Текущий checkpoint:** `0.3f fix2 — Pattern evidence / false-positive guards`
+- **После fix2:** `0.3g — Explanation / usable output`
 
 ## Архитектурная граница
 
@@ -33,7 +35,9 @@ global key
 
 Для длиннее-живущего harmonic context Stage 3 использует отдельный host-neutral `PatternContext / RecognizedPatternInstance`, реконструируемый детерминированно из bounded `PatternTimelineWindow`. Это не arbitrary history и не расширение Stage 1 до `previousN`.
 
-Project key в DAW автоматически не меняется. Core не зависит от JUCE / ARA / Fender Studio Pro.
+`0.3f fix2` усиливает evidence semantics именно на bounded timeline: уже известный future member может **опровергнуть** provisional cadence candidate. Это veto ложной гипотезы, а не скрытый выбор другой трактовки.
+
+Project key в DAW автоматически не меняется. Core не зависит от JUCE / ARA / Studio Pro.
 
 ```text
 TimelineHarmonicSnapshot
@@ -42,7 +46,7 @@ Global harmonic analysis
         ↓
 Pattern Recognizer
         ↓
-PatternContext / recognized pattern continuity
+PatternContext / bounded timeline evidence
         ↓
 Tritone Substitution
         ↓
@@ -115,7 +119,41 @@ Windows Build #310 — success; финальный live-test принят Вла
 
 Acceptance: [STAGE_3_0.3f_FIX1_PLAN.md](STAGE_3_0.3f_FIX1_PLAN.md).
 
-## Текущий checkpoint — 0.3g
+## Текущий refinement — 0.3f fix2
+
+Real-harmony validation **Corcovado** показал, что continuity fix1 работает, но provisional recognizer иногда принимает шаблон несмотря на уже известное противоречащее продолжение.
+
+Основные реальные FAIL-кейсы:
+
+```text
+Fm7 → Bb7 → Em7        != Eb-major ii–V–I
+Em7 → A7 → D7          != D-major ii–V–I / V–I
+Dm7 → G7 → D7/A        != C-major ii–V–I
+```
+
+Кроме false-positive guards, fix2 добавляет два музыкально нужных first-class случая:
+
+```text
+C major: Em7 → Am7 → Dm7 → G7
+         iii     vi     ii     V
+
+D7/A → Ab° → Gm7
+ V     passing   target
+```
+
+`iii–vi–ii–V` считается самостоятельным устойчивым оборотом — отсутствующий I не реконструируется как обязательная замена. `D7/A→Ab°→Gm7` использует узкий `passingDiminished` bridge и сохраняет dominant direction через ornamental diminished.
+
+Полный scope и acceptance gate: [STAGE_3_0.3f_FIX2_PLAN.md](STAGE_3_0.3f_FIX2_PLAN.md).
+
+### Presentation semantics, зафиксированные для 0.3g
+
+- серый — неявный/отсутствующий member шаблона;
+- янтарный/оранжевый — implied/provisional member или гипотеза;
+- красный — известное продолжение опровергает ожидаемый member / конфликт.
+
+При этом `iii–vi–ii–V` не показывает missing I как «дыру»: это самостоятельный pattern.
+
+## После fix2 — 0.3g
 
 `0.3g — Explanation / usable output` должен завершить объяснимую пользовательскую цепочку:
 
@@ -129,15 +167,18 @@ Acceptance: [STAGE_3_0.3f_FIX1_PLAN.md](STAGE_3_0.3f_FIX1_PLAN.md).
 - Why?-data без повторного harmonic analysis в UI;
 - presentation-layer схлопывает одинаковый музыкальный материал из нескольких interpretations, сохраняя provenance;
 - top-level/nested PatternContext используется как источник объяснения;
+- presentation для implied/provisional/conflicting evidence использует принятую цветовую семантику;
 - T1/T2/T3 policy остаётся Stage 4.
 
 ## Что читать при продолжении
 
 1. `docs/CURRENT_STATE.md`;
 2. `docs/STAGE_3_PLAN.md`;
-3. `docs/STAGE_3_0.3f_FIX1_PLAN.md` — принятый refinement;
-4. `docs/STAGE_3_0.3f_LIVE_TEST.md` — принятый базовый 0.3f;
-5. `docs/STAGE_1_TO_STAGE_2_CONTRACT.md`;
-6. `docs/ARCHITECTURAL_DECISIONS.md`;
-7. `docs/IMPROVISATION_METHOD.md`;
-8. Issue #4 — Stage 3.
+3. `docs/STAGE_3_0.3f_FIX2_PLAN.md` — текущий refinement;
+4. `docs/STAGE_3_0.3f_FIX1_PLAN.md` — принятый continuity refinement;
+5. `docs/STAGE_3_0.3f_LIVE_TEST.md` — принятый базовый 0.3f;
+6. `docs/STAGE_1_TO_STAGE_2_CONTRACT.md`;
+7. `docs/ARCHITECTURAL_DECISIONS.md`;
+8. `docs/IMPROVISATION_METHOD.md`;
+9. Issue #4 — Stage 3;
+10. PR #32 — текущая реализация fix2.
