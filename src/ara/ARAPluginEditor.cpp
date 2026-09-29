@@ -333,14 +333,14 @@ juce::String summaryPatternName(smartimproviser::harmony::HarmonicPatternType ty
     using smartimproviser::harmony::HarmonicPatternType;
     switch (type)
     {
-        case HarmonicPatternType::majorIiVI: return "II–V–I";
-        case HarmonicPatternType::minorIiHalfDimVi: return "IIø–V–I";
-        case HarmonicPatternType::minorIvVi: return "IV–V–I";
-        case HarmonicPatternType::dominantToTonic: return "V–I";
-        case HarmonicPatternType::turnaroundIVIiiV: return "I–VI–II–V";
-        case HarmonicPatternType::majorIiiViIiV: return "III–VI–II–V";
-        case HarmonicPatternType::majorCadentialChain: return "III–VI7–II–V–I";
-        case HarmonicPatternType::minorIvToI: return "IV–I";
+        case HarmonicPatternType::majorIiVI: return ru("II–V–I");
+        case HarmonicPatternType::minorIiHalfDimVi: return ru("IIø–V–I");
+        case HarmonicPatternType::minorIvVi: return ru("IV–V–I");
+        case HarmonicPatternType::dominantToTonic: return ru("V–I");
+        case HarmonicPatternType::turnaroundIVIiiV: return ru("I–VI–II–V");
+        case HarmonicPatternType::majorIiiViIiV: return ru("III–VI–II–V");
+        case HarmonicPatternType::majorCadentialChain: return ru("III–VI7–II–V–I");
+        case HarmonicPatternType::minorIvToI: return ru("IV–I");
         default: return patternName(type);
     }
 }
@@ -723,15 +723,15 @@ void SmartImproviserARAEditor::timerCallback()
     const auto& incomplete = cachedSituation.incompleteCadence;
     if (incomplete.valid)
     {
-        showPattern("II–V–", "I", missingColour, progress(incomplete.positionIndex, 3));
+        showPattern(ru("II–V–"), "I", missingColour, progress(incomplete.positionIndex, 3));
     }
     else if (impliedLink.valid)
     {
-        showPattern("V/V → ", "V", impliedColour, progress(impliedLink.positionIndex, 2));
+        showPattern(ru("V/V → "), "V", impliedColour, progress(impliedLink.positionIndex, 2));
     }
     else if (cachedSituation.expectedTonic.valid)
     {
-        showPattern("III–VI–II–V–", "I", missingColour,
+        showPattern(ru("III–VI–II–V–"), "I", missingColour,
                     progress(cachedSituation.patternContext.topLevel.positionIndex,
                              cachedSituation.patternContext.topLevel.length));
     }
@@ -746,7 +746,7 @@ void SmartImproviserARAEditor::timerCallback()
     {
         // A visible ii–V without a known I is only a candidate. The expected
         // tonic is not a played chord or an established local center.
-        showPattern("II–V–", "I", impliedColour,
+        showPattern(ru("II–V–"), "I", impliedColour,
                     progress(cachedSituation.localPattern.positionIndex, 3));
     }
     else
@@ -1094,7 +1094,7 @@ void SmartImproviserARAEditor::paint(juce::Graphics& g)
 
     g.setColour(juce::Colour::fromRGB(150, 156, 168));
     g.setFont(14.0f);
-    g.drawText(ru("0.3h fix2 • интеграция и музыкальная проверка"),
+    g.drawText(ru("0.3h fix3 • интеграция и музыкальная проверка"),
                24, 47, getWidth() - 48, 22, juce::Justification::centredLeft);
 
     g.setColour(juce::Colour::fromRGB(42, 46, 53));
