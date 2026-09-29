@@ -4,7 +4,7 @@
 
 ## Продуктовый workflow и статус
 
-Stage 3 завершён и принят после `0.3h fix3`; готовится stable **0.4**. Следующий этап — Stage 4 / Tension Engine.
+Stage 3 завершён и принят после `0.3h fix3`; текущая stable — **0.4**. Следующий этап — Stage 4 / Tension Engine.
 
 Центральный сценарий — работа над конкретной песней: быстро сохранить идею на такте, взять подходящий материал из общей/личной библиотеки, доработать, сохранить проект и продолжить. Подсказки по выбранному tension доступны независимо от наличия готовой фразы. Подробнее: [PRODUCT_WORKFLOW.md](PRODUCT_WORKFLOW.md).
 
@@ -225,7 +225,7 @@ Stage завершён версией `0.2`.
 0.4  — Stage 3 complete
 ```
 
-Цели и gates каждой буквы: [STAGE_3_PLAN.md](STAGE_3_PLAN.md), Issue #4. Начальная методика согласована: [IMPROVISATION_METHOD.md](IMPROVISATION_METHOD.md). Все checkpoints 0.3a–0.3h и fix-checkpoints приняты. Итоговая stable — 0.4 после release gate.
+Цели и gates каждой буквы: [STAGE_3_PLAN.md](STAGE_3_PLAN.md), Issue #4. Начальная методика согласована: [IMPROVISATION_METHOD.md](IMPROVISATION_METHOD.md). Все checkpoints 0.3a–0.3h и fix-checkpoints приняты. Итоговая stable — 0.4.
 
 Результат стратегии нужен как для самостоятельной подсказки, так и для будущего поиска Phrase. Используются существующие ImprovisationStrategy и ResolutionTarget; confidence анализа отделён от приоритета рекомендации.
 

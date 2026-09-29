@@ -1,6 +1,6 @@
 # Stage 3 — Improvisation Engine: рабочий план
 
-> Обновлено 2026-09-29. `0.3a–0.3h`, включая fix1–fix3 для 0.3h, приняты. Stage 3 завершён; готовится stable `0.4` без новой музыкальной логики.
+> Обновлено 2026-09-29. `0.3a–0.3h`, включая fix1–fix3 для 0.3h, приняты. Stage 3 завершён stable `0.4` без новой музыкальной логики.
 > Начальная методика и текстовая форма подсказки согласованы: [IMPROVISATION_METHOD.md](IMPROVISATION_METHOD.md). См. [PRODUCT_WORKFLOW.md](PRODUCT_WORKFLOW.md).
 
 ## Результат Stage
@@ -167,7 +167,7 @@ Windows Build #331 — success; 14/14 test targets green; live-test принят
 
 **0.3h fix3 — UTF-8 верхней строки [ACCEPTED]:** прямые литералы с `–`, `ø` и `→`, переданные в `juce::String`, на Windows отобразились кракозябрами. Все не ASCII части римских обозначений в compact summary теперь проходят через `juce::String::fromUTF8` (`ru`), как остальные локализованные строки. Гармоническая логика и цвет последней I не меняются. Build label/artifact — `0.3h fix3`.
 
-**Gate:** Windows Build #360 — success, 15/15 tests и VST3 artifact; финальный UI в Studio Pro принят пользователем 2026-09-29. Stable `0.4` проходит отдельный release build.
+**Gate:** Windows Build #360 — success, 15/15 tests и VST3 artifact; финальный UI в Studio Pro принят пользователем 2026-09-29. Итоговая stable `0.4` упакована отдельным release build.
 
 ## Общие правила
 

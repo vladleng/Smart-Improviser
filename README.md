@@ -10,13 +10,13 @@
 **Stage 1 — ARA Context Monitor завершён.**  
 **Stage 2 — Harmonic Engine завершён.**
 
-**Текущая опубликованная stable:** `0.3`
+**Текущая стабильная версия:** `0.4`
 
-**Stage 3:** завершён, `0.3h fix3` принят; готовится stable `0.4`
+**Stage 3:** завершён, stable `0.4`
 
 **Следующий Stage:** Stage 4 — Tension Engine (`0.4a → 0.4x`)
 
-Stable `0.3` фиксирует Stage 2. Stage 3 принят после музыкальной и визуальной проверки в Studio Pro; stable `0.4` проходит отдельный release build.
+Stable `0.4` фиксирует принятый Stage 3: стратегии и объяснения на основе HarmonicSituation. Tension T1/T2/T3 относится к Stage 4.
 
 Первая целевая среда:
 
@@ -158,7 +158,7 @@ Tests:      7 regression/integration targets
 
 `0.3a–0.3h fix3` выдают chord/guide/target notes, допустимые scale/source materials, harmonic concepts, resolution и объяснимые стратегии с provenance global/local/modal. Недостаток данных и неоднозначность показываются явно. Для `III–VI–II–V–I` несыгранная ожидаемая I остаётся серой и не становится выдуманным аккордом.
 
-[План и музыкальная приёмка](docs/STAGE_3_PLAN.md). Windows Build #360 прошёл 15/15 тестовых целей, финальный UI принят в Studio Pro. Stable `0.4` получает отдельный Windows artifact `Smart-Improviser-0.4-Windows`.
+[План и музыкальная приёмка](docs/STAGE_3_PLAN.md). Windows Build #360 прошёл 15/15 тестовых целей, финальный UI принят в Studio Pro. Stable `0.4` выпущена отдельным Windows artifact `Smart-Improviser-0.4-Windows` (папка установки `Smart Improviser.vst3`).
 
 ## Дальнейшее направление
 
