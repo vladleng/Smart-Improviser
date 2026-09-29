@@ -346,10 +346,8 @@ int main()
     expect(iiiViIiVEnd.patternContext.status == PatternContextStatus::completed
            && ! iiiViIiVEnd.pattern.evidence.has(EvidenceFlag::confirmedResolution),
            "iii-vi-ii-V completes on V without fabricating tonic resolution");
-    expect(iiiViIiVEnd.expectedTonic.valid
-           && iiiViIiVEnd.expectedTonic.rootFifths == 0
-           && ! iiiViIiVEnd.resolution.confirmed,
-           "standalone iii-vi-ii-V exposes C expectation without inventing resolution");
+    expect(! iiiViIiVEnd.expectedTonic.valid && ! iiiViIiVEnd.resolution.confirmed,
+           "unknown continuation does not claim C tonic is missing");
 
     const auto eHalfDimAt16 = makeChord(4, {0, 3, 6, 10}, 16.0);
     const std::array unresolvedTurnaround {eMin7At0, aMin7At4, dMin7At8, g7At12, eHalfDimAt16};
@@ -399,7 +397,8 @@ int main()
             makeChord(tonicFifths + 4, {0,3,7,10}, 0.0),
             makeChord(tonicFifths + 3, {0,3,7,10}, 4.0),
             makeChord(tonicFifths + 2, {0,3,7,10}, 8.0),
-            makeChord(tonicFifths + 1, {0,4,7,10}, 12.0)
+            makeChord(tonicFifths + 1, {0,4,7,10}, 12.0),
+            makeChord(tonicFifths + 4, {0,3,6,10}, 16.0)
         };
         const auto transposedV = analyzeWindow(makeKey(tonicFifths, false), transposed, 3);
         expect(transposedV.expectedTonic.valid

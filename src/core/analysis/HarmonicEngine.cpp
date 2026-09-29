@@ -783,17 +783,16 @@ void describeExpectedTonic(HarmonicSituation& situation) noexcept
         || situation.currentChord.quality != ChordQuality::dominant
         || situation.currentChord.rootPitchClass
             != circleOfFifthsToPitchClass(situation.globalKey.key.rootFifths + 1)
-        || (situation.nextChordAvailable && situation.nextChord.valid
-            && chordIsTonicForRoot(situation.nextChord,
-                                   situation.globalKey.key.rootPitchClass,
-                                   KeyMode::major))
+        || ! situation.nextChordAvailable || ! situation.nextChord.valid
+        || chordIsTonicForRoot(situation.nextChord,
+                               situation.globalKey.key.rootPitchClass,
+                               KeyMode::major)
         || (situation.resolution.available && situation.resolution.confirmed))
         return;
 
     situation.expectedTonic.valid = true;
     situation.expectedTonic.rootFifths = situation.globalKey.key.rootFifths;
-    if (situation.nextChordAvailable)
-        situation.expectedTonic.actualContinuation = situation.nextChord;
+    situation.expectedTonic.actualContinuation = situation.nextChord;
 }
 
 PatternMemberRole patternRole(HarmonicPatternType type,
