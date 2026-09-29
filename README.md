@@ -10,12 +10,13 @@
 **Stage 1 — ARA Context Monitor завершён.**  
 **Stage 2 — Harmonic Engine завершён.**
 
-**Текущая стабильная версия:** `0.3`  
-**Текущий Stage:** Stage 3 — Improvisation Engine<br>
-**Следующая рабочая линия:** `0.3a → 0.3x`  
-**Итог Stage 3:** `0.4`
+**Текущая опубликованная stable:** `0.3`
 
-Stable `0.3` фиксирует полностью принятый Stage 2. Новая музыкальная логика относительно `0.2f` в release не добавлялась.
+**Stage 3:** завершён, `0.3h fix3` принят; готовится stable `0.4`
+
+**Следующий Stage:** Stage 4 — Tension Engine (`0.4a → 0.4x`)
+
+Stable `0.3` фиксирует Stage 2. Stage 3 принят после музыкальной и визуальной проверки в Studio Pro; stable `0.4` проходит отдельный release build.
 
 Первая целевая среда:
 
@@ -31,7 +32,7 @@ Stable `0.3` фиксирует полностью принятый Stage 2. Н�
 
 Библиотечный источник и редактируемый экземпляр в песне независимы. Смена tension обновляет подсказки без автоматического переписывания нот.
 
-Это целевой workflow будущих Stage: stable 0.3 пока реализует Harmonic Engine. План: [PRODUCT_WORKFLOW.md](docs/PRODUCT_WORKFLOW.md).
+Это целевой workflow будущих Stage: Stage 3 добавил стратегии и объяснения, а song workspace остаётся будущим этапом. План: [PRODUCT_WORKFLOW.md](docs/PRODUCT_WORKFLOW.md).
 
 ## Ключевая идея
 
@@ -153,19 +154,11 @@ Package:    Smart Improviser.vst3
 Tests:      7 regression/integration targets
 ```
 
-## Следующий Stage — Improvisation Engine
+## Stage 3 — Improvisation Engine [ACCEPTED]
 
-Stage 3 использует готовый `HarmonicSituation` и должен выдавать:
+`0.3a–0.3h fix3` выдают chord/guide/target notes, допустимые scale/source materials, harmonic concepts, resolution и объяснимые стратегии с provenance global/local/modal. Недостаток данных и неоднозначность показываются явно. Для `III–VI–II–V–I` несыгранная ожидаемая I остаётся серой и не становится выдуманным аккордом.
 
-- chord tones;
-- guide tones;
-- target notes;
-- scales;
-- harmonic concepts;
-- resolution notes;
-- базовые improvisation strategies.
-
-Рабочий план Stage 3: [0.3a–0.3h → 0.4](docs/STAGE_3_PLAN.md). Checkpoints **0.3a–0.3d приняты**, включая SubV spelling fix2. Текущая рабочая версия — **0.3e**, harmonic concepts. [Каталог и живой тест](docs/STAGE_3_0.3e_LIVE_TEST.md). [Начальная методика](docs/IMPROVISATION_METHOD.md): материал Бойко, контекст доминанты перед выбором источника, простая расширяемая модель T1–T3.
+[План и музыкальная приёмка](docs/STAGE_3_PLAN.md). Windows Build #360 прошёл 15/15 тестовых целей, финальный UI принят в Studio Pro. Stable `0.4` получает отдельный Windows artifact `Smart-Improviser-0.4-Windows`.
 
 ## Дальнейшее направление
 

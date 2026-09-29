@@ -261,7 +261,7 @@ Stage 1 → 0.2
 Stage 2 → 0.3
 ```
 
-Текущий этап — **Stage 3 — Improvisation Engine**, рабочая версия **0.3e** (0.3a–0.3d приняты, включая fix2). Последняя принятая stable версия: **0.3**.
+Stage 3 — Improvisation Engine принят в `0.3h fix3` (Windows Build #360 и Studio Pro); stable **0.4** проходит release gate. Следующий этап — Stage 4, рабочая линия `0.4a → 0.4x`.
 
 Рабочая линия:
 
