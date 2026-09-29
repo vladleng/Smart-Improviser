@@ -769,30 +769,45 @@ void describeIncompleteCadence(HarmonicSituation& situation,
     }
 }
 
-void describeExpectedTonic(HarmonicSituation& situation) noexcept
+void describeExpectedTonic(HarmonicSituation& situation,
+                           const PatternTimelineWindow& window) noexcept
 {
     situation.expectedTonic = {};
     const auto& pattern = situation.patternContext;
     if (! pattern.valid
         || pattern.topLevel.type != HarmonicPatternType::majorIiiViIiV
-        || pattern.topLevel.positionIndex != 3
+        || pattern.topLevel.length != 4
+        || pattern.topLevel.positionIndex < 0
+        || pattern.topLevel.positionIndex > 3
         || ! situation.globalKey.valid
         || ! pattern.center.valid
         || pattern.center.rootPitchClass != situation.globalKey.key.rootPitchClass
-        || situation.globalKey.key.mode != KeyMode::major
-        || situation.currentChord.quality != ChordQuality::dominant
-        || situation.currentChord.rootPitchClass
+        || situation.globalKey.key.mode != KeyMode::major)
+        return;
+
+    const auto vIndex = window.currentIndex + 3 - pattern.topLevel.positionIndex;
+    const auto continuationIndex = vIndex + 1;
+    if (window.chordCount > window.chords.size()
+        || vIndex < 0 || continuationIndex >= window.chordCount)
+        return;
+
+    const auto v = normalizeChord(window.chords[static_cast<std::size_t>(vIndex)]);
+    const auto continuation = normalizeChord(
+        window.chords[static_cast<std::size_t>(continuationIndex)]);
+    if (! v.valid || v.quality != ChordQuality::dominant
+        || v.rootPitchClass
             != circleOfFifthsToPitchClass(situation.globalKey.key.rootFifths + 1)
-        || ! situation.nextChordAvailable || ! situation.nextChord.valid
-        || chordIsTonicForRoot(situation.nextChord,
+        || ! continuation.valid
+        || chordIsTonicForRoot(continuation,
                                situation.globalKey.key.rootPitchClass,
                                KeyMode::major)
-        || (situation.resolution.available && situation.resolution.confirmed))
+        || (pattern.topLevel.positionIndex == 3
+            && situation.resolution.available && situation.resolution.confirmed))
         return;
 
     situation.expectedTonic.valid = true;
     situation.expectedTonic.rootFifths = situation.globalKey.key.rootFifths;
-    situation.expectedTonic.actualContinuation = situation.nextChord;
+    situation.expectedTonic.actualContinuation = continuation;
 }
 
 PatternMemberRole patternRole(HarmonicPatternType type,
@@ -1170,7 +1185,7 @@ HarmonicSituation analyzeHarmonicSituation(const TimelineHarmonicSnapshot& snaps
 
     applyPatternWindowContext(result, patternWindow);
     describeIncompleteCadence(result, patternWindow);
-    describeExpectedTonic(result);
+    describeExpectedTonic(result, patternWindow);
 
     if (result.evidence.interpretation == InterpretationStatus::unknown)
         result.evidence.markUnique();

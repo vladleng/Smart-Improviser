@@ -326,6 +326,25 @@ juce::String patternName(smartimproviser::harmony::HarmonicPatternType type)
     }
 }
 
+// Compact upper-case Roman notation for the current-context line. The
+// diagnostic panels keep their more descriptive pattern names and chord data.
+juce::String summaryPatternName(smartimproviser::harmony::HarmonicPatternType type)
+{
+    using smartimproviser::harmony::HarmonicPatternType;
+    switch (type)
+    {
+        case HarmonicPatternType::majorIiVI: return ru("II–V–I");
+        case HarmonicPatternType::minorIiHalfDimVi: return ru("IIø–V–I");
+        case HarmonicPatternType::minorIvVi: return ru("IV–V–I");
+        case HarmonicPatternType::dominantToTonic: return ru("V–I");
+        case HarmonicPatternType::turnaroundIVIiiV: return ru("I–VI–II–V");
+        case HarmonicPatternType::majorIiiViIiV: return ru("III–VI–II–V");
+        case HarmonicPatternType::majorCadentialChain: return ru("III–VI7–II–V–I");
+        case HarmonicPatternType::minorIvToI: return ru("IV–I");
+        default: return patternName(type);
+    }
+}
+
 juce::String patternRoleName(smartimproviser::harmony::PatternMemberRole role)
 {
     using smartimproviser::harmony::PatternMemberRole;
@@ -675,63 +694,46 @@ void SmartImproviserARAEditor::timerCallback()
     if (cachedSituation.localPattern.recognized())
         activePattern = &cachedSituation.localPattern;
 
-    summaryPattern = ru("Оборот: ");
-    if (activePattern->recognized())
-    {
-        summaryPattern += patternName(activePattern->type);
-        if (activePattern->positionIndex >= 0 && activePattern->length > 0)
-            summaryPattern += ru("   •   ") + juce::String(activePattern->positionIndex + 1)
-                + " / " + juce::String(activePattern->length);
-    }
-    else
-    {
-        summaryPattern += ru("не распознан");
-    }
-
     summaryPatternDisplay.clear();
-    const juce::Font patternFont { juce::FontOptions(13.2f) };
+    const juce::Font labelFont { juce::FontOptions(14.0f) };
+    const juce::Font romanFont { juce::FontOptions(16.0f, juce::Font::bold) };
     const auto presentColour = juce::Colour::fromRGB(220, 225, 234);
     const auto missingColour = juce::Colour::fromRGB(140, 146, 157);
     const auto impliedColour = juce::Colour::fromRGB(224, 172, 85);
+    const auto label = ru("Оборот: ");
+    const auto progress = [](int position, int length)
+    {
+        return position >= 0 && length > 0
+            ? ru("   •   ") + juce::String(position + 1) + " / " + juce::String(length)
+            : juce::String();
+    };
+    const auto showPattern = [&](const juce::String& roman,
+                                 const juce::String& last,
+                                 juce::Colour lastColour,
+                                 const juce::String& suffix)
+    {
+        summaryPattern = label + roman + last + suffix;
+        summaryPatternDisplay.append(label, labelFont, presentColour);
+        summaryPatternDisplay.append(roman, romanFont, presentColour);
+        if (last.isNotEmpty())
+            summaryPatternDisplay.append(last, romanFont, lastColour);
+        if (suffix.isNotEmpty())
+            summaryPatternDisplay.append(suffix, labelFont, presentColour);
+    };
     const auto& incomplete = cachedSituation.incompleteCadence;
     if (incomplete.valid)
     {
-        const auto prefix = ru("Оборот: незавершённый   ii (")
-            + utf8String(smartimproviser::harmony::normalizedChordSymbol(incomplete.ii))
-            + ru(") – V (")
-            + utf8String(smartimproviser::harmony::normalizedChordSymbol(incomplete.v))
-            + ru(") – ");
-        const auto missing = "I (" + utf8String(fifthsName(incomplete.missingTonicRootFifths))
-            + ru(", отсутствует)");
-        const auto suffix = ru("   •   ") + juce::String(incomplete.positionIndex + 1) + " / 3";
-        summaryPattern = prefix + missing + suffix;
-        summaryPatternDisplay.append(prefix, patternFont, presentColour);
-        summaryPatternDisplay.append(missing, patternFont, missingColour);
-        summaryPatternDisplay.append(suffix, patternFont, presentColour);
+        showPattern(ru("II–V–"), "I", missingColour, progress(incomplete.positionIndex, 3));
     }
     else if (impliedLink.valid)
     {
-        const auto prefix = ru("Оборот: V/V (")
-            + utf8String(smartimproviser::harmony::normalizedChordSymbol(impliedLink.firstChord))
-            + ru(") → ");
-        const auto implied = ru("подразумеваемая V (")
-            + utf8String(smartimproviser::harmony::normalizedChordSymbol(impliedLink.secondChord))
-            + ")";
-        const auto suffix = ru("   •   ") + juce::String(impliedLink.positionIndex + 1) + " / 2";
-        summaryPattern = prefix + implied + suffix;
-        summaryPatternDisplay.append(prefix, patternFont, presentColour);
-        summaryPatternDisplay.append(implied, patternFont, impliedColour);
-        summaryPatternDisplay.append(suffix, patternFont, presentColour);
+        showPattern(ru("V/V → "), "V", impliedColour, progress(impliedLink.positionIndex, 2));
     }
     else if (cachedSituation.expectedTonic.valid)
     {
-        const auto missing = ru("   →   I (")
-            + utf8String(fifthsName(cachedSituation.expectedTonic.rootFifths))
-            + ru("maj, отсутствует)");
-        summaryPattern += missing;
-        summaryPatternDisplay.append(summaryPattern.dropLastCharacters(missing.length()),
-                                     patternFont, presentColour);
-        summaryPatternDisplay.append(missing, patternFont, missingColour);
+        showPattern(ru("III–VI–II–V–"), "I", missingColour,
+                    progress(cachedSituation.patternContext.topLevel.positionIndex,
+                             cachedSituation.patternContext.topLevel.length));
     }
     else if (! cachedSituation.patternContext.valid
              && cachedSituation.localKey.valid
@@ -744,27 +746,15 @@ void SmartImproviserARAEditor::timerCallback()
     {
         // A visible ii–V without a known I is only a candidate. The expected
         // tonic is not a played chord or an established local center.
-        const auto& candidate = cachedSituation.localPattern;
-        const auto& ii = candidate.positionIndex == 0
-            ? cachedSituation.currentChord : cachedSituation.previousChord;
-        const auto& v = candidate.positionIndex == 0
-            ? cachedSituation.nextChord : cachedSituation.currentChord;
-        const auto prefix = ru("Оборот: предполагаемый   ii (")
-            + utf8String(smartimproviser::harmony::normalizedChordSymbol(ii))
-            + ru(") – V (")
-            + utf8String(smartimproviser::harmony::normalizedChordSymbol(v))
-            + ru(") – ");
-        const auto expected = "I (" + utf8String(fifthsName(cachedSituation.localKey.key.rootFifths))
-            + ru(", не подтверждён)");
-        const auto suffix = ru("   •   ") + juce::String(candidate.positionIndex + 1) + " / 3";
-        summaryPattern = prefix + expected + suffix;
-        summaryPatternDisplay.append(prefix, patternFont, presentColour);
-        summaryPatternDisplay.append(expected, patternFont, impliedColour);
-        summaryPatternDisplay.append(suffix, patternFont, presentColour);
+        showPattern(ru("II–V–"), "I", impliedColour,
+                    progress(cachedSituation.localPattern.positionIndex, 3));
     }
     else
     {
-        summaryPatternDisplay.append(summaryPattern, patternFont, presentColour);
+        showPattern(activePattern->recognized()
+                        ? summaryPatternName(activePattern->type) : ru("не распознан"),
+                    {}, presentColour,
+                    progress(activePattern->positionIndex, activePattern->length));
     }
     summaryPatternDisplay.setWordWrap(juce::AttributedString::none);
 
@@ -1104,7 +1094,7 @@ void SmartImproviserARAEditor::paint(juce::Graphics& g)
 
     g.setColour(juce::Colour::fromRGB(150, 156, 168));
     g.setFont(14.0f);
-    g.drawText(ru("0.3h fix1 • интеграция и музыкальная проверка"),
+    g.drawText(ru("0.3h fix3 • интеграция и музыкальная проверка"),
                24, 47, getWidth() - 48, 22, juce::Justification::centredLeft);
 
     g.setColour(juce::Colour::fromRGB(42, 46, 53));
@@ -1127,7 +1117,7 @@ void SmartImproviserARAEditor::paint(juce::Graphics& g)
     g.drawText(summaryLocal, 40, 155, getWidth() - 80, 18,
                juce::Justification::centredLeft, true);
     summaryPatternDisplay.draw(g, juce::Rectangle<float>(40.0f, 177.0f,
-                                static_cast<float>(getWidth() - 80), 20.0f));
+                                static_cast<float>(getWidth() - 80), 22.0f));
 
     g.setColour(juce::Colour::fromRGB(220, 225, 234));
     g.setFont(13.5f);
