@@ -185,6 +185,8 @@ inline bool sameSource(const SourceMaterial& a, const SourceMaterial& b) noexcep
         && sameNotes(a.chordRelativeNotes, b.chordRelativeNotes);
 }
 
+inline std::vector<MaterialNote> importantNotes(const ImprovisationStrategy& strategy);
+
 inline bool visuallySameMaterial(const ExplanationItem& item,
                                  const ImprovisationStrategy& strategy) noexcept
 {
@@ -196,6 +198,7 @@ inline bool visuallySameMaterial(const ExplanationItem& item,
         && sameChordIdentity(item.thinkingStructure, strategy.thinkingStructure)
         && sameChordIdentity(item.targetChord, strategy.nextChord)
         && sameNotes(item.targetNotes, strategy.targetNotes)
+        && sameNotes(item.importantNotes, importantNotes(strategy))
         && item.resolution.confirmed == strategy.resolution.confirmed
         && sameChordIdentity(item.resolution.targetChord, strategy.resolution.targetChord);
 }

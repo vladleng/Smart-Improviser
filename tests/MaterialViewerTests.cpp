@@ -93,5 +93,14 @@ int main()
     expect(! buildMaterialView(result, explanation, 100).valid,
            "out-of-range selection cannot display stale material");
 
+    // Identical source notes with different important-tone roles may not be
+    // collapsed into one viewer item that silently inherits the first role set.
+    auto distinctRole = scale;
+    distinctRole.guideNotes.clear();
+    distinctRole.characteristicNotes.clear();
+    result.strategies.push_back(distinctRole);
+    expect(buildExplanation(result).items.size() == 4,
+           "different guide/characteristic roles retain separate material views");
+
     std::cout << "Material viewer projection: passed\n";
 }

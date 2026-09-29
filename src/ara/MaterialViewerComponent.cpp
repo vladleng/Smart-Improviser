@@ -203,7 +203,6 @@ void MaterialViewerComponent::paint(juce::Graphics& g)
         g.setColour(sourceColour);
         g.drawText(juce::String::fromUTF8(name), static_cast<int>(x + 12), 269, 100, 18,
                    juce::Justification::centredLeft);
-        x += 12.0f + juce::jmax(61.0f, g.getCurrentFont().getStringWidthFloat(
-            juce::String::fromUTF8(name)) + 13.0f);
+        x += 130.0f;
     }
 }
