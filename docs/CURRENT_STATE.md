@@ -1,6 +1,6 @@
 # Smart Improviser — Current State
 
-> Обновлено 2026-09-29: Stage 3 (`0.3a–0.3h`, включая `0.3h fix1–fix3`) принят после Windows Build #360 и Studio Pro live-test. Текущая stable — `0.4`. Следующий Stage 4 — Tension Engine.
+> Обновлено 2026-09-29: Stage 3 принят, текущая stable — `0.4`. Следующий Stage 4 начинается с визуализации нот `0.4a`, затем Tension Engine; Song workspace и редактор остаются Stage 7–8.
 
 > Короткая точка входа для нового чата или рабочей сессии. Подробная архитектура — в `PROJECT_CONTEXT.md`, этапы — в `ROADMAP.md`, правила версий — в `VERSIONING.md`, фактический прогресс — в GitHub Issues.
 
@@ -22,7 +22,7 @@
 - **PR #36:** accepted 0.3g fix1, merged в рабочую ветку PR #35
 - **PR #35:** accepted 0.3g, merged в main (`85337ff`)
 - **Windows Build #331:** success; 14/14 test targets green
-- **Следующий Stage:** Stage 4 — Tension Engine (`0.4a → 0.4x`)
+- **Следующий Stage:** Stage 4 — Visual Material Viewer (`0.4a`), затем Tension Engine (`0.4b → 0.4x`)
 
 0.3h принят 2026-09-29. Fix1: ожидаемая отсутствующая тоника отдельна от распознанного `III–VI–II–V`, G7 получает Mixolydian и допустимые альтернативы, Am7 в C major не навязывается Am6. Fix2: компактные крупные римские ступени с серой I на позициях 1/4–4/4 при известном обходе тоники. Fix3: UTF-8 для `–`, `ø`, `→` в Windows UI. Windows Build #360 — success, 15/15 tests и VST3 artifact; пользователь принял результат в Studio Pro. PR #39 → #38 → #37 merged в main (`b587408`). Stable `0.4` упакована с отдельным Windows build/artifact; музыкальная логика относительно принятого fix3 не менялась.
 

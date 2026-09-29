@@ -14,9 +14,9 @@
 
 **Stage 3:** завершён, stable `0.4`
 
-**Следующий Stage:** Stage 4 — Tension Engine (`0.4a → 0.4x`)
+**Следующий Stage:** Stage 4 — визуализация материала (`0.4a`), затем Tension Engine (`0.4b → 0.4x`)
 
-Stable `0.4` фиксирует принятый Stage 3: стратегии и объяснения на основе HarmonicSituation. Tension T1/T2/T3 относится к Stage 4.
+Stable `0.4` фиксирует принятый Stage 3: стратегии и объяснения на основе HarmonicSituation. В `0.4a` появится viewer нот выбранной гаммы/стратегии; Tension T1/T2/T3 развивается далее в Stage 4.
 
 Первая целевая среда:
 
@@ -176,10 +176,11 @@ Tests:      15 regression/integration targets
 
 После Improvisation Engine планируются:
 
-- Tension Engine;
+- Visual Material Viewer (Stage 4);
+- Tension Engine (Stage 4);
 - Phrase Library;
 - Phrase Transposition;
-- Fretboard / Notation / TAB Viewer;
+- Phrase Viewer / Song Workspace (Stage 7);
 - Phrase Editor;
 - Phrase Transformation Engine;
 - Improvisation Planner.
