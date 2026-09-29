@@ -259,6 +259,7 @@ Smart Improviser.vst3
 Stage 0 → 0.1
 Stage 1 → 0.2
 Stage 2 → 0.3
+Stage 3 → 0.4
 ```
 
 Stage 3 — Improvisation Engine принят в `0.3h fix3` (Windows Build #360 и Studio Pro); текущая stable — **0.4**. Следующий этап — Stage 4, рабочая линия `0.4a → 0.4x`.

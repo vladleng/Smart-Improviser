@@ -154,6 +154,18 @@ Package:    Smart Improviser.vst3
 Tests:      7 regression/integration targets
 ```
 
+## Release 0.4
+
+```text
+Build label: Smart Improviser 0.4
+CMake:      0.4.0
+Artifact:   Smart-Improviser-0.4-Windows
+Package:    Smart Improviser.vst3
+Tests:      15 regression/integration targets
+```
+
+Релиз включает принятый Improvisation Engine и explanation layer. Tension T1/T2/T3 и библиотека фраз остаются задачами следующих Stage.
+
 ## Stage 3 — Improvisation Engine [ACCEPTED]
 
 `0.3a–0.3h fix3` выдают chord/guide/target notes, допустимые scale/source materials, harmonic concepts, resolution и объяснимые стратегии с provenance global/local/modal. Недостаток данных и неоднозначность показываются явно. Для `III–VI–II–V–I` несыгранная ожидаемая I остаётся серой и не становится выдуманным аккордом.
