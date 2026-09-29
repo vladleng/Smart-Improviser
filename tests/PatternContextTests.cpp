@@ -1,5 +1,6 @@
 #include "core/analysis/HarmonicEngine.h"
 #include "core/analysis/Explanation.h"
+#include "core/analysis/ImprovisationEngine.h"
 
 #include <array>
 #include <cstdlib>
@@ -345,6 +346,87 @@ int main()
     expect(iiiViIiVEnd.patternContext.status == PatternContextStatus::completed
            && ! iiiViIiVEnd.pattern.evidence.has(EvidenceFlag::confirmedResolution),
            "iii-vi-ii-V completes on V without fabricating tonic resolution");
+    expect(! iiiViIiVEnd.expectedTonic.valid && ! iiiViIiVEnd.resolution.confirmed,
+           "unknown continuation does not claim C tonic is missing");
+
+    const auto eHalfDimAt16 = makeChord(4, {0, 3, 6, 10}, 16.0);
+    const std::array unresolvedTurnaround {eMin7At0, aMin7At4, dMin7At8, g7At12, eHalfDimAt16};
+    for (int index = 0; index < 4; ++index)
+    {
+        const auto member = analyzeWindow(cMajor, unresolvedTurnaround, index);
+        expect(member.pattern.type == HarmonicPatternType::majorIiiViIiV
+               && member.pattern.positionIndex == index
+               && member.expectedTonic.valid
+               && member.expectedTonic.rootFifths == 0
+               && member.expectedTonic.actualContinuation.rootPitchClass == 4
+               && ! member.incompleteCadence.valid,
+               "each visible iii-vi-ii-V member carries the same missing global tonic");
+    }
+    const auto cMaj7At16 = makeChord(0, {0, 4, 7, 11}, 16.0);
+    const std::array resolvedTurnaround {eMin7At0, aMin7At4, dMin7At8, g7At12, cMaj7At16};
+    for (int index = 0; index < 4; ++index)
+        expect(! analyzeWindow(cMajor, resolvedTurnaround, index).expectedTonic.valid,
+               "played Cmaj7 is not marked as a missing expected tonic");
+    const auto globalV = analyzeWindow(cMajor, unresolvedTurnaround, 3);
+    expect(globalV.pattern.type == HarmonicPatternType::majorIiiViIiV
+           && globalV.pattern.positionIndex == 3
+           && ! globalV.incompleteCadence.valid
+           && globalV.expectedTonic.valid
+           && globalV.expectedTonic.actualContinuation.rootPitchClass == 4,
+           "actual non-tonic continuation preserves four-member pattern and missing C");
+    const auto globalVMaterial = analyzeImprovisation(globalV);
+    bool mixolydian = false;
+    bool lydianDominant = false;
+    bool alteredDominant = false;
+    for (const auto& strategy : globalVMaterial.strategies)
+    {
+        mixolydian = mixolydian || (strategy.source.mode == DiatonicMode::mixolydian
+            && ! strategy.resolution.confirmed && strategy.nextChord.rootPitchClass == 4);
+        lydianDominant = lydianDominant || (strategy.ruleId == "boyko.melodic-minor.V"
+            && ! strategy.resolution.confirmed && strategy.nextChord.rootPitchClass == 4);
+        alteredDominant = alteredDominant || (strategy.ruleId == "boyko.melodic-minor.bII"
+            && ! strategy.resolution.confirmed && strategy.nextChord.rootPitchClass == 4);
+    }
+    expect(mixolydian && lydianDominant && alteredDominant,
+           "global V has basic and contextual alternatives aiming at actual continuation");
+    const auto why = explainImprovisation(globalVMaterial);
+    bool missingC = false;
+    for (const auto& evidence : why.items.front().why)
+        missingC = missingC || (evidence.kind == ExplanationEvidenceKind::expectedTonic
+            && evidence.state == ExplanationEvidenceState::missing && evidence.pitchClass == 0);
+    expect(missingC, "explanation records absent C without treating it as a played chord");
+
+    const auto relativeMinor = analyzeImprovisation(analyzeWindow(cMajor, unresolvedTurnaround, 1));
+    bool aeolian = false;
+    bool automaticAm6 = false;
+    for (const auto& strategy : relativeMinor.strategies)
+    {
+        aeolian = aeolian || strategy.source.mode == DiatonicMode::aeolian;
+        automaticAm6 = automaticAm6 || strategy.ruleId == "boyko.melodic-minor.root";
+    }
+    expect(aeolian && ! automaticAm6,
+           "diatonic Am7 in C has Aeolian but no automatic Am6 melodic-minor application");
+
+    for (int tonicFifths = -5; tonicFifths <= 6; ++tonicFifths)
+    {
+        const std::array transposed {
+            makeChord(tonicFifths + 4, {0,3,7,10}, 0.0),
+            makeChord(tonicFifths + 3, {0,3,7,10}, 4.0),
+            makeChord(tonicFifths + 2, {0,3,7,10}, 8.0),
+            makeChord(tonicFifths + 1, {0,4,7,10}, 12.0),
+            makeChord(tonicFifths + 4, {0,3,6,10}, 16.0)
+        };
+        const auto transposedV = analyzeWindow(makeKey(tonicFifths, false), transposed, 3);
+        expect(transposedV.expectedTonic.valid
+               && transposedV.expectedTonic.rootFifths == tonicFifths
+               && ! transposedV.resolution.confirmed,
+               "twelve keys retain the expected tonic spelling without invented resolution");
+        const auto transposedMaterial = analyzeImprovisation(transposedV);
+        bool hasBasicV = false;
+        for (const auto& strategy : transposedMaterial.strategies)
+            hasBasicV = hasBasicV || strategy.source.mode == DiatonicMode::mixolydian;
+        expect(hasBasicV, "global V offers Mixolydian in all twelve keys");
+    }
 
     const auto cMaj7At0 = makeChord(0, { 0, 4, 7, 11 }, 0.0);
     const std::array fullTurnaround { cMaj7At0, aMin7At4, dMin7At8, g7At12 };

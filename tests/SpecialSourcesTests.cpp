@@ -194,13 +194,19 @@ int main()
     snapshot.nextChord = makeChord(0,{0,4,7,11});
     snapshot.currentChord = makeChord(1,{0,5,7,10});
     expect(analyzeImprovisation(analyzeHarmonicSituation(snapshot)).strategies.size()==1,"sus must not receive added major third");
-    auto situation = withSelectedCenter(makeKey(-2,false),makeChord(1,{0,3,7,10}));
+    auto situation = withSelectedCenter(makeKey(-1,false),makeChord(1,{0,3,7,10}));
     result = analyzeImprovisation(situation);
     auto min = rule(result,"boyko.melodic-minor.root");
     expect(min && min->source.name == "G melodic minor","minor root source");
     expect(min->source.notes.back().role == MaterialNoteRole::passingTone && min->source.notes.back().spelling == "F#","major seventh on m7 is passing");
     expect(min->omittedChordTones.size()==1 && min->omittedChordTones[0]==5,"m7 foundation F explicitly separate from melodic source");
     expect(result.strategies.front().source.notes.back().pitchClass==5,"foundation not rewritten");
+    const auto relativeVi = withSelectedCenter(key, makeChord(3,{0,3,7,10}));
+    expect(!rule(analyzeImprovisation(relativeVi),"boyko.melodic-minor.root"),
+           "diatonic Am7 in C major does not suggest Am6 automatically");
+    const auto explicitAm6 = withSelectedCenter(key, makeChord(3,{0,3,7,9}));
+    expect(rule(analyzeImprovisation(explicitAm6),"boyko.melodic-minor.root"),
+           "an explicitly written Am6 retains compatible melodic minor color");
     situation.currentChord.degrees[10]=9;
     expect(!rule(analyzeImprovisation(situation),"boyko.melodic-minor.root"),"omission does not hide wrong explicit degree");
     situation = withSelectedCenter(key,makeChord(4,{0,3,6,10}));

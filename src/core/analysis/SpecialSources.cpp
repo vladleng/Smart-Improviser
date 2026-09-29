@@ -208,10 +208,17 @@ void addSpecialSources(ImprovisationResult& result)
 
         if (chord.quality == ChordQuality::dominant)
         {
-            if (!situation.resolution.available || !situation.resolution.confirmed
-                || !situation.nextChordAvailable || !situation.nextChord.valid
-                || (result.dominantContext != DominantContext::toMajor
-                    && result.dominantContext != DominantContext::toMinor))
+            const bool expectedMajor = situation.expectedTonic.valid
+                && interpretation.kind == HarmonicInterpretationKind::globalContext
+                && interpretation.center.key.mode == KeyMode::major
+                && interpretation.center.key.rootPitchClass
+                    == circleOfFifthsToPitchClass(situation.expectedTonic.rootFifths);
+            const bool confirmedTarget = situation.resolution.available
+                && situation.resolution.confirmed
+                && situation.nextChordAvailable && situation.nextChord.valid
+                && (result.dominantContext == DominantContext::toMajor
+                    || result.dominantContext == DominantContext::toMinor);
+            if (! confirmedTarget && ! expectedMajor)
                 continue;
 
             const bool subV = interpretation.harmonic.substituteDominantConfirmed;
@@ -221,13 +228,24 @@ void addSpecialSources(ImprovisationResult& result)
             }
             else if (!interpretation.harmonic.substituteDominantCandidate)
             {
-                if (result.dominantContext == DominantContext::toMajor)
+                if (result.dominantContext == DominantContext::toMajor || expectedMajor)
                     append(result, lydian, index);
                 append(result, altered, index);
             }
         }
         else if (chord.quality == ChordQuality::minor)
-            append(result, minor, index);
+        {
+            // A diatonic vi in its explicit global major key is the relative
+            // minor, not an automatic melodic-minor tonicization or Am6.
+            const auto& global = situation.globalKey;
+            const bool relativeMinor = global.valid && global.key.mode == KeyMode::major
+                && interpretation.kind == HarmonicInterpretationKind::globalContext
+                && interpretation.center.key.rootPitchClass == global.key.rootPitchClass
+                && chord.rootPitchClass
+                    == circleOfFifthsToPitchClass(global.key.rootFifths + 3);
+            if (! relativeMinor || chord.hasTone(9) || chord.hasTone(11))
+                append(result, minor, index);
+        }
         else if (chord.quality == ChordQuality::halfDiminished)
             append(result, halfDim, index);
         else if (chord.quality == ChordQuality::diminished && chord.hasTone(9))

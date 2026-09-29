@@ -76,6 +76,16 @@ struct IncompleteCadence
     NormalizedChord actualContinuation;
 };
 
+// A completed iii-vi-ii-V may point toward its global tonic without containing
+// that tonic. This does not extend the four-member pattern, establish a local
+// key, or claim a resolution to a chord that was never played.
+struct ExpectedTonic
+{
+    bool valid = false;
+    std::int32_t rootFifths = 0;
+    NormalizedChord actualContinuation;
+};
+
 // Accepted Stage 1 -> Stage 2 contract. Do not add arbitrary timeline history
 // here: PatternTimelineWindow is a separate Stage 3 analysis input.
 struct TimelineHarmonicSnapshot
@@ -117,6 +127,7 @@ struct HarmonicSituation
     PatternContext patternContext;
     ImpliedDominantReading impliedDominant;
     IncompleteCadence incompleteCadence;
+    ExpectedTonic expectedTonic;
     ResolutionTarget resolution;
     AnalysisEvidence evidence;
 
