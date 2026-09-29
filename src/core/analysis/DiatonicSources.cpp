@@ -69,6 +69,11 @@ bool appendForInterpretation(ImprovisationResult& result, int index)
 
     const ModeDefinition* selected = nullptr;
     bool targetBased = false;
+    const bool expectedMajor = situation.expectedTonic.valid
+        && interpretation.kind == HarmonicInterpretationKind::globalContext
+        && interpretation.center.key.rootPitchClass
+            == circleOfFifthsToPitchClass(situation.expectedTonic.rootFifths)
+        && interpretation.center.key.mode == KeyMode::major;
 
     // Dominant source selection is interpretation-specific in 0.3f. A SubV
     // reading must not suppress an ordinary dominant alternative (or vice versa).
@@ -79,10 +84,10 @@ bool appendForInterpretation(ImprovisationResult& result, int index)
             return false;
         if (result.dominantContext == DominantContext::toMinor)
             return false;
-        if (result.dominantContext != DominantContext::toMajor)
+        if (result.dominantContext != DominantContext::toMajor && ! expectedMajor)
             return false;
         selected = &modes[4]; // Ordinary V -> major: basic Mixolydian.
-        targetBased = true;
+        targetBased = result.dominantContext == DominantContext::toMajor;
     }
     else
     {
@@ -153,9 +158,11 @@ bool appendForInterpretation(ImprovisationResult& result, int index)
     strategy.idea = "Connect the chord anchors using " + strategy.source.name + ".";
     strategy.explanation = targetBased
         ? "Basic dominant material for the confirmed major target in this interpretation."
-        : "Diatonic material of interpretation " + std::to_string(index + 1) + ": "
+        : (expectedMajor
+            ? "Global V material with an absent expected tonic; follow the actual continuation, not a confirmed resolution."
+            : "Diatonic material of interpretation " + std::to_string(index + 1) + ": "
             + spell(interpretation.center.key.rootFifths, 1, interpretation.center.key.rootPitchClass)
-            + " " + keyModeName(interpretation.center.key.mode) + ", starting from the chord root.";
+            + " " + keyModeName(interpretation.center.key.mode) + ", starting from the chord root.");
     strategy.conditions = "Scale notes are available material, not equally stable landing notes; use the chord anchors and targets.";
     if (chord.hasTone(4) && std::find(selected->intervals.begin(), selected->intervals.end(), 5) != selected->intervals.end())
         strategy.conditions += " Treat the natural 4th as a passing tone against the major 3rd.";

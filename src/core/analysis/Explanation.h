@@ -20,7 +20,8 @@ enum class ExplanationEvidenceKind : std::uint8_t
     resolution,
     incompleteCadence,
     impliedDominant,
-    continuationConflict
+    continuationConflict,
+    expectedTonic
 };
 
 enum class ExplanationEvidenceState : std::uint8_t
@@ -412,6 +413,26 @@ inline void appendContextEvidence(ExplanationItem& item,
             contradicted.ruleId = "why.actual-continuation-conflicts";
             contradicted.chord = context.incompleteCadence.actualContinuation;
             item.why.push_back(std::move(contradicted));
+        }
+    }
+
+    if (context.expectedTonic.valid)
+    {
+        ExplanationEvidenceItem missing;
+        missing.kind = ExplanationEvidenceKind::expectedTonic;
+        missing.state = ExplanationEvidenceState::missing;
+        missing.ruleId = "why.expected-tonic-not-played";
+        missing.pitchClass = circleOfFifthsToPitchClass(context.expectedTonic.rootFifths);
+        item.why.push_back(std::move(missing));
+
+        if (context.expectedTonic.actualContinuation.valid)
+        {
+            ExplanationEvidenceItem continuation;
+            continuation.kind = ExplanationEvidenceKind::continuationConflict;
+            continuation.state = ExplanationEvidenceState::contradicted;
+            continuation.ruleId = "why.actual-continuation-conflicts";
+            continuation.chord = context.expectedTonic.actualContinuation;
+            item.why.push_back(std::move(continuation));
         }
     }
 

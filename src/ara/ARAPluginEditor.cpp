@@ -176,6 +176,7 @@ juce::String localizeGeneratedText(juce::String text)
     text = text.replace("why.confirmed-resolution", ru("подтверждённое разрешение"));
     text = text.replace("why.implied-dominant", ru("подразумеваемая доминанта"));
     text = text.replace("why.missing-tonic", ru("отсутствующая тоника"));
+    text = text.replace("why.expected-tonic-not-played", ru("ожидаемая тоника отсутствует"));
     text = text.replace("why.actual-continuation-conflicts", ru("фактическое продолжение не совпало с ожидаемым"));
     text = text.replace("why.interpretation-ambiguous", ru("несколько допустимых трактовок"));
     return text;
@@ -722,6 +723,16 @@ void SmartImproviserARAEditor::timerCallback()
         summaryPatternDisplay.append(implied, patternFont, impliedColour);
         summaryPatternDisplay.append(suffix, patternFont, presentColour);
     }
+    else if (cachedSituation.expectedTonic.valid)
+    {
+        const auto missing = ru("   →   I (")
+            + utf8String(fifthsName(cachedSituation.expectedTonic.rootFifths))
+            + ru("maj, отсутствует)");
+        summaryPattern += missing;
+        summaryPatternDisplay.append(summaryPattern.dropLastCharacters(missing.length()),
+                                     patternFont, presentColour);
+        summaryPatternDisplay.append(missing, patternFont, missingColour);
+    }
     else if (! cachedSituation.patternContext.valid
              && cachedSituation.localKey.valid
              && cachedSituation.localKey.status
@@ -1093,7 +1104,7 @@ void SmartImproviserARAEditor::paint(juce::Graphics& g)
 
     g.setColour(juce::Colour::fromRGB(150, 156, 168));
     g.setFont(14.0f);
-    g.drawText(ru("0.3g fix1 • объяснение материала и гармонического контекста"),
+    g.drawText(ru("0.3h fix1 • интеграция и музыкальная проверка"),
                24, 47, getWidth() - 48, 22, juce::Justification::centredLeft);
 
     g.setColour(juce::Colour::fromRGB(42, 46, 53));
