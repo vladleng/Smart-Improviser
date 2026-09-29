@@ -26,6 +26,7 @@ struct ViewerNote
     int sourceInterval = -1;
     std::string spelling;
     unsigned roles = 0;
+    std::string chordSpelling; // Same pitch in the actual-chord context, when Core supplies it.
 };
 
 struct MaterialView
@@ -66,15 +67,19 @@ inline std::string spelledChordNote(const NormalizedChord& chord, const Material
     const auto wrap = [](int value, int modulus) { return (value % modulus + modulus) % modulus; };
     // Unknown degree: use an enharmonic pitch-class label rather than assert
     // a functional interval that Core did not provide.
-    const int degree = note.degree > 0 ? (note.degree - 1) % 7 :
-        (note.semitonesFromRoot == 0 ? 0 : -1);
-    if (degree < 0)
+    int degree = note.degree;
+    if (degree <= 0)
     {
-        static constexpr const char* names[] =
-            {"C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B"};
-        return names[wrap(note.pitchClass, 12)];
+        // Existing chord-relative spelling convention from HarmonicConcepts:
+        // infer a letter for display only when the host supplies no degree.
+        static constexpr int displayDegrees[] = {1, 9, 9, 3, 3, 11, 5, 5, 13, 13, 7, 7};
+        const int interval = wrap(note.pitchClass - chord.rootPitchClass, 12);
+        degree = displayDegrees[interval];
+        if (interval == 3 && chord.hasTone(4)) degree = 9;
+        if (interval == 6 && chord.hasTone(7)) degree = 11;
+        if (interval == 8 && chord.hasTone(4) && ! chord.hasTone(7)) degree = 5;
     }
-    const int letter = wrap(4 * wrap(chord.rootFifths, 7) + degree, 7);
+    const int letter = wrap(4 * wrap(chord.rootFifths, 7) + degree - 1, 7);
     int accidental = wrap(note.pitchClass - naturals[letter], 12);
     if (accidental > 6) accidental -= 12;
     return std::string(1, letters[letter])
@@ -117,8 +122,14 @@ inline MaterialView buildMaterialView(const ImprovisationResult& result,
             found->roles |= roles;
             return;
         }
+        const auto chordNote = std::find_if(item.source.chordRelativeNotes.begin(),
+                                            item.source.chordRelativeNotes.end(),
+            [&](const auto& n) { return n.pitchClass == note.pitchClass; });
+        const auto chordSpelling = chordNote == item.source.chordRelativeNotes.end()
+            ? spelledChordNote(view.chord, note)
+            : spelledChordNote(view.chord, *chordNote);
         view.current.push_back({note.pitchClass, note.semitonesFromRoot,
-                                spelledChordNote(view.chord, note), roles});
+                                spelledChordNote(view.chord, note), roles, chordSpelling});
     };
 
     for (const auto& note : item.source.notes)

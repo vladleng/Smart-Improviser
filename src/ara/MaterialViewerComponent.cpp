@@ -31,20 +31,29 @@ int illustrativeMidi(const ViewerNote& note, int rootPc)
         wrap(note.pitchClass - rootPc, 12));
 }
 
-int staffStep(const ViewerNote& note, int midi)
+int staffStep(const std::string& spelling, int midi)
 {
     static constexpr int naturalPc[] = {0, 2, 4, 5, 7, 9, 11};
     const std::string letters = "CDEFGAB";
-    const auto index = letters.find(note.spelling.empty() ? 'C' : note.spelling[0]);
+    const auto index = letters.find(spelling.empty() ? 'C' : spelling[0]);
     if (index == std::string::npos) return 0;
     int accidental = 0;
-    for (std::size_t i = 1; i < note.spelling.size(); ++i)
-        accidental += note.spelling[i] == '#' ? 1 : note.spelling[i] == 'b' ? -1 : 0;
+    for (std::size_t i = 1; i < spelling.size(); ++i)
+        accidental += spelling[i] == '#' ? 1 : spelling[i] == 'b' ? -1 : 0;
     const int octave = (midi - naturalPc[index] - accidental) / 12 - 1;
     return (octave - 4) * 7 + static_cast<int>(index) - 2; // E4 = 0
 }
 
-void drawNote(juce::Graphics& g, const ViewerNote& note, float x, float y, bool target)
+const std::string& visibleSpelling(const ViewerNote& note, ViewerLayer layer)
+{
+    if ((layer == ViewerLayer::chord || layer == ViewerLayer::guides
+         || layer == ViewerLayer::characteristic) && ! note.chordSpelling.empty())
+        return note.chordSpelling;
+    return note.spelling;
+}
+
+void drawNote(juce::Graphics& g, const ViewerNote& note, const std::string& spelling,
+              float x, float y, bool target)
 {
     const auto colour = noteColour(note);
     g.setColour(colour);
@@ -56,7 +65,7 @@ void drawNote(juce::Graphics& g, const ViewerNote& note, float x, float y, bool 
     }
     g.setColour(juce::Colour::fromRGB(225, 230, 238));
     g.setFont(11.5f);
-    g.drawText(juce::String::fromUTF8(note.spelling.c_str()),
+    g.drawText(juce::String::fromUTF8(spelling.c_str()),
                juce::Rectangle<float>(x - 19.0f, y + 7.0f, 38.0f, 14.0f),
                juce::Justification::centred);
 }
@@ -88,6 +97,25 @@ void MaterialViewerComponent::paint(juce::Graphics& g)
     g.drawFittedText(juce::String::fromUTF8(view.sourceName.c_str()),
                      16, 6, getWidth() - 30, 22, juce::Justification::centredLeft, 1);
 
+    juce::String aliases;
+    for (const auto& note : view.current)
+        if (! note.chordSpelling.empty() && note.spelling != note.chordSpelling)
+        {
+            if (aliases.isNotEmpty()) aliases += "  •  ";
+            aliases += juce::String::fromUTF8(note.spelling.c_str()) + " = "
+                + juce::String::fromUTF8(note.chordSpelling.c_str());
+        }
+    if (aliases.isNotEmpty())
+    {
+        g.setColour(juce::Colour::fromRGB(183, 191, 204));
+        g.setFont(11.5f);
+        const auto chordName = juce::String::fromUTF8(
+            smartimproviser::harmony::normalizedChordSymbol(view.chord).c_str());
+        g.drawFittedText(juce::String::fromUTF8("Источник / на ") + chordName + ": " + aliases,
+                         18, 28, getWidth() - (view.targets.empty() ? 36 : 205), 17,
+                         juce::Justification::centredLeft, 1);
+    }
+
     constexpr float bottom = 102.0f;
     g.setColour(juce::Colour::fromRGB(121, 128, 139));
     for (int i = 0; i < 5; ++i)
@@ -112,7 +140,8 @@ void MaterialViewerComponent::paint(juce::Graphics& g)
             const auto& note = *notes[i];
             const float x = left + (static_cast<float>(i) + 0.5f) * width / static_cast<float>(notes.size());
             const int midi = illustrativeMidi(note, root);
-            const float y = bottom - 5.0f * static_cast<float>(staffStep(note, midi));
+            const auto& spelling = visibleSpelling(note, layer);
+            const float y = bottom - 5.0f * static_cast<float>(staffStep(spelling, midi));
             if (y > bottom + 5.0f || y < bottom - 45.0f)
             {
                 g.setColour(juce::Colour::fromRGB(121, 128, 139));
@@ -121,7 +150,7 @@ void MaterialViewerComponent::paint(juce::Graphics& g)
                 if (y < bottom - 40.0f) for (float ledger = bottom - 50.0f; ledger >= y; ledger -= 10.0f)
                     g.drawLine(x - 9.0f, ledger, x + 9.0f, ledger);
             }
-            drawNote(g, note, x, y, target);
+            drawNote(g, note, spelling, x, y, target);
         }
     };
     drawStaffGroup(current, 60.0f, sourceWidth,
@@ -184,7 +213,7 @@ void MaterialViewerComponent::paint(juce::Graphics& g)
             }
             g.setColour(juce::Colour::fromRGB(22, 27, 32));
             g.setFont(juce::FontOptions(9.5f, juce::Font::bold));
-            g.drawFittedText(juce::String::fromUTF8(note.spelling.c_str()),
+            g.drawFittedText(juce::String::fromUTF8(visibleSpelling(note, layer).c_str()),
                              static_cast<int>(x - 11.0f), static_cast<int>(y - 8.0f),
                              22, 16, juce::Justification::centred, 1);
         }

@@ -102,5 +102,29 @@ int main()
     expect(buildExplanation(result).items.size() == 4,
            "different guide/characteristic roles retain separate material views");
 
+    // A melodic-minor source can legitimately call pc 3 Eb while the C7 #9
+    // application calls that same pitch D#. Keep both Core spellings visible.
+    ImprovisationResult altered;
+    altered.valid = true;
+    ImprovisationStrategy c7;
+    c7.actualChord.valid = true;
+    c7.actualChord.rootFifths = 0;
+    c7.actualChord.rootPitchClass = 0;
+    c7.actualChord.tones[4] = true;
+    c7.source.kind = MaterialKind::scale;
+    c7.source.rootPitchClass = 1;
+    c7.source.name = "Db melodic minor";
+    c7.source.notes.push_back({3, 2, 2, MaterialNoteRole::colorTone, true, "Eb"});
+    c7.source.chordRelativeNotes.push_back({3, 3, 9, MaterialNoteRole::colorTone, true, "D#"});
+    c7.characteristicNotes.push_back(c7.source.chordRelativeNotes.front());
+    altered.strategies.push_back(c7);
+    const auto alteredView = buildMaterialView(altered, buildExplanation(altered), 0);
+    const auto* color = find(alteredView.current, 3);
+    expect(color && color->spelling == "Eb" && color->chordSpelling == "D#",
+           "source Eb and C7 #9 D# remain explicit aliases");
+    MaterialNote unspelledGuide {4, 4, 0, MaterialNoteRole::guideTone, false, {}};
+    expect(spelledChordNote(c7.actualChord, unspelledGuide) == "E",
+           "unspelled C7 third uses a note name rather than pitch-class number");
+
     std::cout << "Material viewer projection: passed\n";
 }

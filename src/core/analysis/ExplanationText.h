@@ -1,6 +1,7 @@
 #pragma once
 
 #include "core/analysis/ImprovisationEngine.h"
+#include "core/analysis/MaterialViewer.h"
 #include "core/analysis/HarmonicFunction.h"
 #include "core/model/KeyModel.h"
 
@@ -56,11 +57,12 @@ inline std::string keyName(const KeyCenter& center)
     return root + " " + keyModeName(center.key.mode);
 }
 
-inline std::string noteName(const MaterialNote& note)
+inline std::string rootName(std::int32_t fifths)
 {
-    if (! note.spelling.empty())
-        return note.spelling;
-    return std::to_string(note.pitchClass);
+    static constexpr const char* names[] =
+        {"Cb", "Gb", "Db", "Ab", "Eb", "Bb", "F", "C", "G", "D", "A", "E", "B", "F#", "C#", "G#", "D#", "A#", "E#"};
+    return fifths >= -7 && fifths <= 11
+        ? names[static_cast<std::size_t>(fifths + 7)] : std::to_string(fifths);
 }
 }
 
@@ -93,7 +95,7 @@ inline std::string explanationDiagnosticText(const ImprovisationResult& result)
         {
             out << "ВАЖНЫЕ НОТЫ: ";
             for (const auto& note : item.importantNotes)
-                out << explanation_text_detail::noteName(note) << " ";
+                out << spelledChordNote(item.actualChord, note) << " ";
             out << "\n";
         }
 
@@ -125,7 +127,22 @@ inline std::string explanationDiagnosticText(const ImprovisationResult& result)
                 if (evidence.chord.valid)
                     out << " • " << normalizedChordSymbol(evidence.chord);
                 else if (evidence.pitchClass >= 0)
-                    out << " • pc=" << evidence.pitchClass;
+                {
+                    if (evidence.kind == ExplanationEvidenceKind::incompleteCadence
+                        && result.context.incompleteCadence.valid)
+                        out << " • " << explanation_text_detail::rootName(
+                            result.context.incompleteCadence.missingTonicRootFifths);
+                    else if (evidence.kind == ExplanationEvidenceKind::expectedTonic
+                             && result.context.expectedTonic.valid)
+                        out << " • " << explanation_text_detail::rootName(
+                            result.context.expectedTonic.rootFifths);
+                    else
+                    {
+                        MaterialNote note;
+                        note.pitchClass = evidence.pitchClass;
+                        out << " • " << spelledChordNote(item.actualChord, note);
+                    }
+                }
                 if (evidence.pattern.recognized())
                     out << " • pattern=" << static_cast<int>(evidence.pattern.type)
                         << " " << (evidence.pattern.positionIndex + 1)

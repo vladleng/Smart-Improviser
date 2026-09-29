@@ -53,3 +53,27 @@ Selection changes presentation only and never updates the harmonic ranking.
 
 Status: **implementation checkpoint; awaiting Windows CI and Studio Pro live
 acceptance**. Issue #5 and stable 0.4 remain unchanged until live confirmation.
+
+## 0.4a fix1 — Enharmonic notation (2026-09-29)
+
+Studio Pro screenshot on C7 → Fmaj7 showed `Db melodic minor` with `Eb`
+on the source staff, while important chord-relative tones used `D#` and some
+unspelled guides appeared as numeric pitch classes. `Eb` is correct as degree 2
+of Db melodic minor, and `D#` is correct as #9 of C7. Neither source nor chord
+spelling is changed by harmonic re-analysis.
+
+The viewer now shows both spellings with an explicit equivalence label. The
+source/all layers use source spelling; chord/guide/characteristic layers use the
+already supplied chord-relative spelling. Staff position follows the displayed
+letter, and the fretboard keeps the same pitch. Material and Sources text label
+the two contexts. Important notes, anchor/guide/characteristic/target lists,
+resolution moves, and evidence no longer fall back to a flat-biased pitch-class
+list or raw numeric pitch classes. Existing Core spelling data and host degrees
+take precedence; unknown degrees use the existing chord-relative display
+convention without changing pitch or harmonic interpretation.
+
+Live check: on `C7` choose `Db melodic minor`. Confirm `Eb` in the source layer,
+`D#` in the characteristic layer, `Eb = D#` in the legend line, and identical
+guitar positions. Check `Fb = E` on the same source. Inspect important notes,
+guide/target lists and movement arrows in Material / Sources. Repeat on a sharp
+key and a flat key to catch a fixed-name fallback. **Acceptance still pending.**
