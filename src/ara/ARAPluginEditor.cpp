@@ -510,12 +510,22 @@ juce::String moveText(const smartimproviser::harmony::ResolutionMove& move)
     return juce::String(pitchClassName(move.fromPitchClass)) + " -> "
          + pitchClassName(move.toPitchClass) + "  ";
 }
+
+juce::String materialSelectionKey(const smartimproviser::harmony::ExplanationItem& item)
+{
+    juce::String key = utf8String(item.source.name) + "|" + utf8String(item.idea)
+        + "|" + utf8String(item.conditions) + "|" + utf8String(item.usageHint);
+    for (const int index : item.interpretationIndices) key += "|" + juce::String(index);
+    for (const auto& note : item.source.notes)
+        key += "|" + utf8String(note.spelling) + ":" + juce::String(note.pitchClass);
+    return key;
+}
 }
 
 SmartImproviserARAEditor::SmartImproviserARAEditor(SmartImproviserARAProcessor& p)
     : juce::AudioProcessorEditor(p), processor(p)
 {
-    setSize(1020, 760);
+    setSize(1020, 1000);
 
     detailsView.setMultiLine(true, true);
     detailsView.setReadOnly(true);
@@ -527,6 +537,40 @@ SmartImproviserARAEditor::SmartImproviserARAEditor(SmartImproviserARAProcessor& 
     detailsView.setColour(juce::TextEditor::outlineColourId, juce::Colours::transparentBlack);
     detailsView.setColour(juce::TextEditor::focusedOutlineColourId, juce::Colours::transparentBlack);
     addAndMakeVisible(detailsView);
+
+    for (auto* selector : { &strategySelector, &layerSelector, &fretSelector })
+    {
+        selector->setColour(juce::ComboBox::backgroundColourId, juce::Colour::fromRGB(45, 49, 56));
+        selector->setColour(juce::ComboBox::textColourId, juce::Colour::fromRGB(225, 230, 238));
+        selector->setColour(juce::ComboBox::outlineColourId, juce::Colour::fromRGB(85, 94, 105));
+        addAndMakeVisible(*selector);
+    }
+    layerSelector.addItem(ru("Все роли"), 1);
+    layerSelector.addItem(ru("Источник"), 2);
+    layerSelector.addItem(ru("Аккорд"), 3);
+    layerSelector.addItem(ru("Направляющие"), 4);
+    layerSelector.addItem(ru("Характерные"), 5);
+    layerSelector.addItem(ru("Цели следующего аккорда"), 6);
+    layerSelector.setSelectedId(1, juce::dontSendNotification);
+    fretSelector.addItem(ru("Лады 0–12"), 1);
+    fretSelector.addItem(ru("Лады 5–17"), 2);
+    fretSelector.addItem(ru("Лады 12–24"), 3);
+    fretSelector.setSelectedId(1, juce::dontSendNotification);
+    strategySelector.onChange = [this]
+    {
+        if (updatingSelector) return;
+        const int index = strategySelector.getSelectedId() - 1;
+        if (index >= 0 && index < static_cast<int>(cachedExplanation.items.size()))
+        {
+            const auto& item = cachedExplanation.items[static_cast<std::size_t>(index)];
+            selectedMaterialKey = materialSelectionKey(item);
+        }
+        updateMaterialSelection();
+        refreshPanelView(true);
+    };
+    layerSelector.onChange = [this] { updateMaterialSelection(); };
+    fretSelector.onChange = [this] { updateMaterialSelection(); };
+    addAndMakeVisible(materialViewer);
 
     for (auto* button : { &materialButton, &sourcesButton, &harmonicButton, &araButton })
     {
@@ -561,7 +605,62 @@ void SmartImproviserARAEditor::resized()
     araButton.setBounds(margin + 3 * (buttonW + gap), buttonY,
                         getWidth() - margin - (margin + 3 * (buttonW + gap)), buttonH);
 
-    detailsView.setBounds(margin, 312, getWidth() - margin * 2, getHeight() - 354);
+    strategySelector.setBounds(margin, 312, getWidth() - 408, 32);
+    layerSelector.setBounds(getWidth() - 376, 312, 207, 32);
+    fretSelector.setBounds(getWidth() - 161, 312, 137, 32);
+    materialViewer.setBounds(margin, 352, getWidth() - margin * 2, 296);
+    detailsView.setBounds(margin, 660, getWidth() - margin * 2, getHeight() - 702);
+}
+
+juce::String SmartImproviserARAEditor::selectedMaterialText() const
+{
+    const int selected = strategySelector.getSelectedId() - 1;
+    if (selected < 0 || selected >= static_cast<int>(cachedExplanation.items.size()))
+        return {};
+    const auto& item = cachedExplanation.items[static_cast<std::size_t>(selected)];
+    juce::String text = ru("ВЫБРАННЫЙ МАТЕРИАЛ: ") + localizeGeneratedText(utf8String(item.source.name)) + "\n";
+    if (item.interpretationIndependent)
+        text += ru("Опоры аккорда • независимо от трактовки\n");
+    for (const int index : item.interpretationIndices)
+    {
+        if (index < 0 || index >= cachedSituation.interpretationCount) continue;
+        const auto& interpretation = cachedSituation.interpretations[static_cast<std::size_t>(index)];
+        text += ru("Трактовка ") + juce::String(index + 1) + ": "
+            + interpretationKindNameRu(interpretation.kind) + " • "
+            + centerKeyDisplayName(interpretation.center) + "\n";
+    }
+    if (cachedSituation.primaryInterpretationIndex < 0 && cachedSituation.interpretationCount > 1)
+        text += ru("[неоднозначно] Выбор показа не определяет главную трактовку.\n");
+    text += localizeGeneratedText(utf8String(item.idea)) + "\n";
+    if (item.targetChord.valid)
+        text += ru("Цели реального следующего аккорда: ")
+            + utf8String(smartimproviser::harmony::normalizedChordSymbol(item.targetChord)) + "\n";
+    for (const auto& why : item.why)
+    {
+        using State = smartimproviser::harmony::ExplanationEvidenceState;
+        if (why.state == State::missing || why.state == State::implied
+            || why.state == State::contradicted || why.state == State::ambiguous)
+        {
+            const char* marker = why.state == State::missing ? "[отсутствует] " :
+                why.state == State::implied ? "[подразумевается] " :
+                why.state == State::contradicted ? "[противоречие] " : "[неоднозначно] ";
+            text += ru(marker) + localizeGeneratedText(utf8String(why.ruleId)) + "\n";
+        }
+    }
+    return text + "\n";
+}
+
+void SmartImproviserARAEditor::updateMaterialSelection()
+{
+    const int selected = strategySelector.getSelectedId() - 1;
+    const auto layer = static_cast<smartimproviser::harmony::ViewerLayer>(
+        juce::jlimit(0, 5, layerSelector.getSelectedId() - 1));
+    const int range = juce::jlimit(1, 3, fretSelector.getSelectedId());
+    const int first = range == 1 ? 0 : range == 2 ? 5 : 12;
+    materialViewer.showMaterial(smartimproviser::harmony::buildMaterialView(
+        cachedResult, cachedExplanation, selected < 0 ? cachedExplanation.items.size()
+                                                   : static_cast<std::size_t>(selected)),
+        layer, first, first + 12);
 }
 
 void SmartImproviserARAEditor::setActivePanel(Panel panel)
@@ -611,7 +710,9 @@ void SmartImproviserARAEditor::refreshPanelView(bool resetScroll)
         case Panel::ara: text = &araText; break;
     }
 
-    if (detailsView.getText() != *text)
+    const juce::String content = (activePanel == Panel::material || activePanel == Panel::sources)
+        ? selectedMaterialText() + *text : *text;
+    if (detailsView.getText() != content)
     {
         detailsView.setText({}, false);
         const auto ordinary = juce::Colour::fromRGB(225, 230, 238);
@@ -621,13 +722,13 @@ void SmartImproviserARAEditor::refreshPanelView(bool resetScroll)
         // TextEditor stores the current text colour on each inserted run.
         // Only the ready-made explanation state markers drive this styling.
         int start = 0;
-        while (start < text->length())
+        while (start < content.length())
         {
-            const int newline = text->indexOfChar(start, '\n');
-            const int end = newline < 0 ? text->length() : newline + 1;
-            const auto line = text->substring(start, end);
+            const int newline = content.indexOfChar(start, '\n');
+            const int end = newline < 0 ? content.length() : newline + 1;
+            const auto line = content.substring(start, end);
             auto colour = ordinary;
-            if (activePanel == Panel::material)
+            if (activePanel == Panel::material || activePanel == Panel::sources)
             {
                 if (line.contains(ru("[отсутствует]"))) colour = missing;
                 else if (line.contains(ru("[подразумевается]")) || line.contains(ru("[ожидается]"))) colour = implied;
@@ -653,6 +754,51 @@ void SmartImproviserARAEditor::timerCallback()
     cachedSituation = smartimproviser::harmony::analyzeHarmonicSituation(timeline, patternWindow);
     const auto result = smartimproviser::harmony::analyzeImprovisation(cachedSituation);
     const auto explanation = smartimproviser::harmony::explainImprovisation(result);
+    cachedResult = result;
+    cachedExplanation = explanation;
+    updatingSelector = true;
+    int keep = -1;
+    for (std::size_t i = 0; i < explanation.items.size(); ++i)
+    {
+        const auto& item = explanation.items[i];
+        const auto key = materialSelectionKey(item);
+        if (key == selectedMaterialKey && selectedMaterialKey.isNotEmpty()) keep = static_cast<int>(i);
+    }
+    juce::StringArray labels;
+    for (std::size_t i = 0; i < explanation.items.size(); ++i)
+    {
+        const auto& item = explanation.items[i];
+        juce::String label = localizeGeneratedText(utf8String(item.source.name));
+        if (label.isEmpty()) label = localizeGeneratedText(utf8String(item.idea));
+        if (! item.interpretationIndices.empty())
+        {
+            label += ru(" • трактовка ");
+            for (std::size_t j = 0; j < item.interpretationIndices.size(); ++j)
+                label += (j ? ", " : "") + juce::String(item.interpretationIndices[j] + 1);
+        }
+        else if (item.interpretationIndependent) label += ru(" • общая опора");
+        labels.add(label);
+    }
+    bool changed = strategySelector.getNumItems() != labels.size();
+    for (int i = 0; ! changed && i < labels.size(); ++i)
+        changed = strategySelector.getItemText(i) != labels[i];
+    if (changed)
+    {
+        strategySelector.clear(juce::dontSendNotification);
+        for (int i = 0; i < labels.size(); ++i)
+            strategySelector.addItem(labels[i], i + 1);
+    }
+    if (! explanation.items.empty())
+    {
+        const auto index = keep >= 0 ? keep : 0;
+        if (strategySelector.getSelectedId() != index + 1)
+            strategySelector.setSelectedId(index + 1, juce::dontSendNotification);
+        const auto& item = explanation.items[static_cast<std::size_t>(index)];
+        selectedMaterialKey = materialSelectionKey(item);
+    }
+    else selectedMaterialKey.clear();
+    updatingSelector = false;
+    updateMaterialSelection();
     const auto impliedLink = smartimproviser::harmony::explainImpliedDominantLink(cachedSituation);
     const auto debug = ARAContextDebugState::instance().getSnapshot();
 
@@ -1094,7 +1240,7 @@ void SmartImproviserARAEditor::paint(juce::Graphics& g)
 
     g.setColour(juce::Colour::fromRGB(150, 156, 168));
     g.setFont(14.0f);
-    g.drawText(ru("0.4 • материал для импровизации и гармонический контекст"),
+    g.drawText(ru("0.4a • визуальный просмотр материала"),
                24, 47, getWidth() - 48, 22, juce::Justification::centredLeft);
 
     g.setColour(juce::Colour::fromRGB(42, 46, 53));
