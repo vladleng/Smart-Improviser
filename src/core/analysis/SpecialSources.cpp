@@ -208,10 +208,17 @@ void addSpecialSources(ImprovisationResult& result)
 
         if (chord.quality == ChordQuality::dominant)
         {
-            if (!situation.resolution.available || !situation.resolution.confirmed
-                || !situation.nextChordAvailable || !situation.nextChord.valid
-                || (result.dominantContext != DominantContext::toMajor
-                    && result.dominantContext != DominantContext::toMinor))
+            const bool expectedMajor = situation.expectedTonic.valid
+                && interpretation.kind == HarmonicInterpretationKind::globalContext
+                && interpretation.center.key.mode == KeyMode::major
+                && interpretation.center.key.rootPitchClass
+                    == circleOfFifthsToPitchClass(situation.expectedTonic.rootFifths);
+            const bool confirmedTarget = situation.resolution.available
+                && situation.resolution.confirmed
+                && situation.nextChordAvailable && situation.nextChord.valid
+                && (result.dominantContext == DominantContext::toMajor
+                    || result.dominantContext == DominantContext::toMinor);
+            if (! confirmedTarget && ! expectedMajor)
                 continue;
 
             const bool subV = interpretation.harmonic.substituteDominantConfirmed;
@@ -221,7 +228,7 @@ void addSpecialSources(ImprovisationResult& result)
             }
             else if (!interpretation.harmonic.substituteDominantCandidate)
             {
-                if (result.dominantContext == DominantContext::toMajor)
+                if (result.dominantContext == DominantContext::toMajor || expectedMajor)
                     append(result, lydian, index);
                 append(result, altered, index);
             }

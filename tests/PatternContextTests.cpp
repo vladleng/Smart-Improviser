@@ -362,10 +362,19 @@ int main()
            "actual non-tonic continuation preserves four-member pattern and missing C");
     const auto globalVMaterial = analyzeImprovisation(globalV);
     bool mixolydian = false;
+    bool lydianDominant = false;
+    bool alteredDominant = false;
     for (const auto& strategy : globalVMaterial.strategies)
+    {
         mixolydian = mixolydian || (strategy.source.mode == DiatonicMode::mixolydian
             && ! strategy.resolution.confirmed && strategy.nextChord.rootPitchClass == 4);
-    expect(mixolydian, "global V has Mixolydian while aiming at actual continuation");
+        lydianDominant = lydianDominant || (strategy.ruleId == "boyko.melodic-minor.V"
+            && ! strategy.resolution.confirmed && strategy.nextChord.rootPitchClass == 4);
+        alteredDominant = alteredDominant || (strategy.ruleId == "boyko.melodic-minor.bII"
+            && ! strategy.resolution.confirmed && strategy.nextChord.rootPitchClass == 4);
+    }
+    expect(mixolydian && lydianDominant && alteredDominant,
+           "global V has basic and contextual alternatives aiming at actual continuation");
     const auto why = explainImprovisation(globalVMaterial);
     bool missingC = false;
     for (const auto& evidence : why.items.front().why)
