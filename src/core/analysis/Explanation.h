@@ -67,6 +67,8 @@ struct ExplanationItem
     std::vector<std::size_t> strategyIndices;
     std::vector<int> interpretationIndices;
     bool interpretationIndependent = false;
+    bool missingTonicApplication = false;
+    int missingTonicRootFifths = 0;
 
     std::string idea;
     std::string conditions;
@@ -199,6 +201,9 @@ inline bool visuallySameMaterial(const ExplanationItem& item,
         && sameChordIdentity(item.targetChord, strategy.nextChord)
         && sameNotes(item.targetNotes, strategy.targetNotes)
         && sameNotes(item.importantNotes, importantNotes(strategy))
+        && item.missingTonicApplication == strategy.missingTonicApplication
+        && (! item.missingTonicApplication
+            || item.missingTonicRootFifths == strategy.missingTonicRootFifths)
         && item.resolution.confirmed == strategy.resolution.confirmed
         && sameChordIdentity(item.resolution.targetChord, strategy.resolution.targetChord);
 }
@@ -479,6 +484,8 @@ inline ExplanationResult buildExplanation(const ImprovisationResult& result)
             ExplanationItem item;
             item.strategyIndices.push_back(index);
             item.interpretationIndependent = strategy.interpretationIndependent;
+            item.missingTonicApplication = strategy.missingTonicApplication;
+            item.missingTonicRootFifths = strategy.missingTonicRootFifths;
             explanation_detail::addUniqueInterpretation(item.interpretationIndices,
                                                         strategy.interpretationIndex);
             item.idea = strategy.idea;

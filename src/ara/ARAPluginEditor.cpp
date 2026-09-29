@@ -627,6 +627,16 @@ juce::String SmartImproviserARAEditor::selectedMaterialText() const
     juce::String text = ru("ВЫБРАННЫЙ МАТЕРИАЛ: ") + localizeGeneratedText(utf8String(item.source.name)) + "\n";
     if (item.interpretationIndependent)
         text += ru("Опоры аккорда • независимо от трактовки\n");
+    if (item.missingTonicApplication)
+    {
+        text += ru("Материал V в незавершённом ii–V • ожидаемый I: ")
+            + utf8String(fifthsName(item.missingTonicRootFifths))
+            + ru(" [отсутствует]\n");
+        if (item.targetChord.valid)
+            text += ru("Фактическое продолжение: ")
+                + utf8String(smartimproviser::harmony::normalizedChordSymbol(item.targetChord))
+                + ru(". Разрешение в ожидаемый I не подтверждено.\n");
+    }
     for (const int index : item.interpretationIndices)
     {
         if (index < 0 || index >= cachedSituation.interpretationCount) continue;
@@ -804,6 +814,10 @@ void SmartImproviserARAEditor::timerCallback()
                 label += (j ? ", " : "") + juce::String(item.interpretationIndices[j] + 1);
         }
         else if (item.interpretationIndependent) label += ru(" • общая опора");
+        if (item.missingTonicApplication)
+            label += ru(" • ожидаемый ")
+                + utf8String(fifthsName(item.missingTonicRootFifths))
+                + ru(" (I отсутствует)");
         labels.add(label);
     }
     bool changed = strategySelector.getNumItems() != labels.size();
@@ -953,6 +967,7 @@ void SmartImproviserARAEditor::timerCallback()
             if (strategy.source.kind != smartimproviser::harmony::MaterialKind::scale)
                 continue;
             if (! strategy.interpretationIndependent
+                && ! strategy.missingTonicApplication
                 && primaryIndex >= 0
                 && strategy.interpretationIndex != primaryIndex)
                 continue;
@@ -965,6 +980,9 @@ void SmartImproviserARAEditor::timerCallback()
             else
                 item = utf8String(strategy.source.name);
 
+            if (strategy.missingTonicApplication)
+                item += ru(" [ожидаемый ")
+                    + utf8String(fifthsName(strategy.missingTonicRootFifths)) + "]";
             if (item.isNotEmpty())
                 thoughts.addIfNotAlreadyThere(item);
         }
@@ -1052,6 +1070,15 @@ void SmartImproviserARAEditor::timerCallback()
                     sourcesText += interpretationKindNameRu(interpretation.kind)
                         + " • " + centerKeyDisplayName(interpretation.center) + "\n";
                 }
+            }
+
+            if (scalar.missingTonicApplication)
+            {
+                sourcesText += ru("ГИПОТЕЗА НЕЗАВЕРШЁННОГО II–V: ожидаемый ")
+                    + utf8String(fifthsName(scalar.missingTonicRootFifths))
+                    + ru(" [отсутствует], далее фактически ")
+                    + utf8String(smartimproviser::harmony::normalizedChordSymbol(scalar.nextChord))
+                    + ru("; разрешение не подтверждено.\n");
             }
 
             sourcesText += localizeGeneratedText(utf8String(scalar.source.name)) + "\n";

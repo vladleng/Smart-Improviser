@@ -90,6 +90,12 @@ inline std::string explanationDiagnosticText(const ImprovisationResult& result)
         out << "\nИДЕЯ " << (itemIndex + 1) << ": " << item.idea << "\n";
         if (item.source.kind != MaterialKind::undefined)
             out << "ИСТОЧНИК: " << item.source.name << "\n";
+        if (item.missingTonicApplication)
+            out << "ОЖИДАЕМЫЙ I: "
+                << explanation_text_detail::rootName(item.missingTonicRootFifths)
+                << " [MISSING]; actual next chord remains "
+                << (item.targetChord.valid ? normalizedChordSymbol(item.targetChord) : "-")
+                << "; resolution unconfirmed\n";
 
         if (! item.importantNotes.empty())
         {

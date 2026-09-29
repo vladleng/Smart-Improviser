@@ -77,3 +77,27 @@ Live check: on `C7` choose `Db melodic minor`. Confirm `Eb` in the source layer,
 guitar positions. Check `Fb = E` on the same source. Inspect important notes,
 guide/target lists and movement arrows in Material / Sources. Repeat on a sharp
 key and a flat key to catch a fixed-name fallback. **Acceptance still pending.**
+
+## 0.4a fix2 — V material on an incomplete ii–V
+
+The accepted Stage 3 model already preserves `Dm7–G7 → D7/A` with missing C
+and `Fm7–Bb7 → Em7` with missing Eb. Source gates had required a confirmed
+major target, so the dominant lost its scale applications. The existing major-V
+source catalog now applies **provisionally** to the actual V of this recognized
+incomplete pattern, subject to explicit-chord compatibility. This is a material
+option, not a change to the harmonic reading:
+
+- The expected I is labeled missing and never becomes an actual next chord,
+  confirmed resolution or established local key.
+- The next-chord targets and optional movements continue to use the played
+  `D7/A` or `Em7`, not the absent tonic.
+- The UI names the missing I, keeps alternative interpretations, and labels
+  the material's provisional provenance. No tension classification is added.
+- Unknown future, actual major-I resolution and minor-target cases retain
+  their existing rules. Explicit incompatible chord tones still veto a source.
+
+Live check: seek to `G7` in `Dm7–G7–D7/A` and `Bb7` in `Fm7–Bb7–Em7`.
+Select a provisional source, confirm the expected C/Eb is marked absent, and
+verify the purple target notes still belong to real D7/A/Em7. Seek to the
+next chord; the missing-I label must disappear. Compare a complete `ii–V–I`
+and an `ii–V` whose future is unknown. **Live acceptance still pending.**
