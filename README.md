@@ -10,12 +10,13 @@
 **Stage 1 — ARA Context Monitor завершён.**  
 **Stage 2 — Harmonic Engine завершён.**
 
-**Текущая стабильная версия:** `0.3`  
-**Текущий Stage:** Stage 3 — Improvisation Engine<br>
-**Следующая рабочая линия:** `0.3a → 0.3x`  
-**Итог Stage 3:** `0.4`
+**Текущая стабильная версия:** `0.4`
 
-Stable `0.3` фиксирует полностью принятый Stage 2. Новая музыкальная логика относительно `0.2f` в release не добавлялась.
+**Stage 3:** завершён, stable `0.4`
+
+**Следующий Stage:** Stage 4 — Tension Engine (`0.4a → 0.4x`)
+
+Stable `0.4` фиксирует принятый Stage 3: стратегии и объяснения на основе HarmonicSituation. Tension T1/T2/T3 относится к Stage 4.
 
 Первая целевая среда:
 
@@ -31,7 +32,7 @@ Stable `0.3` фиксирует полностью принятый Stage 2. Н�
 
 Библиотечный источник и редактируемый экземпляр в песне независимы. Смена tension обновляет подсказки без автоматического переписывания нот.
 
-Это целевой workflow будущих Stage: stable 0.3 пока реализует Harmonic Engine. План: [PRODUCT_WORKFLOW.md](docs/PRODUCT_WORKFLOW.md).
+Это целевой workflow будущих Stage: Stage 3 добавил стратегии и объяснения, а song workspace остаётся будущим этапом. План: [PRODUCT_WORKFLOW.md](docs/PRODUCT_WORKFLOW.md).
 
 ## Ключевая идея
 
@@ -153,19 +154,23 @@ Package:    Smart Improviser.vst3
 Tests:      7 regression/integration targets
 ```
 
-## Следующий Stage — Improvisation Engine
+## Release 0.4
 
-Stage 3 использует готовый `HarmonicSituation` и должен выдавать:
+```text
+Build label: Smart Improviser 0.4
+CMake:      0.4.0
+Artifact:   Smart-Improviser-0.4-Windows
+Package:    Smart Improviser.vst3
+Tests:      15 regression/integration targets
+```
 
-- chord tones;
-- guide tones;
-- target notes;
-- scales;
-- harmonic concepts;
-- resolution notes;
-- базовые improvisation strategies.
+Релиз включает принятый Improvisation Engine и explanation layer. Tension T1/T2/T3 и библиотека фраз остаются задачами следующих Stage.
 
-Рабочий план Stage 3: [0.3a–0.3h → 0.4](docs/STAGE_3_PLAN.md). Checkpoints **0.3a–0.3d приняты**, включая SubV spelling fix2. Текущая рабочая версия — **0.3e**, harmonic concepts. [Каталог и живой тест](docs/STAGE_3_0.3e_LIVE_TEST.md). [Начальная методика](docs/IMPROVISATION_METHOD.md): материал Бойко, контекст доминанты перед выбором источника, простая расширяемая модель T1–T3.
+## Stage 3 — Improvisation Engine [ACCEPTED]
+
+`0.3a–0.3h fix3` выдают chord/guide/target notes, допустимые scale/source materials, harmonic concepts, resolution и объяснимые стратегии с provenance global/local/modal. Недостаток данных и неоднозначность показываются явно. Для `III–VI–II–V–I` несыгранная ожидаемая I остаётся серой и не становится выдуманным аккордом.
+
+[План и музыкальная приёмка](docs/STAGE_3_PLAN.md). Windows Build #360 прошёл 15/15 тестовых целей, финальный UI принят в Studio Pro. Stable `0.4` выпущена отдельным Windows artifact `Smart-Improviser-0.4-Windows` (папка установки `Smart Improviser.vst3`).
 
 ## Дальнейшее направление
 

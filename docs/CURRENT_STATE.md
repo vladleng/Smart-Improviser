@@ -1,19 +1,19 @@
 # Smart Improviser — Current State
 
-> Обновлено 2026-09-26: `0.3a–0.3g`, включая `0.3f fix1–fix4` и `0.3g fix1`, приняты. 0.3g прошёл regression, Windows Build #351 и Studio Pro live-test. Текущий checkpoint — **`0.3h — Integration / musical validation`**. Последняя stable — `0.3`.
+> Обновлено 2026-09-29: Stage 3 (`0.3a–0.3h`, включая `0.3h fix1–fix3`) принят после Windows Build #360 и Studio Pro live-test. Текущая stable — `0.4`. Следующий Stage 4 — Tension Engine.
 
 > Короткая точка входа для нового чата или рабочей сессии. Подробная архитектура — в `PROJECT_CONTEXT.md`, этапы — в `ROADMAP.md`, правила версий — в `VERSIONING.md`, фактический прогресс — в GitHub Issues.
 
 ## Текущее состояние
 
-- **Завершённые Stage:** Stage 0, Stage 1, Stage 2
-- **Текущая стабильная версия:** `0.3`
-- **Текущий Stage:** Stage 3 — Improvisation Engine
-- **Рабочая линия:** `0.3a → 0.3x`
+- **Завершённые Stage:** Stage 0, Stage 1, Stage 2, Stage 3
+- **Текущая стабильная версия:** `0.4`
+- **Последний принятый Stage:** Stage 3 — Improvisation Engine
+- **Рабочая линия:** `0.3a → 0.3h fix3` [ACCEPTED]
 - **Итог Stage 3:** `0.4`
 - **Stage 2 Issue:** #3 — закрыт стабильной `0.3`
-- **Stage 3 Issue:** #4 — активен
-- **Принято Stage 3:** `0.3a–0.3g` + `0.3f fix1–fix4` + `0.3g fix1`
+- **Stage 3 Issue:** #4 — закрыт stable `0.4`
+- **Принято Stage 3:** `0.3a–0.3h` + `0.3f fix1–fix4` + `0.3g fix1` + `0.3h fix1–fix3`
 - **PR #30:** merged — базовый `0.3f`
 - **PR #31:** merged — `0.3f fix1`, squash commit `1117502220887fe05e294b3b6a4af3037c7b5d88`
 - **PR #32:** superseded, closed without merge
@@ -22,13 +22,9 @@
 - **PR #36:** accepted 0.3g fix1, merged в рабочую ветку PR #35
 - **PR #35:** accepted 0.3g, merged в main (`85337ff`)
 - **Windows Build #331:** success; 14/14 test targets green
-- **Текущий checkpoint:** `0.3h — Integration / musical validation`
+- **Следующий Stage:** Stage 4 — Tension Engine (`0.4a → 0.4x`)
 
-0.3h fix1 в работе: для завершённого `iii–vi–ii–V` Core отдельно сообщает ожидаемую отсутствующую тонику на всех членах распознанного оборота, когда известен обход тоники после V, сохраняя фактический следующий аккорд и неподтверждённое разрешение. На неальтерированной V глобального мажора доступен Mixolydian. Диатонический Am7/VI в C major больше автоматически не предлагает Am6; явно записанный Am6 остаётся доступным. Локальные регрессии и транспозиции 12 тональностей пройдены; Windows Build #357 прошёл; финальный UI live-test перенесён в fix2.
-
-0.3h fix1 Windows Build #357 — success (15/15 тестов, VST3 artifact). Пользователь подтвердил музыкальную часть, но уточнил компактную запись оборота в верхнем поле. 0.3h fix2 в работе: `III–VI–II–V–I` с серой отсутствующей I на позициях 1/4–4/4, все римские ступени крупнее, жирнее и заглавными; без названий аккордов в скобках. Stable 0.3 до приёмки 0.3h и выпуска 0.4.
-
-0.3h fix2 Windows Build #359 — success, но live-test выявил неправильное декодирование `–`/`ø` в верхнем summary. Fix3 переводит все не ASCII литералы этой строки через `String::fromUTF8`; Windows и Studio Pro gate ожидаются.
+0.3h принят 2026-09-29. Fix1: ожидаемая отсутствующая тоника отдельна от распознанного `III–VI–II–V`, G7 получает Mixolydian и допустимые альтернативы, Am7 в C major не навязывается Am6. Fix2: компактные крупные римские ступени с серой I на позициях 1/4–4/4 при известном обходе тоники. Fix3: UTF-8 для `–`, `ø`, `→` в Windows UI. Windows Build #360 — success, 15/15 tests и VST3 artifact; пользователь принял результат в Studio Pro. PR #39 → #38 → #37 merged в main (`b587408`). Stable `0.4` упакована с отдельным Windows build/artifact; музыкальная логика относительно принятого fix3 не менялась.
 
 ## Архитектурная граница
 
@@ -205,4 +201,4 @@ Windows Build #351 — success на итоговом head с fix1; Studio Pro li
 7. `docs/STAGE_1_TO_STAGE_2_CONTRACT.md`;
 8. `docs/ARCHITECTURAL_DECISIONS.md`;
 9. `docs/IMPROVISATION_METHOD.md`;
-10. Issue #4 — Stage 3.
+10. Issue #4 — Stage 3, итоговая приёмка и stable `0.4`.
