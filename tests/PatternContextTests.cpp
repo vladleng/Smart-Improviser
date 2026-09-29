@@ -351,6 +351,22 @@ int main()
 
     const auto eHalfDimAt16 = makeChord(4, {0, 3, 6, 10}, 16.0);
     const std::array unresolvedTurnaround {eMin7At0, aMin7At4, dMin7At8, g7At12, eHalfDimAt16};
+    for (int index = 0; index < 4; ++index)
+    {
+        const auto member = analyzeWindow(cMajor, unresolvedTurnaround, index);
+        expect(member.pattern.type == HarmonicPatternType::majorIiiViIiV
+               && member.pattern.positionIndex == index
+               && member.expectedTonic.valid
+               && member.expectedTonic.rootFifths == 0
+               && member.expectedTonic.actualContinuation.rootPitchClass == 4
+               && ! member.incompleteCadence.valid,
+               "each visible iii-vi-ii-V member carries the same missing global tonic");
+    }
+    const auto cMaj7At16 = makeChord(0, {0, 4, 7, 11}, 16.0);
+    const std::array resolvedTurnaround {eMin7At0, aMin7At4, dMin7At8, g7At12, cMaj7At16};
+    for (int index = 0; index < 4; ++index)
+        expect(! analyzeWindow(cMajor, resolvedTurnaround, index).expectedTonic.valid,
+               "played Cmaj7 is not marked as a missing expected tonic");
     const auto globalV = analyzeWindow(cMajor, unresolvedTurnaround, 3);
     expect(globalV.pattern.type == HarmonicPatternType::majorIiiViIiV
            && globalV.pattern.positionIndex == 3
