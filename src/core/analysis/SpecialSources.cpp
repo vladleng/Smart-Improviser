@@ -32,8 +32,8 @@ struct Rule
     enum class Form { melodicMinor, wholeHalf, halfWhole, wholeTone } form = Form::melodicMinor;
 };
 const Rule minor {"boyko.melodic-minor.root", ImprovisationStrategyKind::melodicMinorApplication, 0,
-    "Minor melodic color", "Levine, chapter 4, pp. 88-90; Boyko, section 2, pp. 88-89", "Use on an explicit minor-sixth or minor-major-seventh chord; preserve the written seventh.",
-    {1,0,9,3,0,11,0,5,0,13,0,7}, -1};
+    "Minor melodic color", "Levine, chapter 4, pp. 88-90; Boyko, section 2, pp. 88-89", "On m7 this is an optional overlay: keep the written b7 as an anchor and use the major 7 only as a passing color.",
+    {1,0,9,3,0,11,0,5,0,13,0,7}, 10};
 const Rule halfDim {"boyko.melodic-minor.bIII", ImprovisationStrategyKind::melodicMinorApplication, -3,
     "Locrian natural 2", "Levine, chapter 4, pp. 101-103; Boyko, section 2, pp. 92-93", "Natural 9 color; keep b3, b5 and b7 anchors.",
     {1,0,9,3,0,11,5,0,13,0,7,0}, -1};
@@ -47,7 +47,7 @@ const Rule diminished {"boyko.diminished.whole-half", ImprovisationStrategyKind:
     "Diminished whole-half", "Levine, chapter 5, pp. 112-124; Boyko, section 2, p. 112", "Whole-half on dim7; follow the actual next chord.",
     {1,0,9,3,0,11,5,0,13,7,0,7}, -1, Rule::Form::wholeHalf};
 const Rule dominantDiminished {"levine.dominant.half-whole", ImprovisationStrategyKind::diminishedDominant, 0,
-    "Dominant half-whole diminished", "Levine, chapter 5, pp. 112-124", "Use for an explicit dominant b9; #9 and #11 are colors, not mandatory landing notes.",
+    "Dominant half-whole diminished", "Levine, chapter 5, pp. 112-124", "Optional b9/#9/#11 color on a compatible dominant; written natural 9 or b13 blocks this collection.",
     {1,9,0,9,3,0,11,5,0,13,7,0}, -1, Rule::Form::halfWhole};
 const Rule wholeTone {"levine.dominant.whole-tone", ImprovisationStrategyKind::wholeToneDominant, 0,
     "Dominant whole-tone", "Levine, chapter 5, pp. 124-127", "Use for an explicit augmented dominant; the natural fifth is absent.",
@@ -93,11 +93,11 @@ int functionalSubVRootFifths(const ImprovisationResult& result, const Normalized
 }
 
 void append(ImprovisationResult& result, const Rule& rule, int index,
-            bool subV = false, bool missingTonic = false)
+            bool subV = false, bool missingTonic = false, bool chordLocal = false)
 {
     const auto& chord = result.context.currentChord;
     if (!compatible(rule, chord)) return;
-    if (! missingTonic && (index < 0 || index >= result.context.interpretationCount
+    if (! missingTonic && ! chordLocal && (index < 0 || index >= result.context.interpretationCount
         || static_cast<std::size_t>(index) >= result.context.interpretations.size()
         || ! result.context.interpretations[static_cast<std::size_t>(index)].valid)) return;
 
@@ -112,10 +112,10 @@ void append(ImprovisationResult& result, const Rule& rule, int index,
     }
     strategy.kind = rule.kind;
     strategy.ruleId = subV ? "project.subv.melodic-minor.V" : rule.id;
-    strategy.ruleVersion = 3;
+    strategy.ruleVersion = &rule == &minor ? 4 : &rule == &dominantDiminished ? 2 : 3;
     strategy.priority = 40; // Catalog/recommendation order, never harmonic confidence.
-    strategy.interpretationIndependent = false;
-    strategy.interpretationIndex = missingTonic ? -1 : index;
+    strategy.interpretationIndependent = chordLocal;
+    strategy.interpretationIndex = missingTonic || chordLocal ? -1 : index;
     strategy.missingTonicApplication = missingTonic;
     if (missingTonic)
     {
@@ -124,6 +124,7 @@ void append(ImprovisationResult& result, const Rule& rule, int index,
         strategy.evidence.confidence = ConfidenceLevel::low;
         strategy.evidence.add(EvidenceFlag::patternMatch);
     }
+    else if (chordLocal) strategy.evidence = {};
     else strategy.evidence = result.context.interpretations[static_cast<std::size_t>(index)].evidence;
     strategy.source = {};
     strategy.source.kind = MaterialKind::scale;
@@ -143,13 +144,17 @@ void append(ImprovisationResult& result, const Rule& rule, int index,
     strategy.usageHint = rule.hint;
     strategy.idea = rule.application;
     strategy.explanation = strategy.sourceReference;
-    strategy.conditions = missingTonic
+    strategy.conditions = chordLocal
+        ? "Chord-local optional color; no tonic, key or functional resolution is inferred. "
+        : missingTonic
         ? "Incomplete ii-V: the expected major I did not sound; source root is not an established key. "
         : "Use with harmonic interpretation " + std::to_string(index + 1)
             + "; source root is not a song key. ";
     strategy.conditions += rule.hint;
     if (rule.omittedInterval >= 0 && chord.hasTone(rule.omittedInterval))
         strategy.omittedChordTones.push_back(wrap(chord.rootPitchClass + rule.omittedInterval));
+    if (rule.omittedInterval == 10 && ! chord.hasTone(10))
+        strategy.usageHint = "Native minor melodic sound on the written m6 or m(maj7).";
     constexpr int melodic[] = {0,2,3,5,7,9,11};
     constexpr int wholeHalf[] = {0,2,3,5,6,8,9,11};
     constexpr int wholeHalfDegrees[] = {1,2,3,4,5,6,7,7};
@@ -180,6 +185,8 @@ void append(ImprovisationResult& result, const Rule& rule, int index,
         note.characteristic = !chord.hasTone(relative);
         for (const auto& guide : strategy.guideNotes)
             if (guide.pitchClass == note.pitchClass) note.role = MaterialNoteRole::guideTone;
+        if (rule.omittedInterval == 10 && chord.hasTone(10) && relative == 11)
+            note.role = MaterialNoteRole::passingTone;
         strategy.source.notes.push_back(note);
         auto chordNote = note;
         chordNote.semitonesFromRoot = relative;
@@ -263,17 +270,22 @@ void addSpecialSources(ImprovisationResult& result)
                 if (result.dominantContext == DominantContext::toMajor || expectedMajor)
                     append(result, lydian, index);
                 append(result, altered, index);
-                if (chord.hasTone(1)) append(result, dominantDiminished, index);
+                append(result, dominantDiminished, index);
                 if (chord.hasAlteration(ChordAlteration::sharpFifth) && ! chord.hasTone(7))
                     append(result, wholeTone, index);
             }
         }
         else if (chord.quality == ChordQuality::minor)
         {
-            // Levine treats melodic minor as the native minor-major sound.
-            // An ordinary m7's explicit b7 is not silently replaced with 7;
-            // an explicit m6 or m(maj7) is enough, including a relative vi.
-            if (! chord.hasTone(10) && (chord.hasTone(9) || chord.hasTone(11)))
+            // Native m6 / m(maj7), or a visibly conditional overlay on m7.
+            // Avoid automatic Am6 color for a plain relative vi in major.
+            const auto& global = situation.globalKey;
+            const bool relativeMinor = global.valid && global.key.mode == KeyMode::major
+                && interpretation.kind == HarmonicInterpretationKind::globalContext
+                && interpretation.center.key.rootPitchClass == global.key.rootPitchClass
+                && chord.rootPitchClass
+                    == circleOfFifthsToPitchClass(global.key.rootFifths + 3);
+            if (! relativeMinor || chord.hasTone(9) || chord.hasTone(11))
                 append(result, minor, index);
         }
         else if (chord.quality == ChordQuality::halfDiminished)
@@ -294,9 +306,26 @@ void addSpecialSources(ImprovisationResult& result)
         // provisional provenance and the real next chord retained as target.
         append(result, lydian, -1, false, true);
         append(result, altered, -1, false, true);
-        if (chord.hasTone(1)) append(result, dominantDiminished, -1, false, true);
+        append(result, dominantDiminished, -1, false, true);
         if (chord.hasAlteration(ChordAlteration::sharpFifth) && ! chord.hasTone(7))
             append(result, wholeTone, -1, false, true);
+    }
+
+    // No tonic interpretation is needed to present a compatible chord-local
+    // palette. This also covers V/V -> implied V and unknown future; the
+    // written slash bass and target remain untouched.
+    if (chord.quality == ChordQuality::dominant)
+    {
+        const auto hasRule = [&](const char* id)
+        {
+            return std::any_of(result.strategies.begin(), result.strategies.end(),
+                [id](const auto& strategy) { return strategy.ruleId == id; });
+        };
+        if (! hasRule(dominantDiminished.id))
+            append(result, dominantDiminished, -1, false, false, true);
+        if (chord.hasAlteration(ChordAlteration::sharpFifth) && ! chord.hasTone(7)
+            && ! hasRule(wholeTone.id))
+            append(result, wholeTone, -1, false, false, true);
     }
 }
 }

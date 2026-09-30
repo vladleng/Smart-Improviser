@@ -131,3 +131,53 @@ Live checklist for upd1:
 
 Regression: all 16 host-neutral suites pass locally. Windows CI and Studio
 Pro live acceptance remain pending; stable `0.4` and Issue #5 are unchanged.
+
+## 0.4a upd2 — Dominant palette / Corcovado live correction
+
+The `0.4a upd1` Windows Build #376 passed, but Vlad's Studio Pro screenshots
+exposed a real gap: `D7/A → Abdim` correctly reads as `V/V → implied V`, yet
+the source selector held only the chord anchors. The catalog had equated
+availability of a scale with confirmation of a major/minor tonic. Levine's
+half-whole dominant language had also been restricted to a written `7b9`,
+so no ordinary dominant offered that optional color.
+
+`upd2` separates chord-local options from function-specific interpretations:
+
+- A written dominant compatible with Mixolydian gets a chord-local baseline
+  when no interpretation-specific/basic provisional source exists. The label
+  says "от аккорда", not "общая опора"; it establishes no tonic or local key.
+- Half-whole diminished may be selected as an optional alteration on a
+  compatible dominant even without explicit b9. Natural 9, b13 or an
+  incompatible slash bass veto the complete collection. The original chord
+  symbol is retained, and T1–T3 is not classified.
+- An explicit augmented dominant without natural fifth may show whole-tone
+  in a dominant chain. On `m7`, melodic minor returns as a marked **optional
+  overlay**: actual b7 stays an anchor and source major 7 is passing; this
+  is not the native m(maj7) chord-scale reading. Plain relative vi7 in major
+  remains guarded.
+- Selected-source text and Sources panel distinguish independent *scale*
+  from independent *chord anchors*; a symmetric scale without an m6 thinking
+  structure no longer prints `(no chord)` as if it were a thinking chord.
+
+The [harmonic thinking map](HARMONIC_THINKING_MAP.md) inventories every
+recognized pattern, current source coverage, explicit-chord guards and
+subsequent work. It does not add new Harmonic Engine interpretations.
+
+Live checklist for upd2:
+
+1. On the screenshot's `D7/A → Abdim`, select `D Mixolydian • от аккорда`
+   (`D E F# G A B C`) and `D half-whole diminished • от аккорда`
+   (`D Eb F F# G# A B C`). Both contain bass A; purple targets belong to
+   written `Abdim`. Neither selection establishes G major/minor as tonic.
+2. Compare `G7 → Cmaj7` with `G7b9 → Cmaj7`: half-whole is an **optional**
+   choice on both; G7 keeps its actual symbol, while explicit b9 excludes
+   Mixolydian. `G9` blocks half-whole; `G13` may keep it because the scale
+   contains natural E, but `G7b13` blocks it. Explicit natural 13 blocks
+   altered, not half-whole.
+3. Check `C7 → Fmaj7`, `A7b13 → Dm7`, and a dominant chain. No existing
+   options or alternative interpretation may vanish. Verify `m7` melodic
+   color is described as an overlay with a passing major seventh.
+4. Seek, PLAY and STOP across `D7/A → Abdim → Gm7 → C7 → Fmaj7`; staff,
+   fretboard, current chord, source label and text must remain synchronized.
+
+`0.4a` still awaits Vlad's live acceptance; stable remains `0.4`.

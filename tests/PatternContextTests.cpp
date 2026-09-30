@@ -498,6 +498,27 @@ int main()
            "D7/A starts V/V to rootless-V dominant chain");
     expect(! corcovadoD7.localKey.valid,
            "D7/A does not pre-assign a false G-minor local center");
+    const auto d7Material = analyzeImprovisation(corcovadoD7);
+    bool d7Mixolydian = false, d7HalfWhole = false;
+    for (const auto& source : d7Material.strategies)
+    {
+        if (source.ruleId == "chord-local.mixolydian"
+            && source.source.name == "D Mixolydian")
+        {
+            d7Mixolydian = source.interpretationIndependent
+                && source.actualChord.slashBass && source.actualChord.bassPitchClass == 9
+                && source.nextChord.rootPitchClass == 8 && !source.resolution.confirmed;
+        }
+        if (source.ruleId == "levine.dominant.half-whole"
+            && source.source.name == "D half-whole diminished")
+        {
+            d7HalfWhole = source.interpretationIndependent
+                && source.source.notes.size() == 8 && !source.tensionClassified
+                && source.nextChord.rootPitchClass == 8 && !source.resolution.confirmed;
+        }
+    }
+    expect(d7Mixolydian && d7HalfWhole,
+           "Corcovado D7/A has basic and diminished options with the real Abdim next chord");
     const auto firstLink = explainImpliedDominantLink(corcovadoD7);
     expect(firstLink.valid && firstLink.positionIndex == 0
            && firstLink.firstChord.rootPitchClass == 2

@@ -121,6 +121,20 @@ juce::String localizeGeneratedText(juce::String text)
     text = text.replace("Lydian dominant", ru("Лидийский доминантовый"));
     text = text.replace("Altered dominant", ru("Альтерированная доминанта"));
     text = text.replace("Diminished whole-half", ru("Уменьшённая тон–полутон"));
+    text = text.replace("Dominant half-whole diminished", ru("Доминантовая уменьшённая полутон–тон"));
+    text = text.replace("Dominant whole-tone", ru("Доминантовая целотоновая"));
+    text = text.replace("Chord-local Mixolydian on the written dominant.",
+                        ru("Миксолидийский лад от написанной доминанты, без вывода тоники."));
+    text = text.replace("Chord-local source; use written guides and actual next-chord targets.",
+                        ru("Источник от аккорда: опирайся на записанные направляющие и фактический следующий аккорд."));
+    text = text.replace("Use for an explicit augmented dominant; the natural fifth is absent.",
+                        ru("Для увеличенной доминанты: натуральная квинта в источнике отсутствует."));
+    text = text.replace("Optional b9/#9/#11 color on a compatible dominant; written natural 9 or b13 blocks this collection.",
+                        ru("Необязательная краска ♭9/#9/#11; явно записанная натуральная 9 или ♭13 исключает этот набор."));
+    text = text.replace("On m7 this is an optional overlay: keep the written b7 as an anchor and use the major 7 only as a passing color.",
+                        ru("На m7 это дополнительное наложение: ♭7 остаётся опорой, большая 7 — проходящей краской."));
+    text = text.replace("Native minor melodic sound on the written m6 or m(maj7).",
+                        ru("Основной звук мелодического минора на записанном m6 или m(maj7)."));
 
     text = text.replace(" Ionian", ru(" ионийский"));
     text = text.replace(" Dorian", ru(" дорийский"));
@@ -131,6 +145,8 @@ juce::String localizeGeneratedText(juce::String text)
     text = text.replace(" Locrian", ru(" локрийский"));
     text = text.replace(" melodic minor", ru(" мелодический минор"));
     text = text.replace(" whole-half diminished", ru(" уменьшённая (тон–полутон)"));
+    text = text.replace(" half-whole diminished", ru(" уменьшённая (полутон–тон)"));
+    text = text.replace(" whole-tone", ru(" целотоновая"));
 
     text = text.replace("Material on ", ru("Материал на "));
     text = text.replace(" [passing]", ru(" [проходящая]"));
@@ -626,7 +642,9 @@ juce::String SmartImproviserARAEditor::selectedMaterialText() const
     const auto& item = cachedExplanation.items[static_cast<std::size_t>(selected)];
     juce::String text = ru("ВЫБРАННЫЙ МАТЕРИАЛ: ") + localizeGeneratedText(utf8String(item.source.name)) + "\n";
     if (item.interpretationIndependent)
-        text += ru("Опоры аккорда • независимо от трактовки\n");
+        text += item.source.kind == smartimproviser::harmony::MaterialKind::chordTones
+            ? ru("Опоры аккорда • независимо от трактовки\n")
+            : ru("Источник от написанного аккорда • без выбора тонального центра\n");
     if (item.missingTonicApplication)
     {
         text += ru("Материал V в незавершённом ii–V • ожидаемый I: ")
@@ -648,6 +666,8 @@ juce::String SmartImproviserARAEditor::selectedMaterialText() const
     if (cachedSituation.primaryInterpretationIndex < 0 && cachedSituation.interpretationCount > 1)
         text += ru("[неоднозначно] Выбор показа не определяет главную трактовку.\n");
     text += localizeGeneratedText(utf8String(item.idea)) + "\n";
+    if (! item.usageHint.empty())
+        text += localizeGeneratedText(utf8String(item.usageHint)) + "\n";
     const auto view = smartimproviser::harmony::buildMaterialView(
         cachedResult, cachedExplanation, static_cast<std::size_t>(selected));
     if (item.source.kind == smartimproviser::harmony::MaterialKind::scale)
@@ -813,7 +833,9 @@ void SmartImproviserARAEditor::timerCallback()
             for (std::size_t j = 0; j < item.interpretationIndices.size(); ++j)
                 label += (j ? ", " : "") + juce::String(item.interpretationIndices[j] + 1);
         }
-        else if (item.interpretationIndependent) label += ru(" • общая опора");
+        else if (item.interpretationIndependent)
+            label += item.source.kind == smartimproviser::harmony::MaterialKind::chordTones
+                ? ru(" • общая опора") : ru(" • от аккорда");
         if (item.missingTonicApplication)
             label += ru(" • ожидаемый ")
                 + utf8String(fifthsName(item.missingTonicRootFifths))
@@ -1088,8 +1110,9 @@ void SmartImproviserARAEditor::timerCallback()
             if (! scalar.sourceReference.empty())
             {
                 sourcesText += "\n" + localizeGeneratedText(utf8String(scalar.idea));
-                sourcesText += ru("\nМыслить: ")
-                    + utf8String(smartimproviser::harmony::normalizedChordSymbol(scalar.thinkingStructure));
+                if (scalar.thinkingStructure.valid)
+                    sourcesText += ru("\nМыслить: ")
+                        + utf8String(smartimproviser::harmony::normalizedChordSymbol(scalar.thinkingStructure));
                 sourcesText += ru("\nТе же звуки относительно ")
                     + utf8String(smartimproviser::harmony::normalizedChordSymbol(scalar.actualChord)) + ": ";
                 for (const auto& note : scalar.source.chordRelativeNotes)
