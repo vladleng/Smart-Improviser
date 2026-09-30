@@ -1,6 +1,6 @@
 # Smart Improviser — Current State
 
-> Обновлено 2026-09-30: Stage 3 принят, текущая stable — `0.4`. Влад принял `0.4a` и уточнение `upd4` после живых проверок; PR #44 и #45 объединены в main (последний merge `724c7af`). Текущий checkpoint — `0.4b`, контракт Tension Engine без автоматической классификации T1–T3. Stage 4/Issue #5 ещё не завершён. Song workspace и редактор остаются Stage 7–8.
+> Обновлено 2026-09-30: Stage 3 принят, текущая stable — `0.4`. Влад принял `0.4a upd4` и `0.4b` после живых проверок; PR #44–#46 объединены в main (последний merge `dffae06`). Следующий checkpoint — `0.4c`, музыкальные правила Level 1 / Stable поверх принятого контракта Tension Engine. Stage 4/Issue #5 ещё не завершён. Song workspace и редактор остаются Stage 7–8.
 
 > Короткая точка входа для нового чата или рабочей сессии. Подробная архитектура — в `PROJECT_CONTEXT.md`, этапы — в `ROADMAP.md`, правила версий — в `VERSIONING.md`, фактический прогресс — в GitHub Issues.
 
@@ -9,8 +9,8 @@
 - **Завершённые Stage:** Stage 0, Stage 1, Stage 2, Stage 3
 - **Текущая стабильная версия:** `0.4`
 - **Последний принятый Stage:** Stage 3 — Improvisation Engine
-- **Принятый checkpoint Stage 4:** `0.4a` и `upd4`; PR #44/#45 merged, Windows Build #379/#381 success
-- **Текущая работа:** `0.4b` — контракт TensionRole/TensionProfile, живой тест ещё не пройден
+- **Принятые checkpoints Stage 4:** `0.4a` с `upd4`, затем `0.4b`; PR #44–#46 merged, Windows Build #379/#381/#383 success
+- **Следующий checkpoint:** `0.4c` — Level 1 / Stable; музыкальные правила ещё не начаты
 - **Рабочая линия:** `0.3a → 0.3h fix3` [ACCEPTED]
 - **Итог Stage 3:** `0.4`
 - **Stage 2 Issue:** #3 — закрыт стабильной `0.3`
@@ -24,7 +24,7 @@
 - **PR #36:** accepted 0.3g fix1, merged в рабочую ветку PR #35
 - **PR #35:** accepted 0.3g, merged в main (`85337ff`)
 - **Windows Build #331:** success; 14/14 test targets green
-- **Текущий Stage:** Stage 4 — viewer `0.4a` принят, контракт `0.4b` в работе; правила уровней начинаются с `0.4c`
+- **Текущий Stage:** Stage 4 — viewer `0.4a` и контракт `0.4b` приняты; правила уровней начинаются с `0.4c`
 
 Для будущих музыкальных правил после `0.4b` согласована первая лестница V7 → мажорной цели: исходный Mixolydian, затем T1 Dm6 / D melodic minor, T2 Fm6 / F melodic minor и T3 Abm6 / Ab melodic minor. Источники уже доступны с условиями, но классы T1–T3 пока спецификация, не работающая классификация; правила совместимости с реальным V7alt и ноты каждой структуры приведены в [IMPROVISATION_METHOD.md](IMPROVISATION_METHOD.md).
 
