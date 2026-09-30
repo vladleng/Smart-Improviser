@@ -182,14 +182,17 @@ HarmonicPattern recognizePattern(const HarmonicSituation& situation,
         && situation.nextChordAvailable
         && key.mode == KeyMode::major
         && isDegree(situation.previousChord, key, 2)
-        && situation.previousChord.quality == ChordQuality::minor
+        && (situation.previousChord.quality == ChordQuality::minor
+            || situation.previousChord.quality == ChordQuality::halfDiminished)
         && isDegree(situation.currentChord, key, 5)
         && situation.currentChord.quality == ChordQuality::dominant
         && isDegree(situation.nextChord, key, 1)
         && situation.nextChord.quality == ChordQuality::major
         && situation.harmonic.dominantResolutionConfirmed)
     {
-        return makePattern(HarmonicPatternType::majorIiVI,
+        return makePattern(situation.previousChord.quality == ChordQuality::halfDiminished
+                               ? HarmonicPatternType::halfDiminishedIiViMajor
+                               : HarmonicPatternType::majorIiVI,
                            PatternMemberRole::dominant,
                            1,
                            3,
@@ -606,6 +609,18 @@ bool matchesMinorIiVI(const NormalizedChord& ii,
 {
     return tonic.valid
         && isMinorFamily(tonic)
+        && ii.quality == ChordQuality::halfDiminished
+        && v.quality == ChordQuality::dominant
+        && rootIs(ii, tonic, 2)
+        && rootIs(v, tonic, 7);
+}
+
+bool matchesHalfDiminishedIiViMajor(const NormalizedChord& ii,
+                                    const NormalizedChord& v,
+                                    const NormalizedChord& tonic) noexcept
+{
+    return tonic.valid
+        && tonic.quality == ChordQuality::major
         && ii.quality == ChordQuality::halfDiminished
         && v.quality == ChordQuality::dominant
         && rootIs(ii, tonic, 2)
@@ -1120,6 +1135,11 @@ void applyPatternWindowContext(HarmonicSituation& situation,
         if (matchesMajorIiVI(first, dominant, tonic))
         {
             type = HarmonicPatternType::majorIiVI;
+            mode = KeyMode::major;
+        }
+        else if (matchesHalfDiminishedIiViMajor(first, dominant, tonic))
+        {
+            type = HarmonicPatternType::halfDiminishedIiViMajor;
             mode = KeyMode::major;
         }
         else if (matchesMinorIiVI(first, dominant, tonic))

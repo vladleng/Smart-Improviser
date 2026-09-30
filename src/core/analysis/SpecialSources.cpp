@@ -29,7 +29,7 @@ struct Rule
     // Chord-relative pitch intervals; zero means a non-member, otherwise a degree.
     std::array<int, 12> degrees;
     int omittedInterval;
-    enum class Form { melodicMinor, wholeHalf, halfWhole, wholeTone } form = Form::melodicMinor;
+    enum class Form { melodicMinor, wholeHalf, halfWhole, wholeTone, harmonicMinorFragment } form = Form::melodicMinor;
 };
 const Rule minor {"boyko.melodic-minor.root", ImprovisationStrategyKind::melodicMinorApplication, 0,
     "Minor melodic color", "Levine, chapter 4, pp. 88-90; Boyko, section 2, pp. 88-89", "On m7 this is an optional overlay: keep the written b7 as an anchor and use the major 7 only as a passing color.",
@@ -45,9 +45,13 @@ const Rule flatSevenOverlay {"project.melodic-minor.bVII-overlay", Improvisation
     "Optional m6 overlay: keep the written dominant third as an anchor outside this source; the source's b3 is a color, not a replacement third.",
     {1,9,0,3,0,11,0,5,0,13,7,0}, 4};
 const Rule minorTargetColor {"project.melodic-minor.minor-V-b13", ImprovisationStrategyKind::melodicMinorApplication, -1,
-    "Mixolydian b6 from melodic minor", "Melodic minor fifth mode; project application to a compatible V7(b13)",
-    "b13 belongs to the written dominant. This color does not prove that the next chord is minor; follow the actual next chord.",
+    "Rare fifth-mode melodic-minor color", "Levine, chapter 4, pp. 98-100: fifth mode is rare; conditional project application to written V7(b13)",
+    "Rare conditional color on written b13: 11 and b13 can clash when sustained. It does not imply a minor next chord; follow the actual target.",
     {1,0,9,0,3,11,0,5,13,0,7,0}, -1};
+const Rule harmonicMinorVFragment {"levine.harmonic-minor.minor-V-fragment", ImprovisationStrategyKind::harmonicMinorFragment, 0,
+    "Harmonic-minor V fragment", "Levine, chapter 23, pp. 529-531: harmonic-minor fragments over V7(b9) resolving to minor",
+    "Six-note V fragment for confirmed minor resolution and written b9 or b13; omit 11, and treat b13 as a passing color unless supported by the melody.",
+    {1,9,0,0,3,0,0,5,13,0,7,0}, -1, Rule::Form::harmonicMinorFragment};
 const Rule altered {"boyko.melodic-minor.bII", ImprovisationStrategyKind::alteredDominant, -5,
     "Altered dominant", "Levine, chapter 4, pp. 104-106; Boyko, section 2, pp. 101-102", "b9/#9/b5/b13; omit natural 5 in this line.",
     {1,9,0,9,3,0,5,0,13,0,7,0}, 7};
@@ -78,7 +82,8 @@ bool compatible(const Rule& rule, const NormalizedChord& chord)
         if (!expected) return false;
         if (!given || simpleGiven == (expected - 1) % 7 + 1) continue;
         // b5/#11 and #5/b13 are intentional dominant enharmonic realizations.
-        if (chord.quality == ChordQuality::dominant
+        if (rule.form != Rule::Form::harmonicMinorFragment
+            && chord.quality == ChordQuality::dominant
             && ((interval == 6 && (simpleGiven == 4 || simpleGiven == 5))
                 || (interval == 8 && (simpleGiven == 5 || simpleGiven == 6)))) continue;
         return false;
@@ -121,7 +126,7 @@ void append(ImprovisationResult& result, const Rule& rule, int index,
     strategy.kind = rule.kind;
     strategy.ruleId = subV ? "project.subv.melodic-minor.V" : rule.id;
     strategy.ruleVersion = &rule == &minor ? 4 : &rule == &dominantDiminished ? 2 : 3;
-    strategy.priority = 40; // Catalog/recommendation order, never harmonic confidence.
+    strategy.priority = &rule == &minorTargetColor ? 15 : 40; // Never harmonic confidence.
     strategy.interpretationIndependent = chordLocal;
     strategy.interpretationIndex = missingTonic || chordLocal ? -1 : index;
     strategy.missingTonicApplication = missingTonic;
@@ -145,6 +150,7 @@ void append(ImprovisationResult& result, const Rule& rule, int index,
         case Rule::Form::wholeHalf: strategy.source.name = rootName + " whole-half diminished"; break;
         case Rule::Form::halfWhole: strategy.source.name = rootName + " half-whole diminished"; break;
         case Rule::Form::wholeTone: strategy.source.name = rootName + " whole-tone"; break;
+        case Rule::Form::harmonicMinorFragment: strategy.source.name = rootName + " harmonic-minor V fragment"; break;
     }
     strategy.characteristicNotes.clear();
     strategy.sourceReference = rule.reference;
@@ -168,8 +174,9 @@ void append(ImprovisationResult& result, const Rule& rule, int index,
     constexpr int wholeHalfDegrees[] = {1,2,3,4,5,6,7,7};
     constexpr int halfWhole[] = {0,1,3,4,6,7,9,10};
     constexpr int wholeToneIntervals[] = {0,2,4,6,8,10};
+    constexpr int harmonicFragment[] = {0,1,4,7,8,10};
     const int count = rule.form == Rule::Form::wholeHalf || rule.form == Rule::Form::halfWhole ? 8
-        : rule.form == Rule::Form::wholeTone ? 6 : 7;
+        : rule.form == Rule::Form::wholeTone || rule.form == Rule::Form::harmonicMinorFragment ? 6 : 7;
     for (int i = 0; i < count; ++i)
     {
         MaterialNote note;
@@ -185,6 +192,9 @@ void append(ImprovisationResult& result, const Rule& rule, int index,
             case Rule::Form::wholeTone:
                 note.semitonesFromRoot = wholeToneIntervals[i];
                 note.degree = rule.degrees[static_cast<std::size_t>(wholeToneIntervals[i])]; break;
+            case Rule::Form::harmonicMinorFragment:
+                note.semitonesFromRoot = harmonicFragment[i];
+                note.degree = rule.degrees[static_cast<std::size_t>(harmonicFragment[i])]; break;
         }
         note.pitchClass = wrap(strategy.source.rootPitchClass + note.semitonesFromRoot);
         note.spelling = spell(strategy.source.rootFifths, note.degree, note.pitchClass);
@@ -285,8 +295,10 @@ void addSpecialSources(ImprovisationResult& result)
                     append(result, lydian, index);
                     append(result, flatSevenOverlay, index);
                 }
-                if (result.dominantContext == DominantContext::toMinor)
-                    append(result, minorTargetColor, index);
+                if (confirmedTarget && result.dominantContext == DominantContext::toMinor
+                    && (chord.hasTone(1) && chord.degrees[1] == 9
+                        || chord.hasTone(8) && chord.degrees[8] == 13))
+                    append(result, harmonicMinorVFragment, index);
                 append(result, altered, index);
                 append(result, dominantDiminished, index);
                 if (chord.hasAlteration(ChordAlteration::sharpFifth) && ! chord.hasTone(7))

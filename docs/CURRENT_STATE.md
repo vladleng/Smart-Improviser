@@ -1,6 +1,6 @@
 # Smart Improviser — Current State
 
-> Обновлено 2026-09-30: Stage 3 принят, текущая stable — `0.4`. `0.4a upd3` собран, но ожидает живого теста. Дальнейшие обновления плагина приостановлены ради [пересмотра музыкального фундамента](HARMONIC_THINKING_MAP.md): карта стала проектом спецификации и матрицей контрпримеров для согласования с Владом. Особенно проверить спорное применение пятого лада melodic minor на V7♭13 по Левину, с. 98–100. Stage 4 не принят; Tension Engine начинается позже. Song workspace и редактор остаются Stage 7–8.
+> Обновлено 2026-09-30: Stage 3 принят, текущая stable — `0.4`. Влад принял `0.4a` после живого теста `upd3`; PR #44 объединён в main. `0.4a upd4` сверяет [гармоническую карту](HARMONIC_THINKING_MAP.md) с Левиным и ждёт отдельного живого теста. Stage 4/Issue #5 ещё не завершён; Tension Engine начинается позже. Song workspace и редактор остаются Stage 7–8.
 
 > Короткая точка входа для нового чата или рабочей сессии. Подробная архитектура — в `PROJECT_CONTEXT.md`, этапы — в `ROADMAP.md`, правила версий — в `VERSIONING.md`, фактический прогресс — в GitHub Issues.
 
@@ -9,6 +9,8 @@
 - **Завершённые Stage:** Stage 0, Stage 1, Stage 2, Stage 3
 - **Текущая стабильная версия:** `0.4`
 - **Последний принятый Stage:** Stage 3 — Improvisation Engine
+- **Принятый checkpoint Stage 4:** `0.4a` (после `upd3`); PR #44 merged, Windows Build #379 success
+- **Текущая работа:** `0.4a upd4` — ограниченная сверка Core и карты с Левиным, живой тест ожидается
 - **Рабочая линия:** `0.3a → 0.3h fix3` [ACCEPTED]
 - **Итог Stage 3:** `0.4`
 - **Stage 2 Issue:** #3 — закрыт стабильной `0.3`
@@ -22,7 +24,7 @@
 - **PR #36:** accepted 0.3g fix1, merged в рабочую ветку PR #35
 - **PR #35:** accepted 0.3g, merged в main (`85337ff`)
 - **Windows Build #331:** success; 14/14 test targets green
-- **Следующий Stage:** Stage 4 — Visual Material Viewer (`0.4a`), затем Tension Engine (`0.4b → 0.4x`)
+- **Текущий Stage:** Stage 4 — viewer `0.4a` принят, далее Tension Engine (`0.4b → 0.4x`) после проверки upd4
 
 Для `0.4b` согласована первая лестница V7 → мажорной цели: исходный Mixolydian, затем T1 Dm6 / D melodic minor, T2 Fm6 / F melodic minor и T3 Abm6 / Ab melodic minor. Источники в `0.4a upd3` доступны с условиями, но классы T1–T3 пока спецификация, не классификация; правила совместимости с реальным V7alt и ноты каждой структуры приведены в [IMPROVISATION_METHOD.md](IMPROVISATION_METHOD.md).
 
