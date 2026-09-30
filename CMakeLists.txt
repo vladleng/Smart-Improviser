@@ -166,7 +166,7 @@ target_compile_definitions(SmartImproviserARA
         JUCE_WEB_BROWSER=0
         JUCE_USE_CURL=0
         JUCE_VST3_CAN_REPLACE_VST2=0
-        SMART_IMPROVISER_BUILD_VERSION="0.4b"
+        SMART_IMPROVISER_BUILD_VERSION="0.4c"
 )
 
 target_link_libraries(SmartImproviserARA
@@ -329,3 +329,11 @@ if(MSVC)
     target_compile_options(SmartImproviserTensionContractTests PRIVATE /utf-8)
 endif()
 add_test(NAME SmartImproviserTensionContractTests COMMAND SmartImproviserTensionContractTests)
+
+add_executable(SmartImproviserTensionLevel1Tests tests/TensionLevel1Tests.cpp)
+target_link_libraries(SmartImproviserTensionLevel1Tests PRIVATE SmartImproviserCore)
+target_compile_features(SmartImproviserTensionLevel1Tests PRIVATE cxx_std_20)
+if(MSVC)
+    target_compile_options(SmartImproviserTensionLevel1Tests PRIVATE /utf-8)
+endif()
+add_test(NAME SmartImproviserTensionLevel1Tests COMMAND SmartImproviserTensionLevel1Tests)

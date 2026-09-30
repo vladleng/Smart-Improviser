@@ -6,6 +6,7 @@
 #include "context/TimelineContextMapper.h"
 #include "core/analysis/HarmonicEngine.h"
 #include "core/analysis/ImprovisationEngine.h"
+#include "core/analysis/TensionEngine.h"
 #include "core/model/ChordModel.h"
 #include "core/model/KeyModel.h"
 
@@ -41,6 +42,24 @@ juce::String localizeGeneratedText(juce::String text)
                         ru("Ожидание корректной позиции, аккорда и тональности."));
     text = text.replace("No explicit chord tones available.",
                         ru("Нет доступных явно заданных звуков аккорда."));
+    text = text.replace("T1: use the written chord tones and available guide tones.",
+                        ru("T1: звуки записанного аккорда и его направляющие."));
+    text = text.replace("T1: written chord anchors with the natural 9 from the confirmed diatonic source.",
+                        ru("T1: опоры аккорда с натуральной 9 из доступного диатонического источника."));
+    text = text.replace("T1: play the four-note m6 thinking structure over the written dominant.",
+                        ru("T1: четыре звука m6-структуры над записанной доминантой."));
+    text = text.replace("The written chord, including any alteration or slash bass, remains the harmony; no scale or tonic is inferred.",
+                        ru("Записанный аккорд, включая альтерации и бас, остаётся гармонией; гамма и тоника не выводятся."));
+    text = text.replace("Only the 9 is added; the natural 4th against a major third is passing, never a stable landing note.",
+                        ru("Добавлена только 9; натуральная 4 против большой терции допускается как проходящая, не как устойчивая цель."));
+    text = text.replace("The dominant root and any written tones remain harmonic anchors outside this m6 line. The full melodic-minor scale, especially #11, is not assigned T1.",
+                        ru("Корень доминанты и записанные звуки остаются опорами вне линии m6. Полная гамма melodic minor, особенно #11, не объявлена T1."));
+    text = text.replace("T1 chord anchors; connect to actual next-chord targets only when known.",
+                        ru("T1: опоры аккорда; направляй к действительной цели, если она известна."));
+    text = text.replace("Natural 9 is a stable extension; a major chord's 4th is passing only.",
+                        ru("Натуральная 9 — устойчивая надстройка; 4 мажорного аккорда только проходящая."));
+    text = text.replace("m6 structure only; optional diatonic passing note is not a stable target.",
+                        ru("Только m6-структура; дополнительный диатонический проходящий звук не является устойчивой целью."));
 
     text = text.replace("No primary interpretation: use the explicit chord tones.",
                         ru("Нет основной трактовки: используй явно заданные звуки аккорда."));
@@ -650,6 +669,10 @@ juce::String SmartImproviserARAEditor::selectedMaterialText() const
         return {};
     const auto& item = cachedExplanation.items[static_cast<std::size_t>(selected)];
     juce::String text = ru("ВЫБРАННЫЙ МАТЕРИАЛ: ") + localizeGeneratedText(utf8String(item.source.name)) + "\n";
+    if (!item.strategyIndices.empty()
+        && item.strategyIndices.front() < cachedResult.strategies.size()
+        && cachedResult.strategies[item.strategyIndices.front()].tensionClassified)
+        text += ru("T1 • базовое мышление для текущего контекста\n");
     if (item.interpretationIndependent)
         text += item.source.kind == smartimproviser::harmony::MaterialKind::chordTones
             ? ru("Опоры аккорда • независимо от трактовки\n")
@@ -818,7 +841,11 @@ void SmartImproviserARAEditor::timerCallback()
     const auto patternWindow = smartimproviser::harmony::mapPatternTimelineWindow(cachedShared, ppq);
     const auto context = smartimproviser::harmony::mapHarmonicContext(cachedShared, ppq);
     cachedSituation = smartimproviser::harmony::analyzeHarmonicSituation(timeline, patternWindow);
-    const auto result = smartimproviser::harmony::analyzeImprovisation(cachedSituation);
+    auto result = smartimproviser::harmony::analyzeImprovisation(cachedSituation);
+    const auto stableProfile = smartimproviser::harmony::analyzeStableTension(result);
+    if (const auto* band = stableProfile.band(smartimproviser::harmony::TensionLevel::stable))
+        for (const auto& candidate : band->alternatives)
+            result.strategies.push_back(candidate.strategy);
     const auto explanation = smartimproviser::harmony::explainImprovisation(result);
     cachedResult = result;
     cachedExplanation = explanation;
@@ -836,6 +863,10 @@ void SmartImproviserARAEditor::timerCallback()
         const auto& item = explanation.items[i];
         juce::String label = localizeGeneratedText(utf8String(item.source.name));
         if (label.isEmpty()) label = localizeGeneratedText(utf8String(item.idea));
+        if (!item.strategyIndices.empty()
+            && item.strategyIndices.front() < result.strategies.size()
+            && result.strategies[item.strategyIndices.front()].tensionClassified)
+            label = ru("T1 • ") + label;
         if (! item.interpretationIndices.empty())
         {
             label += ru(" • трактовка ");
@@ -1122,7 +1153,8 @@ void SmartImproviserARAEditor::timerCallback()
                     + ru("; разрешение не подтверждено.\n");
             }
 
-            sourcesText += localizeGeneratedText(utf8String(scalar.source.name)) + "\n";
+            sourcesText += (scalar.tensionClassified ? ru("T1 • ") : juce::String())
+                + localizeGeneratedText(utf8String(scalar.source.name)) + "\n";
             for (const auto& note : scalar.source.notes)
                 sourcesText += utf8String(note.spelling) + " ";
 

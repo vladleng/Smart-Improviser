@@ -1,6 +1,6 @@
 # Smart Improviser — Current State
 
-> Обновлено 2026-09-30: Stage 3 принят, текущая stable — `0.4`. Влад принял `0.4a upd4` и `0.4b` после живых проверок; PR #44–#46 объединены в main (последний merge `dffae06`). Следующий checkpoint — `0.4c`, музыкальные правила Level 1 / Stable поверх принятого контракта Tension Engine. Stage 4/Issue #5 ещё не завершён. Song workspace и редактор остаются Stage 7–8.
+> Обновлено 2026-09-30: Stage 3 принят, текущая stable — `0.4`. Влад принял `0.4a upd4` и `0.4b` после живых проверок; PR #44–#47 объединены в main. Рабочий checkpoint `0.4c` реализует Level 1 / Stable поверх принятого контракта Tension Engine; живое подтверждение ещё требуется. Stage 4/Issue #5 открыт. Song workspace и редактор остаются Stage 7–8.
 
 > Короткая точка входа для нового чата или рабочей сессии. Подробная архитектура — в `PROJECT_CONTEXT.md`, этапы — в `ROADMAP.md`, правила версий — в `VERSIONING.md`, фактический прогресс — в GitHub Issues.
 
@@ -10,7 +10,7 @@
 - **Текущая стабильная версия:** `0.4`
 - **Последний принятый Stage:** Stage 3 — Improvisation Engine
 - **Принятые checkpoints Stage 4:** `0.4a` с `upd4`, затем `0.4b`; PR #44–#46 merged, Windows Build #379/#381/#383 success
-- **Следующий checkpoint:** `0.4c` — Level 1 / Stable; музыкальные правила ещё не начаты
+- **Текущий checkpoint:** `0.4c` — Level 1 / Stable; [правила и живой gate](STAGE_4_0.4c_LEVEL1.md), до принятия
 - **Рабочая линия:** `0.3a → 0.3h fix3` [ACCEPTED]
 - **Итог Stage 3:** `0.4`
 - **Stage 2 Issue:** #3 — закрыт стабильной `0.3`
@@ -24,9 +24,9 @@
 - **PR #36:** accepted 0.3g fix1, merged в рабочую ветку PR #35
 - **PR #35:** accepted 0.3g, merged в main (`85337ff`)
 - **Windows Build #331:** success; 14/14 test targets green
-- **Текущий Stage:** Stage 4 — viewer `0.4a` и контракт `0.4b` приняты; правила уровней начинаются с `0.4c`
+- **Текущий Stage:** Stage 4 — viewer `0.4a` и контракт `0.4b` приняты; Level 1 в `0.4c` ожидает живой проверки
 
-Для будущих музыкальных правил после `0.4b` согласована первая лестница V7 → мажорной цели: исходный Mixolydian, затем T1 Dm6 / D melodic minor, T2 Fm6 / F melodic minor и T3 Abm6 / Ab melodic minor. Источники уже доступны с условиями, но классы T1–T3 пока спецификация, не работающая классификация; правила совместимости с реальным V7alt и ноты каждой структуры приведены в [IMPROVISATION_METHOD.md](IMPROVISATION_METHOD.md).
+Согласована лестница V7 → мажорной цели: исходный Mixolydian, затем T1 Dm6, T2 Fm6 и T3 Abm6. В `0.4c` работает только T1 для совместимого подтверждённого V→мажор; полная гамма D melodic minor остаётся отдельным материалом и не объявлена целиком T1. Для иных аккордов T1 использует совместимую диатоническую 9 или буквальные опоры. Правила T2/T3 остаются спецификацией. Подробности — в [STAGE_4_0.4c_LEVEL1.md](STAGE_4_0.4c_LEVEL1.md) и [IMPROVISATION_METHOD.md](IMPROVISATION_METHOD.md).
 
 0.3h принят 2026-09-29. Fix1: ожидаемая отсутствующая тоника отдельна от распознанного `III–VI–II–V`, G7 получает Mixolydian и допустимые альтернативы, Am7 в C major не навязывается Am6. Fix2: компактные крупные римские ступени с серой I на позициях 1/4–4/4 при известном обходе тоники. Fix3: UTF-8 для `–`, `ø`, `→` в Windows UI. Windows Build #360 — success, 15/15 tests и VST3 artifact; пользователь принял результат в Studio Pro. PR #39 → #38 → #37 merged в main (`b587408`). Stable `0.4` упакована с отдельным Windows build/artifact; музыкальная логика относительно принятого fix3 не менялась.
 

@@ -20,7 +20,8 @@ enum class TensionRole : std::uint8_t
     contextualColor,
     passingApproach,
     resolutionTarget,
-    outsideTone
+    outsideTone,
+    stableExtension
 };
 
 enum class TensionAssessment : std::uint8_t

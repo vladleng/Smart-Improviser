@@ -148,6 +148,24 @@ inline MaterialView buildMaterialView(const ImprovisationResult& result,
             | (view.chord.valid && view.chord.hasTone((note.pitchClass - view.chord.rootPitchClass + 12) % 12)
                 ? chordRole : 0u));
 
+    // A T1 m6 line omits the dominant root by design. Keep every written
+    // chord anchor available in the chord/all layers without adding it to the
+    // selected four-note source. The spelling comes from Core's anchor source.
+    if (strategy.tensionClassified)
+        for (const auto& original : result.strategies)
+            if (original.ruleId == "core.explicit-chord-tones")
+            {
+                for (auto note : original.source.notes)
+                {
+                    note.semitonesFromRoot = (note.pitchClass - view.sourceRootPitchClass + 12) % 12;
+                    append(note, chordRole | (note.role == MaterialNoteRole::guideTone ? guideRole : 0u));
+                }
+                break;
+            }
+    if (strategy.tensionClassified)
+        std::stable_sort(view.current.begin(), view.current.end(), [](const auto& a, const auto& b)
+        { return a.sourceInterval < b.sourceInterval; });
+
     // Targets belong to the actual next chord, never the inferred tonic.
     for (const auto& note : item.targetNotes)
         if (note.pitchClass >= 0 && note.pitchClass < 12)
