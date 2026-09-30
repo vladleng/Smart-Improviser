@@ -6,10 +6,13 @@
 #include "core/analysis/Explanation.h"
 #include "ara/MaterialViewerComponent.h"
 
+#include <string>
+
 class SmartImproviserARAProcessor;
 
 class SmartImproviserARAEditor final : public juce::AudioProcessorEditor,
-                                       private juce::Timer
+                                       private juce::Timer,
+                                       private juce::ListBoxModel
 {
 public:
     explicit SmartImproviserARAEditor(SmartImproviserARAProcessor& processor);
@@ -33,6 +36,15 @@ private:
     void updatePanelButtons();
     void updateMaterialSelection();
     juce::String selectedMaterialText() const;
+    int getNumRows() override;
+    void paintListBoxItem(int row, juce::Graphics& g, int width, int height,
+                          bool rowIsSelected) override;
+    void listBoxItemClicked(int row, const juce::MouseEvent& event) override;
+    void selectedRowsChanged(int row) override;
+    void selectMaterial(int index);
+    void openTensionMenu(int index, const juce::MouseEvent& event);
+    std::string tensionKey(int index) const;
+    int manualTension(int index) const;
 
     SmartImproviserARAProcessor& processor;
     SharedHarmonicContextSnapshot cachedShared;
@@ -40,6 +52,8 @@ private:
     smartimproviser::harmony::ImprovisationResult cachedResult;
     smartimproviser::harmony::ExplanationResult cachedExplanation;
     juce::String selectedMaterialKey;
+    juce::StringArray strategyLabels;
+    int selectedMaterialIndex = -1;
     bool updatingSelector = false;
 
     Panel activePanel = Panel::material;
@@ -60,7 +74,7 @@ private:
     juce::TextButton harmonicButton;
     juce::TextButton araButton;
     juce::TextEditor detailsView;
-    juce::ComboBox strategySelector;
+    juce::ListBox strategyList;
     juce::ComboBox layerSelector;
     juce::ComboBox fretSelector;
     MaterialViewerComponent materialViewer;

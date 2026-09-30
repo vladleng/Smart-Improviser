@@ -38,6 +38,7 @@ add_library(SmartImproviserCore STATIC
     src/core/analysis/DiatonicSources.h
     src/core/analysis/Explanation.h
     src/core/analysis/MaterialViewer.h
+    src/core/analysis/FretboardLayout.h
     src/core/analysis/SpecialSources.cpp
     src/core/analysis/SpecialSources.h
     src/core/analysis/TensionEngine.cpp
@@ -337,3 +338,10 @@ if(MSVC)
     target_compile_options(SmartImproviserTensionLevel1Tests PRIVATE /utf-8)
 endif()
 add_test(NAME SmartImproviserTensionLevel1Tests COMMAND SmartImproviserTensionLevel1Tests)
+
+add_executable(SmartImproviserFretboardLayoutTests tests/FretboardLayoutTests.cpp)
+target_link_libraries(SmartImproviserFretboardLayoutTests PRIVATE SmartImproviserCore)
+if(MSVC)
+    target_compile_options(SmartImproviserFretboardLayoutTests PRIVATE /utf-8)
+endif()
+add_test(NAME SmartImproviserFretboardLayoutTests COMMAND SmartImproviserFretboardLayoutTests)

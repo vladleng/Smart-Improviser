@@ -2,6 +2,8 @@
 
 #include <JuceHeader.h>
 #include <atomic>
+#include <map>
+#include <string>
 
 class SmartImproviserARAProcessor final : public juce::AudioProcessor
 #if JucePlugin_Enable_ARA
@@ -36,6 +38,10 @@ public:
     void setStateInformation(const void* data, int sizeInBytes) override;
 
     bool isAraBound() const noexcept { return araBound.load(std::memory_order_relaxed); }
+    int manualTensionFor(const std::string& key) const;
+    void setManualTension(const std::string& key, int level);
+    juce::Point<int> editorSize() const;
+    void setEditorSize(juce::Point<int> size);
 
 protected:
 #if JucePlugin_Enable_ARA
@@ -44,6 +50,9 @@ protected:
 
 private:
     std::atomic<bool> araBound { false };
+    mutable juce::CriticalSection stateLock;
+    std::map<std::string, int> manualTensions;
+    juce::Point<int> savedEditorSize {1120, 1220};
     bool hasPublishedTransport = false;
     bool lastPublishedTransportAvailable = false;
     bool lastPublishedTransportPlaying = false;

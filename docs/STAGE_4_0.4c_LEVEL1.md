@@ -9,7 +9,7 @@ replace a missing resolution. T2 and T3 remain `notEvaluated`.
 
 | Context from Core | T1 material | Roles and limits |
 |---|---|---|
-| Confirmed ordinary V7 → major, compatible written chord | Four tones of Core's m6 thinking structure (G7→Cmaj7: D F A B) | Written G is an external chord anchor. A is the natural 9; the source's E may be a passing approach, while C# from full D melodic minor is outside T1. Ordinary Mixolydian remains a separate baseline source. |
+| Confirmed ordinary V7 → major **or** ordinary `iim7–V7` with provisional major direction, compatible written chord | Four tones of Core's m6 thinking structure (G7→Cmaj7: D F A B; Fm7–B♭7–Em7: F A♭ C D on B♭7) | The written dominant root is an external chord anchor. The full melodic-minor scale is not T1. For incomplete ii–V, an expected I remains unplayed and only the actual next chord supplies factual targets. Ordinary Mixolydian remains a separate baseline source. |
 | Compatible major/minor chord with a confirmed diatonic source (Ionian, Dorian, Aeolian) | Literal chord notes plus natural 9, as a subset of that source | Major 4 against the third is only a passing note, not a stable source member. |
 | Every other valid written chord, including incompatible alterations, sus, slash bass, unknown future and unsupported dominant resolution | Literal Core chord anchors and guides | Do not infer a replacement scale, tonic or natural fifth. |
 
@@ -22,23 +22,39 @@ membership. `passingApproach` is an optional role and is outside the four or
 five selected stable notes. This is Smart Improviser's own T1 policy, not a
 T1 label in Levine's book.
 
-The viewer offers T1 items alongside the original Core material. Selecting a
-T1 item updates staff, fretboard, selected material and explanation together
-with seek/PLAY/STOP. The m6 source layer contains four notes; chord/all layers
-also expose the literal dominant root. Text labels T1. This checkpoint does
-not add rhythm, phrase entry, persistence, or T2/T3 algorithms.
+The viewer offers T1 items alongside the original Core material. The current
+context lists every available material in a vertically scrollable column.
+Selecting a row updates staff, fretboard and explanation together with
+seek/PLAY/STOP. A separate circle beside each row opens a colored menu for a
+**manual** T1/T2/T3 label or no label. The manual label never reclassifies Core
+evidence, changes the source, or declares a tonic; unmarked is the default.
+These UI labels and window dimensions are saved in the plugin instance's host
+state and restored when the host restores the plugin. This is not a saved Song
+workspace. Core's T2/T3 algorithms remain for later checkpoints.
+
+The editor window can be resized within fixed bounds; fonts, controls and
+noteheads retain their pixel size as available space changes. The fretboard
+draws a clear nut between open strings and fret 1, with Roman position markers
+only over frets 3, 5, 7, 9, 12, 15, 17, 19 and 21 when visible. The m6 source
+layer contains four notes; chord/all layers also expose the literal dominant
+root. This checkpoint does not add rhythm, phrase entry or song persistence.
 
 ## Verification and live gate
 
 `TensionLevel1Tests` covers G7→Cmaj7, V→minor, written b9 and #5,
-unknown next chord, Dm7/Cmaj7 natural 9, passing major 4, sus, preserved
-ambiguous context and the viewer's chord/source split. All previous test
+Fm7–B♭7–Em7 with missing I, candidate ii–V with unknown future, isolated
+dominant with unknown future, Dm7/Cmaj7 natural 9, passing major 4, sus,
+preserved ambiguous context and the viewer's chord/source split.
+`FretboardLayoutTests` checks nut/0/1 geometry and Roman markers. All previous test
 suites and Windows CTest must pass. The Windows workflow packages
 `Smart-Improviser-0.4c-Windows` VST3.
 
 Studio Pro live check: install the VST3; confirm version `0.4c`. At
-G7→Cmaj7, select `T1 • Dm6` and compare four source notes D F A B and G in
-the chord layer. Check G7b9 and G7#5 do not offer ordinary Dm6, and an
-unknown next chord shows literal anchors. Seek across chords and PLAY/STOP:
-selected text, staff and fretboard should follow together. Acceptance remains
+G7→Cmaj7, select Dm6 and compare four source notes D F A B and G in the chord
+layer. For Fm7–B♭7–Em7, confirm provisional Fm6 without E♭ as a played tonic
+or target. Check G7b9 and G7#5 do not offer ordinary Dm6. Assign and clear
+colored labels to two rows, seek away/back and save/reopen the Studio Pro
+project. Resize the editor; compare fixed text/notehead size. In ranges 0–12,
+5–17 and 12–24, check the nut and Roman positions. Seek and PLAY/STOP should
+keep selected text, staff and fretboard synchronized. Acceptance remains
 pending Vlad's live confirmation.

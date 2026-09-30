@@ -204,12 +204,23 @@ TensionProfile analyzeStableTension(const ImprovisationResult& result)
         && result.dominantContext == DominantContext::toMajor
         && result.context.resolution.confirmed
         && !result.substituteDominant;
+    const auto& incomplete = result.context.incompleteCadence;
+    const bool missingMajorV = chord.quality == ChordQuality::dominant
+        && incomplete.valid && incomplete.positionIndex == 1
+        && chord.rootPitchClass == incomplete.v.rootPitchClass
+        && !result.context.resolution.confirmed
+        && !result.substituteDominant;
+    const auto& localPattern = result.context.localPattern;
+    const bool pendingMajorV = chord.quality == ChordQuality::dominant
+        && !result.context.nextChordAvailable && !result.context.resolution.confirmed
+        && localPattern.type == HarmonicPatternType::majorIiVI
+        && localPattern.positionIndex == 1 && !result.substituteDominant;
 
-    if (confirmedMajorV)
+    if (confirmedMajorV || missingMajorV || pendingMajorV)
         for (const auto& source : result.strategies)
             if (source.ruleId == "boyko.melodic-minor.V"
                 && source.thinkingStructure.valid
-                && !source.missingTonicApplication
+                && source.missingTonicApplication == missingMajorV
                 && compatibleStructure(chord, source.thinkingStructure))
                 stable.alternatives.push_back(makeDominantSix(source, *anchors));
 

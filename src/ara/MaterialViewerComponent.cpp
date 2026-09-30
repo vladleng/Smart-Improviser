@@ -1,4 +1,5 @@
 #include "ara/MaterialViewerComponent.h"
+#include "core/analysis/FretboardLayout.h"
 
 #include <array>
 #include <cmath>
@@ -173,6 +174,11 @@ void MaterialViewerComponent::paint(juce::Graphics& g)
     const float left = 60.0f, right = static_cast<float>(getWidth() - 24);
     const float top = 157.0f, spacing = 18.0f;
     const float fretWidth = (right - left) / static_cast<float>(fretEnd - fretStart + 1);
+    if (fretStart == 0 && fretEnd >= 1)
+    {
+        g.setColour(juce::Colour::fromRGB(49, 55, 63));
+        g.fillRect(left, top - 7.0f, fretWidth, 5 * spacing + 14.0f);
+    }
     for (int string = 0; string < 6; ++string)
     {
         const float y = top + string * spacing;
@@ -181,16 +187,26 @@ void MaterialViewerComponent::paint(juce::Graphics& g)
         static constexpr const char* names[] = {"E", "B", "G", "D", "A", "E"};
         g.drawText(names[string], 27, static_cast<int>(y - 9), 27, 18, juce::Justification::centred);
     }
+    for (int fret = fretStart; fret <= fretEnd + 1; ++fret)
+    {
+        const bool nut = fretStart == 0 && fret == 1;
+        const float x = nut ? nutBoundary(fretStart, left, fretWidth)
+                            : left + (fret - fretStart) * fretWidth;
+        g.setColour(nut ? juce::Colour::fromRGB(230, 219, 193)
+                        : juce::Colour::fromRGB(101, 108, 119));
+        g.drawLine(x, top - 7.0f, x, top + 5 * spacing + 7.0f,
+                   nut ? 4.0f : 0.8f);
+    }
+    g.setColour(sourceColour);
+    g.setFont(11.0f);
     for (int fret = fretStart; fret <= fretEnd; ++fret)
     {
-        const float x = left + (fret - fretStart) * fretWidth;
-        g.setColour(juce::Colour::fromRGB(101, 108, 119));
-        g.drawLine(x, top - 5.0f, x, top + 5 * spacing + 5.0f,
-                   fret == 0 ? 2.0f : 0.8f);
-        g.setColour(sourceColour);
-        g.setFont(10.5f);
-        g.drawText(juce::String(fret), static_cast<int>(x), 136,
-                   static_cast<int>(fretWidth), 15, juce::Justification::centred);
+        const auto label = fret == 0 ? juce::String::fromUTF8("откр.")
+                                     : juce::String(positionMarker(fret));
+        if (label.isEmpty()) continue;
+        const float x = fretCellCenter(fretStart, fret, left, fretWidth);
+        g.drawText(label, static_cast<int>(x - fretWidth * 0.5f), 135,
+                   static_cast<int>(fretWidth), 17, juce::Justification::centred);
     }
     static constexpr std::array<int, 6> openMidi {64, 59, 55, 50, 45, 40};
     for (int string = 0; string < 6; ++string)
@@ -201,7 +217,7 @@ void MaterialViewerComponent::paint(juce::Graphics& g)
             const auto currentIt = std::find_if(current.begin(), current.end(), match);
             const auto targetIt = std::find_if(targets.begin(), targets.end(), match);
             if (currentIt == current.end() && targetIt == targets.end()) continue;
-            const float x = left + (fret - fretStart + 0.5f) * fretWidth;
+            const float x = fretCellCenter(fretStart, fret, left, fretWidth);
             const float y = top + string * spacing;
             const auto& note = **(currentIt != current.end() ? currentIt : targetIt);
             g.setColour(noteColour(note));

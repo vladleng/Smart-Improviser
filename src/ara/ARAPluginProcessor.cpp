@@ -4,6 +4,7 @@
 #include "context/SharedHarmonicContext.h"
 
 #include <cmath>
+#include <utility>
 
 namespace
 {
@@ -94,11 +95,69 @@ juce::AudioProcessorEditor* SmartImproviserARAProcessor::createEditor()
 
 void SmartImproviserARAProcessor::getStateInformation(juce::MemoryBlock& destData)
 {
-    static constexpr char state[] = "SmartImproviserARAStateV1";
-    destData.replaceAll(state, sizeof(state));
+    const juce::ScopedLock lock(stateLock);
+    juce::MemoryOutputStream stream(destData, false);
+    stream.writeString("SmartImproviserARAStateV2");
+    stream.writeInt(savedEditorSize.x);
+    stream.writeInt(savedEditorSize.y);
+    stream.writeInt(static_cast<int>(manualTensions.size()));
+    for (const auto& [key, level] : manualTensions)
+    {
+        stream.writeString(juce::String::fromUTF8(key.c_str()));
+        stream.writeInt(level);
+    }
 }
 
-void SmartImproviserARAProcessor::setStateInformation(const void*, int) {}
+void SmartImproviserARAProcessor::setStateInformation(const void* data, int size)
+{
+    if (data == nullptr || size <= 0) return;
+    juce::MemoryInputStream stream(data, static_cast<std::size_t>(size), false);
+    if (stream.readString() != "SmartImproviserARAStateV2") return;
+    const auto width = stream.readInt(), height = stream.readInt();
+    const auto count = stream.readInt();
+    if (width < 940 || width > 1900 || height < 1100 || height > 1800
+        || count < 0 || count > 10000) return;
+    std::map<std::string, int> restored;
+    for (int i = 0; i < count; ++i)
+    {
+        if (stream.isExhausted()) return;
+        auto key = stream.readString().toStdString();
+        if (stream.isExhausted()) return;
+        const auto level = stream.readInt();
+        if (!key.empty() && level >= 1 && level <= 3)
+            restored[std::move(key)] = level;
+    }
+    const juce::ScopedLock lock(stateLock);
+    manualTensions = std::move(restored);
+    savedEditorSize = {width, height};
+}
+
+int SmartImproviserARAProcessor::manualTensionFor(const std::string& key) const
+{
+    const juce::ScopedLock lock(stateLock);
+    const auto found = manualTensions.find(key);
+    return found == manualTensions.end() ? 0 : found->second;
+}
+
+void SmartImproviserARAProcessor::setManualTension(const std::string& key, int level)
+{
+    if (key.empty()) return;
+    const juce::ScopedLock lock(stateLock);
+    if (level >= 1 && level <= 3) manualTensions[key] = level;
+    else manualTensions.erase(key);
+}
+
+juce::Point<int> SmartImproviserARAProcessor::editorSize() const
+{
+    const juce::ScopedLock lock(stateLock);
+    return savedEditorSize;
+}
+
+void SmartImproviserARAProcessor::setEditorSize(juce::Point<int> size)
+{
+    const juce::ScopedLock lock(stateLock);
+    savedEditorSize = size;
+}
 
 #if JucePlugin_Enable_ARA
 void SmartImproviserARAProcessor::didBindToARA() noexcept

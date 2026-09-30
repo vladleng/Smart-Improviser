@@ -106,11 +106,13 @@ int functionalSubVRootFifths(const ImprovisationResult& result, const Normalized
 }
 
 void append(ImprovisationResult& result, const Rule& rule, int index,
-            bool subV = false, bool missingTonic = false, bool chordLocal = false)
+            bool subV = false, bool missingTonic = false, bool chordLocal = false,
+            bool pendingIiV = false)
 {
     const auto& chord = result.context.currentChord;
     if (!compatible(rule, chord)) return;
-    if (! missingTonic && ! chordLocal && (index < 0 || index >= result.context.interpretationCount
+    if (! missingTonic && ! chordLocal && ! pendingIiV
+        && (index < 0 || index >= result.context.interpretationCount
         || static_cast<std::size_t>(index) >= result.context.interpretations.size()
         || ! result.context.interpretations[static_cast<std::size_t>(index)].valid)) return;
 
@@ -128,7 +130,7 @@ void append(ImprovisationResult& result, const Rule& rule, int index,
     strategy.ruleVersion = &rule == &minor ? 4 : &rule == &dominantDiminished ? 2 : 3;
     strategy.priority = &rule == &minorTargetColor ? 15 : 40; // Never harmonic confidence.
     strategy.interpretationIndependent = chordLocal;
-    strategy.interpretationIndex = missingTonic || chordLocal ? -1 : index;
+    strategy.interpretationIndex = missingTonic || chordLocal || pendingIiV ? -1 : index;
     strategy.missingTonicApplication = missingTonic;
     if (missingTonic)
     {
@@ -138,6 +140,7 @@ void append(ImprovisationResult& result, const Rule& rule, int index,
         strategy.evidence.add(EvidenceFlag::patternMatch);
     }
     else if (chordLocal) strategy.evidence = {};
+    else if (pendingIiV) strategy.evidence = result.context.localPattern.evidence;
     else strategy.evidence = result.context.interpretations[static_cast<std::size_t>(index)].evidence;
     strategy.source = {};
     strategy.source.kind = MaterialKind::scale;
@@ -158,7 +161,9 @@ void append(ImprovisationResult& result, const Rule& rule, int index,
     strategy.usageHint = rule.hint;
     strategy.idea = rule.application;
     strategy.explanation = strategy.sourceReference;
-    strategy.conditions = chordLocal
+    strategy.conditions = pendingIiV
+        ? "Candidate major ii-V: the expected I has not been observed; no next-chord target is claimed. "
+        : chordLocal
         ? "Chord-local optional color; no tonic, key or functional resolution is inferred. "
         : missingTonic
         ? "Incomplete ii-V: the expected major I did not sound; source root is not an established key. "
@@ -340,6 +345,19 @@ void addSpecialSources(ImprovisationResult& result)
         append(result, dominantDiminished, -1, false, true);
         if (chord.hasAlteration(ChordAlteration::sharpFifth) && ! chord.hasTone(7))
             append(result, wholeTone, -1, false, true);
+    }
+
+    if (!situation.nextChordAvailable && !situation.resolution.confirmed
+        && situation.localPattern.type == HarmonicPatternType::majorIiVI
+        && situation.localPattern.positionIndex == 1
+        && chord.quality == ChordQuality::dominant && !result.substituteDominant)
+    {
+        // A future that has not been supplied is not a missing tonic. Retain
+        // the ii-V evidence and major-directed palette without a target.
+        append(result, lydian, -1, false, false, false, true);
+        append(result, flatSevenOverlay, -1, false, false, false, true);
+        append(result, altered, -1, false, false, false, true);
+        append(result, dominantDiminished, -1, false, false, false, true);
     }
 
     // No tonic interpretation is needed to present a compatible chord-local

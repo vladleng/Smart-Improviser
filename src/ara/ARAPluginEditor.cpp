@@ -11,8 +11,10 @@
 #include "core/model/KeyModel.h"
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <string>
+#include <utility>
 #include <vector>
 
 #ifndef SMART_IMPROVISER_BUILD_VERSION
@@ -75,6 +77,8 @@ juce::String localizeGeneratedText(juce::String text)
                         ru("Нет базового диатонического источника для доминанты в минор; сохраняй опоры и контекстные альтернативы."));
     text = text.replace("No confirmed major target for the basic dominant source.",
                         ru("Нет подтверждённой мажорной цели для базового доминантового источника."));
+    text = text.replace("Candidate major ii-V: the expected I has not been observed; no next-chord target is claimed.",
+                        ru("Кандидат мажорного ii–V: ожидаемая I не прозвучала; цель следующего аккорда не утверждается."));
     text = text.replace("No supported major/minor center in the selected interpretation.",
                         ru("В выбранной трактовке нет поддерживаемого мажорного/минорного центра."));
     text = text.replace("No compatible diatonic source for all explicit chord tones/degrees.",
@@ -575,7 +579,10 @@ juce::String materialSelectionKey(const smartimproviser::harmony::ExplanationIte
 SmartImproviserARAEditor::SmartImproviserARAEditor(SmartImproviserARAProcessor& p)
     : juce::AudioProcessorEditor(p), processor(p)
 {
-    setSize(1020, 1000);
+    setResizable(true, true);
+    setResizeLimits(940, 1100, 1900, 1800);
+    const auto size = processor.editorSize();
+    setSize(size.x, size.y);
 
     detailsView.setMultiLine(true, true);
     detailsView.setReadOnly(true);
@@ -588,7 +595,7 @@ SmartImproviserARAEditor::SmartImproviserARAEditor(SmartImproviserARAProcessor& 
     detailsView.setColour(juce::TextEditor::focusedOutlineColourId, juce::Colours::transparentBlack);
     addAndMakeVisible(detailsView);
 
-    for (auto* selector : { &strategySelector, &layerSelector, &fretSelector })
+    for (auto* selector : { &layerSelector, &fretSelector })
     {
         selector->setColour(juce::ComboBox::backgroundColourId, juce::Colour::fromRGB(45, 49, 56));
         selector->setColour(juce::ComboBox::textColourId, juce::Colour::fromRGB(225, 230, 238));
@@ -606,18 +613,13 @@ SmartImproviserARAEditor::SmartImproviserARAEditor(SmartImproviserARAProcessor& 
     fretSelector.addItem(ru("Лады 5–17"), 2);
     fretSelector.addItem(ru("Лады 12–24"), 3);
     fretSelector.setSelectedId(1, juce::dontSendNotification);
-    strategySelector.onChange = [this]
-    {
-        if (updatingSelector) return;
-        const int index = strategySelector.getSelectedId() - 1;
-        if (index >= 0 && index < static_cast<int>(cachedExplanation.items.size()))
-        {
-            const auto& item = cachedExplanation.items[static_cast<std::size_t>(index)];
-            selectedMaterialKey = materialSelectionKey(item);
-        }
-        updateMaterialSelection();
-        refreshPanelView(true);
-    };
+    strategyList.setModel(this);
+    strategyList.setRowHeight(36);
+    strategyList.setMultipleSelectionEnabled(false);
+    strategyList.setColour(juce::ListBox::backgroundColourId,
+                           juce::Colour::fromRGB(42, 46, 53));
+    strategyList.setOutlineThickness(0);
+    addAndMakeVisible(strategyList);
     layerSelector.onChange = [this] { updateMaterialSelection(); };
     fretSelector.onChange = [this] { updateMaterialSelection(); };
     addAndMakeVisible(materialViewer);
@@ -642,9 +644,10 @@ SmartImproviserARAEditor::SmartImproviserARAEditor(SmartImproviserARAProcessor& 
 
 void SmartImproviserARAEditor::resized()
 {
+    processor.setEditorSize({getWidth(), getHeight()});
     const int margin = 24;
     const int gap = 8;
-    const int buttonY = 264;
+    const int buttonY = 522;
     const int buttonH = 36;
     const int available = getWidth() - margin * 2 - gap * 3;
     const int buttonW = available / 4;
@@ -655,24 +658,136 @@ void SmartImproviserARAEditor::resized()
     araButton.setBounds(margin + 3 * (buttonW + gap), buttonY,
                         getWidth() - margin - (margin + 3 * (buttonW + gap)), buttonH);
 
-    strategySelector.setBounds(margin, 312, getWidth() - 408, 32);
-    layerSelector.setBounds(getWidth() - 376, 312, 207, 32);
-    fretSelector.setBounds(getWidth() - 161, 312, 137, 32);
-    materialViewer.setBounds(margin, 352, getWidth() - margin * 2, 296);
-    detailsView.setBounds(margin, 660, getWidth() - margin * 2, getHeight() - 702);
+    strategyList.setBounds(40, 268, getWidth() - 80, 236);
+    layerSelector.setBounds(getWidth() - 376, 570, 207, 32);
+    fretSelector.setBounds(getWidth() - 161, 570, 137, 32);
+    materialViewer.setBounds(margin, 610, getWidth() - margin * 2, 296);
+    detailsView.setBounds(margin, 918, getWidth() - margin * 2, getHeight() - 960);
+}
+
+int SmartImproviserARAEditor::getNumRows()
+{
+    return strategyLabels.size();
+}
+
+std::string SmartImproviserARAEditor::tensionKey(int index) const
+{
+    if (index < 0 || index >= static_cast<int>(cachedExplanation.items.size())) return {};
+    const auto& item = cachedExplanation.items[static_cast<std::size_t>(index)];
+    juce::String key = utf8String(smartimproviser::harmony::normalizedChordSymbol(item.actualChord))
+        + "|" + materialSelectionKey(item);
+    if (item.missingTonicApplication)
+        key += "|" + juce::String(item.missingTonicRootFifths);
+    return key.toStdString();
+}
+
+int SmartImproviserARAEditor::manualTension(int index) const
+{
+    return processor.manualTensionFor(tensionKey(index));
+}
+
+void SmartImproviserARAEditor::paintListBoxItem(int row, juce::Graphics& g,
+                                                int width, int height, bool selected)
+{
+    if (row < 0 || row >= strategyLabels.size()) return;
+    const auto blue = juce::Colour::fromRGB(91, 158, 223);
+    const auto orange = juce::Colour::fromRGB(242, 157, 62);
+    const auto red = juce::Colour::fromRGB(233, 94, 96);
+    const auto gray = juce::Colour::fromRGB(154, 165, 179);
+    const auto level = manualTension(row);
+    const auto dot = level == 1 ? blue : level == 2 ? orange : level == 3 ? red : gray;
+    const auto frame = juce::Rectangle<float>(1.0f, 1.0f,
+                                              static_cast<float>(width - 3),
+                                              static_cast<float>(height - 3));
+    g.setColour(selected ? juce::Colour::fromRGB(48, 65, 83)
+                         : juce::Colour::fromRGB(39, 44, 50));
+    g.fillRoundedRectangle(frame, 5.0f);
+    g.setColour(selected ? blue : juce::Colour::fromRGB(70, 80, 91));
+    g.drawRoundedRectangle(frame, 5.0f, 1.0f);
+    g.setColour(dot);
+    g.drawEllipse(13.0f, (height - 20) * 0.5f, 20.0f, 20.0f, 1.5f);
+    if (level != 0)
+        g.fillEllipse(18.0f, (height - 10) * 0.5f, 10.0f, 10.0f);
+    g.setColour(juce::Colour::fromRGB(225, 230, 238));
+    g.setFont(juce::FontOptions(13.2f));
+    g.drawText(strategyLabels[row], 49, 0, width - 64, height,
+               juce::Justification::centredLeft, true);
+}
+
+void SmartImproviserARAEditor::selectMaterial(int index)
+{
+    if (index < 0 || index >= static_cast<int>(cachedExplanation.items.size())) return;
+    if (selectedMaterialIndex == index) return;
+    selectedMaterialIndex = index;
+    selectedMaterialKey = materialSelectionKey(cachedExplanation.items[static_cast<std::size_t>(index)]);
+    updatingSelector = true;
+    strategyList.selectRow(index);
+    updatingSelector = false;
+    updateMaterialSelection();
+    refreshPanelView(true);
+    strategyList.repaint();
+}
+
+void SmartImproviserARAEditor::selectedRowsChanged(int row)
+{
+    if (!updatingSelector) selectMaterial(row);
+}
+
+void SmartImproviserARAEditor::listBoxItemClicked(int row, const juce::MouseEvent& event)
+{
+    selectMaterial(row);
+    if (event.x < 43) openTensionMenu(row, event);
+}
+
+void SmartImproviserARAEditor::openTensionMenu(int index, const juce::MouseEvent& event)
+{
+    const auto key = tensionKey(index);
+    if (key.empty()) return;
+    const int current = manualTension(index);
+    const auto icon = [](int level)
+    {
+        juce::Image image(juce::Image::ARGB, 18, 18, true);
+        juce::Graphics graphics(image);
+        const auto colour = level == 1 ? juce::Colour::fromRGB(91, 158, 223)
+            : level == 2 ? juce::Colour::fromRGB(242, 157, 62)
+            : level == 3 ? juce::Colour::fromRGB(233, 94, 96)
+            : juce::Colour::fromRGB(154, 165, 179);
+        graphics.setColour(colour);
+        graphics.drawEllipse(1.0f, 1.0f, 16.0f, 16.0f, 1.5f);
+        if (level != 0) graphics.fillEllipse(5.0f, 5.0f, 8.0f, 8.0f);
+        return image;
+    };
+    juce::PopupMenu menu;
+    menu.addItem(1, ru("Без метки"), true, current == 0, icon(0));
+    menu.addItem(2, ru("T1 · базовое"), true, current == 1, icon(1));
+    menu.addItem(3, ru("T2 · цвет"), true, current == 2, icon(2));
+    menu.addItem(4, ru("T3 · максимум"), true, current == 3, icon(3));
+    const auto screen = event.getScreenPosition();
+    const auto options = juce::PopupMenu::Options().withTargetScreenArea(
+        juce::Rectangle<int>(screen.x, screen.y, 1, 1));
+    juce::Component::SafePointer<SmartImproviserARAEditor> safe(this);
+    menu.showMenuAsync(options, [safe, key](int choice)
+    {
+        if (safe == nullptr || choice < 1 || choice > 4) return;
+        safe->processor.setManualTension(key, choice - 1);
+        safe->strategyList.repaint();
+        safe->refreshPanelView(false);
+    });
 }
 
 juce::String SmartImproviserARAEditor::selectedMaterialText() const
 {
-    const int selected = strategySelector.getSelectedId() - 1;
+    const int selected = selectedMaterialIndex;
     if (selected < 0 || selected >= static_cast<int>(cachedExplanation.items.size()))
         return {};
     const auto& item = cachedExplanation.items[static_cast<std::size_t>(selected)];
     juce::String text = ru("ВЫБРАННЫЙ МАТЕРИАЛ: ") + localizeGeneratedText(utf8String(item.source.name)) + "\n";
+    if (const int manual = manualTension(selected); manual != 0)
+        text += ru("Моя метка напряжения: T") + juce::String(manual) + "\n";
     if (!item.strategyIndices.empty()
         && item.strategyIndices.front() < cachedResult.strategies.size()
         && cachedResult.strategies[item.strategyIndices.front()].tensionClassified)
-        text += ru("T1 • базовое мышление для текущего контекста\n");
+        text += ru("Оценка Core: T1 • базовое мышление для текущего контекста\n");
     if (item.interpretationIndependent)
         text += item.source.kind == smartimproviser::harmony::MaterialKind::chordTones
             ? ru("Опоры аккорда • независимо от трактовки\n")
@@ -741,7 +856,7 @@ juce::String SmartImproviserARAEditor::selectedMaterialText() const
 
 void SmartImproviserARAEditor::updateMaterialSelection()
 {
-    const int selected = strategySelector.getSelectedId() - 1;
+    const int selected = selectedMaterialIndex;
     const auto layer = static_cast<smartimproviser::harmony::ViewerLayer>(
         juce::jlimit(0, 5, layerSelector.getSelectedId() - 1));
     const int range = juce::jlimit(1, 3, fretSelector.getSelectedId());
@@ -863,10 +978,6 @@ void SmartImproviserARAEditor::timerCallback()
         const auto& item = explanation.items[i];
         juce::String label = localizeGeneratedText(utf8String(item.source.name));
         if (label.isEmpty()) label = localizeGeneratedText(utf8String(item.idea));
-        if (!item.strategyIndices.empty()
-            && item.strategyIndices.front() < result.strategies.size()
-            && result.strategies[item.strategyIndices.front()].tensionClassified)
-            label = ru("T1 • ") + label;
         if (! item.interpretationIndices.empty())
         {
             label += ru(" • трактовка ");
@@ -882,30 +993,33 @@ void SmartImproviserARAEditor::timerCallback()
                 + ru(" (I отсутствует)");
         labels.add(label);
     }
-    bool changed = strategySelector.getNumItems() != labels.size();
+    bool changed = strategyLabels.size() != labels.size();
     for (int i = 0; ! changed && i < labels.size(); ++i)
-        changed = strategySelector.getItemText(i) != labels[i];
+        changed = strategyLabels[i] != labels[i];
     if (changed)
     {
-        strategySelector.clear(juce::dontSendNotification);
-        for (int i = 0; i < labels.size(); ++i)
-            strategySelector.addItem(labels[i], i + 1);
+        strategyLabels = labels;
+        strategyList.updateContent();
     }
     if (! explanation.items.empty())
     {
         const auto index = keep >= 0 ? keep : 0;
-        if (strategySelector.getSelectedId() != index + 1)
-            strategySelector.setSelectedId(index + 1, juce::dontSendNotification);
+        selectedMaterialIndex = index;
+        if (strategyList.getSelectedRow() != index)
+            strategyList.selectRow(index);
         const auto& item = explanation.items[static_cast<std::size_t>(index)];
         selectedMaterialKey = materialSelectionKey(item);
     }
-    else selectedMaterialKey.clear();
+    else { selectedMaterialKey.clear(); selectedMaterialIndex = -1; }
     updatingSelector = false;
+    strategyList.repaint();
     updateMaterialSelection();
     const auto impliedLink = smartimproviser::harmony::explainImpliedDominantLink(cachedSituation);
     const auto debug = ARAContextDebugState::instance().getSnapshot();
 
-    summaryContext = chordDisplayName(timeline.currentChord);
+    summaryContext = timeline.previousChordAvailable
+        ? chordDisplayName(timeline.previousChord) + " -> " + chordDisplayName(timeline.currentChord)
+        : chordDisplayName(timeline.currentChord);
     if (timeline.nextChordAvailable)
         summaryContext += " -> " + chordDisplayName(timeline.nextChord);
 
@@ -1373,11 +1487,11 @@ void SmartImproviserARAEditor::paint(juce::Graphics& g)
 
     g.setColour(juce::Colour::fromRGB(150, 156, 168));
     g.setFont(14.0f);
-    g.drawText(ru("0.4a • визуальный просмотр материала"),
+    g.drawText(ru("0.4c • материал и ручные метки напряжения"),
                24, 47, getWidth() - 48, 22, juce::Justification::centredLeft);
 
     g.setColour(juce::Colour::fromRGB(42, 46, 53));
-    g.fillRoundedRectangle(24.0f, 82.0f, static_cast<float>(getWidth() - 48), 166.0f, 8.0f);
+    g.fillRoundedRectangle(24.0f, 82.0f, static_cast<float>(getWidth() - 48), 426.0f, 8.0f);
 
     g.setColour(juce::Colour::fromRGB(150, 156, 168));
     g.setFont(12.5f);
@@ -1400,8 +1514,33 @@ void SmartImproviserARAEditor::paint(juce::Graphics& g)
 
     g.setColour(juce::Colour::fromRGB(220, 225, 234));
     g.setFont(13.5f);
-    g.drawFittedText(summaryThinking, 40, 200, getWidth() - 80, 38,
-                     juce::Justification::topLeft, 2, 0.86f);
+    g.drawText(summaryThinking, 40, 200, getWidth() - 80, 38,
+               juce::Justification::centredLeft, true);
+
+    g.setColour(juce::Colour::fromRGB(76, 84, 94));
+    g.drawLine(40.0f, 240.0f, static_cast<float>(getWidth() - 40), 240.0f);
+    g.setColour(juce::Colour::fromRGB(207, 215, 227));
+    g.setFont(juce::FontOptions(12.0f, juce::Font::bold));
+    g.drawText(ru("СПОСОБЫ ОБЫГРЫВАНИЯ"), 40, 244, 285, 19,
+               juce::Justification::centredLeft);
+    const auto legendX = getWidth() - 380;
+    const std::array<std::pair<const char*, juce::Colour>, 4> legend {{
+        {"T1", juce::Colour::fromRGB(91, 158, 223)},
+        {"T2", juce::Colour::fromRGB(242, 157, 62)},
+        {"T3", juce::Colour::fromRGB(233, 94, 96)},
+        {"—", juce::Colour::fromRGB(154, 165, 179)}
+    }};
+    for (int i = 0; i < static_cast<int>(legend.size()); ++i)
+    {
+        const int x = legendX + i * 88;
+        g.setColour(legend[static_cast<std::size_t>(i)].second);
+        if (i == 3) g.drawEllipse(static_cast<float>(x), 250.0f, 9.0f, 9.0f, 1.2f);
+        else g.fillEllipse(static_cast<float>(x), 250.0f, 9.0f, 9.0f);
+        g.setColour(juce::Colour::fromRGB(179, 187, 200));
+        g.setFont(11.5f);
+        g.drawText(ru(legend[static_cast<std::size_t>(i)].first), x + 14, 244, 53, 20,
+                   juce::Justification::centredLeft);
+    }
 
     g.setColour(juce::Colour::fromRGB(105, 110, 120));
     g.setFont(12.0f);

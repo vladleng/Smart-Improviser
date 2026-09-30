@@ -4,6 +4,7 @@
 #include "core/analysis/TensionEngine.h"
 
 #include <algorithm>
+#include <array>
 #include <cstdlib>
 #include <iostream>
 
@@ -133,6 +134,45 @@ int main()
     unknown.nextChordAvailable = false;
     expect(first(analyzeStableTension(analyze(unknown))).strategy.ruleId == "project.t1.explicit-anchors",
            "an unknown next chord does not invent a tonic or m6 application");
+
+    // The recognized ii-V supplies provisional major playing context even
+    // when its expected I is missing or future harmony is not yet known.
+    std::array<ChordContext, 3> fMinorBbEm {
+        chord(-1, {0, 3, 7, 10}), chord(-2, {0, 4, 7, 10}), chord(4, {0, 3, 7, 10})
+    };
+    fMinorBbEm[0].startPpq = 0.0;
+    fMinorBbEm[1].startPpq = 4.0;
+    fMinorBbEm[2].startPpq = 8.0;
+    auto iiVSnapshot = snapshot(fMinorBbEm[1], fMinorBbEm[2]);
+    iiVSnapshot.previousChord = fMinorBbEm[0];
+    PatternTimelineWindow window;
+    window.chordCount = 3;
+    window.currentIndex = 1;
+    for (std::size_t i = 0; i < 3; ++i) window.chords[i] = fMinorBbEm[i];
+    auto incompleteResult = analyzeImprovisation(analyzeHarmonicSituation(iiVSnapshot, window));
+    expect(incompleteResult.context.incompleteCadence.valid
+           && !incompleteResult.context.resolution.confirmed,
+           "Fm7-Bb7-Em7 is an incomplete ii-V, not an Eb resolution");
+    auto incompleteProfile = analyzeStableTension(incompleteResult);
+    const auto& incompleteT1 = first(incompleteProfile);
+    expect(incompleteT1.strategy.ruleId == "project.t1.major-V-m6"
+           && incompleteT1.strategy.source.name == "Fm6"
+           && incompleteT1.strategy.missingTonicApplication
+           && incompleteT1.strategy.missingTonicRootFifths == -3
+           && incompleteT1.strategy.nextChord.rootPitchClass == 4
+           && !incompleteT1.strategy.resolution.confirmed,
+           "B♭7 gets provisional Fm6 T1 while actual Em7 target and missing E♭ remain separate");
+    window.chordCount = 2;
+    iiVSnapshot.nextChordAvailable = false;
+    auto pendingResult = analyzeImprovisation(analyzeHarmonicSituation(iiVSnapshot, window));
+    expect(pendingResult.context.localPattern.type == HarmonicPatternType::majorIiVI
+           && !pendingResult.context.incompleteCadence.valid,
+           "unknown future has candidate ii-V without declaring an absent I");
+    const auto pendingProfile = analyzeStableTension(pendingResult);
+    expect(first(pendingProfile).strategy.ruleId == "project.t1.major-V-m6"
+           && !first(pendingProfile).strategy.resolution.confirmed
+           && !first(pendingProfile).strategy.missingTonicApplication,
+           "candidate ii-V offers the major-directed T1 without fabricated target");
 
     auto dm = analyze(snapshot(chord(2, {0, 3, 7, 10}), chord(1, {0, 4, 7, 10})));
     const auto minorNineProfile = analyzeStableTension(dm);
