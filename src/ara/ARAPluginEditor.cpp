@@ -121,6 +121,20 @@ juce::String localizeGeneratedText(juce::String text)
     text = text.replace("Lydian dominant", ru("Лидийский доминантовый"));
     text = text.replace("Altered dominant", ru("Альтерированная доминанта"));
     text = text.replace("Diminished whole-half", ru("Уменьшённая тон–полутон"));
+    text = text.replace("Dominant half-whole diminished", ru("Доминантовая уменьшённая полутон–тон"));
+    text = text.replace("Dominant whole-tone", ru("Доминантовая целотоновая"));
+    text = text.replace("Chord-local Mixolydian on the written dominant.",
+                        ru("Миксолидийский лад от написанной доминанты, без вывода тоники."));
+    text = text.replace("Chord-local source; use written guides and actual next-chord targets.",
+                        ru("Источник от аккорда: опирайся на записанные направляющие и фактический следующий аккорд."));
+    text = text.replace("Use for an explicit augmented dominant; the natural fifth is absent.",
+                        ru("Для увеличенной доминанты: натуральная квинта в источнике отсутствует."));
+    text = text.replace("Optional b9/#9/#11 color on a compatible dominant; written natural 9 or b13 blocks this collection.",
+                        ru("Необязательная краска ♭9/#9/#11; явно записанная натуральная 9 или ♭13 исключает этот набор."));
+    text = text.replace("On m7 this is an optional overlay: keep the written b7 as an anchor and use the major 7 only as a passing color.",
+                        ru("На m7 это дополнительное наложение: ♭7 остаётся опорой, большая 7 — проходящей краской."));
+    text = text.replace("Native minor melodic sound on the written m6 or m(maj7).",
+                        ru("Основной звук мелодического минора на записанном m6 или m(maj7)."));
 
     text = text.replace(" Ionian", ru(" ионийский"));
     text = text.replace(" Dorian", ru(" дорийский"));
@@ -131,6 +145,8 @@ juce::String localizeGeneratedText(juce::String text)
     text = text.replace(" Locrian", ru(" локрийский"));
     text = text.replace(" melodic minor", ru(" мелодический минор"));
     text = text.replace(" whole-half diminished", ru(" уменьшённая (тон–полутон)"));
+    text = text.replace(" half-whole diminished", ru(" уменьшённая (полутон–тон)"));
+    text = text.replace(" whole-tone", ru(" целотоновая"));
 
     text = text.replace("Material on ", ru("Материал на "));
     text = text.replace(" [passing]", ru(" [проходящая]"));
@@ -211,17 +227,6 @@ std::string fifthsName(std::int32_t fifths)
     static constexpr const char* pitchClassNames[smartimproviser::harmony::kPitchClassCount] =
         { "C", "C#", "D", "Eb", "E", "F", "F#", "G", "Ab", "A", "Bb", "B" };
     return pitchClassNames[smartimproviser::harmony::circleOfFifthsToPitchClass(fifths)];
-}
-
-const char* pitchClassName(int pitchClass) noexcept
-{
-    static constexpr const char* names[smartimproviser::harmony::kPitchClassCount] =
-        { "C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B" };
-
-    pitchClass %= smartimproviser::harmony::kPitchClassCount;
-    if (pitchClass < 0)
-        pitchClass += smartimproviser::harmony::kPitchClassCount;
-    return names[pitchClass];
 }
 
 juce::String keyModeNameRu(smartimproviser::harmony::KeyMode mode)
@@ -497,25 +502,52 @@ double localBpm(const SharedHarmonicContextSnapshot& shared, double ppq) noexcep
     return 60.0 * deltaQuarter / deltaTime;
 }
 
-juce::String notesText(const std::vector<smartimproviser::harmony::MaterialNote>& notes)
+juce::String pitchText(int pitch, const smartimproviser::harmony::NormalizedChord& chord,
+                       const std::vector<smartimproviser::harmony::MaterialNote>& preferred = {})
+{
+    const auto found = std::find_if(preferred.begin(), preferred.end(), [pitch](const auto& note)
+    { return note.pitchClass == pitch; });
+    if (found != preferred.end())
+        return utf8String(smartimproviser::harmony::spelledChordNote(chord, *found));
+
+    smartimproviser::harmony::MaterialNote note;
+    note.pitchClass = pitch;
+    note.semitonesFromRoot = (pitch - chord.rootPitchClass + 12) % 12;
+    note.degree = chord.degrees[static_cast<std::size_t>(note.semitonesFromRoot)];
+    return utf8String(smartimproviser::harmony::spelledChordNote(chord, note));
+}
+
+juce::String notesText(const std::vector<smartimproviser::harmony::MaterialNote>& notes,
+                       const smartimproviser::harmony::NormalizedChord& chord)
 {
     juce::String text;
     for (const auto& note : notes)
-        text += juce::String(pitchClassName(note.pitchClass)) + " ";
+        text += utf8String(smartimproviser::harmony::spelledChordNote(chord, note)) + " ";
     return text.isEmpty() ? ru("Нет") : text;
 }
 
-juce::String moveText(const smartimproviser::harmony::ResolutionMove& move)
+juce::String moveText(const smartimproviser::harmony::ResolutionMove& move,
+                      const smartimproviser::harmony::ImprovisationStrategy& strategy)
 {
-    return juce::String(pitchClassName(move.fromPitchClass)) + " -> "
-         + pitchClassName(move.toPitchClass) + "  ";
+    return pitchText(move.fromPitchClass, strategy.actualChord, strategy.source.chordRelativeNotes)
+        + " -> " + pitchText(move.toPitchClass, strategy.nextChord, strategy.targetNotes) + "  ";
+}
+
+juce::String materialSelectionKey(const smartimproviser::harmony::ExplanationItem& item)
+{
+    juce::String key = utf8String(item.source.name) + "|" + utf8String(item.idea)
+        + "|" + utf8String(item.conditions) + "|" + utf8String(item.usageHint);
+    for (const int index : item.interpretationIndices) key += "|" + juce::String(index);
+    for (const auto& note : item.source.notes)
+        key += "|" + utf8String(note.spelling) + ":" + juce::String(note.pitchClass);
+    return key;
 }
 }
 
 SmartImproviserARAEditor::SmartImproviserARAEditor(SmartImproviserARAProcessor& p)
     : juce::AudioProcessorEditor(p), processor(p)
 {
-    setSize(1020, 760);
+    setSize(1020, 1000);
 
     detailsView.setMultiLine(true, true);
     detailsView.setReadOnly(true);
@@ -527,6 +559,40 @@ SmartImproviserARAEditor::SmartImproviserARAEditor(SmartImproviserARAProcessor& 
     detailsView.setColour(juce::TextEditor::outlineColourId, juce::Colours::transparentBlack);
     detailsView.setColour(juce::TextEditor::focusedOutlineColourId, juce::Colours::transparentBlack);
     addAndMakeVisible(detailsView);
+
+    for (auto* selector : { &strategySelector, &layerSelector, &fretSelector })
+    {
+        selector->setColour(juce::ComboBox::backgroundColourId, juce::Colour::fromRGB(45, 49, 56));
+        selector->setColour(juce::ComboBox::textColourId, juce::Colour::fromRGB(225, 230, 238));
+        selector->setColour(juce::ComboBox::outlineColourId, juce::Colour::fromRGB(85, 94, 105));
+        addAndMakeVisible(*selector);
+    }
+    layerSelector.addItem(ru("Все роли"), 1);
+    layerSelector.addItem(ru("Источник"), 2);
+    layerSelector.addItem(ru("Аккорд"), 3);
+    layerSelector.addItem(ru("Направляющие"), 4);
+    layerSelector.addItem(ru("Характерные"), 5);
+    layerSelector.addItem(ru("Цели следующего аккорда"), 6);
+    layerSelector.setSelectedId(1, juce::dontSendNotification);
+    fretSelector.addItem(ru("Лады 0–12"), 1);
+    fretSelector.addItem(ru("Лады 5–17"), 2);
+    fretSelector.addItem(ru("Лады 12–24"), 3);
+    fretSelector.setSelectedId(1, juce::dontSendNotification);
+    strategySelector.onChange = [this]
+    {
+        if (updatingSelector) return;
+        const int index = strategySelector.getSelectedId() - 1;
+        if (index >= 0 && index < static_cast<int>(cachedExplanation.items.size()))
+        {
+            const auto& item = cachedExplanation.items[static_cast<std::size_t>(index)];
+            selectedMaterialKey = materialSelectionKey(item);
+        }
+        updateMaterialSelection();
+        refreshPanelView(true);
+    };
+    layerSelector.onChange = [this] { updateMaterialSelection(); };
+    fretSelector.onChange = [this] { updateMaterialSelection(); };
+    addAndMakeVisible(materialViewer);
 
     for (auto* button : { &materialButton, &sourcesButton, &harmonicButton, &araButton })
     {
@@ -561,7 +627,97 @@ void SmartImproviserARAEditor::resized()
     araButton.setBounds(margin + 3 * (buttonW + gap), buttonY,
                         getWidth() - margin - (margin + 3 * (buttonW + gap)), buttonH);
 
-    detailsView.setBounds(margin, 312, getWidth() - margin * 2, getHeight() - 354);
+    strategySelector.setBounds(margin, 312, getWidth() - 408, 32);
+    layerSelector.setBounds(getWidth() - 376, 312, 207, 32);
+    fretSelector.setBounds(getWidth() - 161, 312, 137, 32);
+    materialViewer.setBounds(margin, 352, getWidth() - margin * 2, 296);
+    detailsView.setBounds(margin, 660, getWidth() - margin * 2, getHeight() - 702);
+}
+
+juce::String SmartImproviserARAEditor::selectedMaterialText() const
+{
+    const int selected = strategySelector.getSelectedId() - 1;
+    if (selected < 0 || selected >= static_cast<int>(cachedExplanation.items.size()))
+        return {};
+    const auto& item = cachedExplanation.items[static_cast<std::size_t>(selected)];
+    juce::String text = ru("ВЫБРАННЫЙ МАТЕРИАЛ: ") + localizeGeneratedText(utf8String(item.source.name)) + "\n";
+    if (item.interpretationIndependent)
+        text += item.source.kind == smartimproviser::harmony::MaterialKind::chordTones
+            ? ru("Опоры аккорда • независимо от трактовки\n")
+            : ru("Источник от написанного аккорда • без выбора тонального центра\n");
+    if (item.missingTonicApplication)
+    {
+        text += ru("Материал V в незавершённом ii–V • ожидаемый I: ")
+            + utf8String(fifthsName(item.missingTonicRootFifths))
+            + ru(" [отсутствует]\n");
+        if (item.targetChord.valid)
+            text += ru("Фактическое продолжение: ")
+                + utf8String(smartimproviser::harmony::normalizedChordSymbol(item.targetChord))
+                + ru(". Разрешение в ожидаемый I не подтверждено.\n");
+    }
+    for (const int index : item.interpretationIndices)
+    {
+        if (index < 0 || index >= cachedSituation.interpretationCount) continue;
+        const auto& interpretation = cachedSituation.interpretations[static_cast<std::size_t>(index)];
+        text += ru("Трактовка ") + juce::String(index + 1) + ": "
+            + interpretationKindNameRu(interpretation.kind) + " • "
+            + centerKeyDisplayName(interpretation.center) + "\n";
+    }
+    if (cachedSituation.primaryInterpretationIndex < 0 && cachedSituation.interpretationCount > 1)
+        text += ru("[неоднозначно] Выбор показа не определяет главную трактовку.\n");
+    text += localizeGeneratedText(utf8String(item.idea)) + "\n";
+    if (! item.usageHint.empty())
+        text += localizeGeneratedText(utf8String(item.usageHint)) + "\n";
+    const auto view = smartimproviser::harmony::buildMaterialView(
+        cachedResult, cachedExplanation, static_cast<std::size_t>(selected));
+    if (item.source.kind == smartimproviser::harmony::MaterialKind::scale)
+    {
+        text += ru("Ноты источника: ");
+        for (const auto& note : item.source.notes)
+            text += utf8String(note.spelling) + " ";
+        text += "\n";
+        if (! item.source.chordRelativeNotes.empty())
+        {
+            text += ru("Те же звуки на ")
+                + utf8String(smartimproviser::harmony::normalizedChordSymbol(item.actualChord)) + ": ";
+            for (const auto& note : item.source.chordRelativeNotes)
+                text += utf8String(note.spelling) + " ";
+            text += "\n";
+        }
+    }
+    for (const auto& note : view.current)
+        if (! note.chordSpelling.empty() && note.spelling != note.chordSpelling)
+            text += utf8String(note.spelling) + " = " + utf8String(note.chordSpelling)
+                + ru(" в контексте аккорда\n");
+    if (item.targetChord.valid)
+        text += ru("Цели реального следующего аккорда: ")
+            + utf8String(smartimproviser::harmony::normalizedChordSymbol(item.targetChord)) + "\n";
+    for (const auto& why : item.why)
+    {
+        using State = smartimproviser::harmony::ExplanationEvidenceState;
+        if (why.state == State::missing || why.state == State::implied
+            || why.state == State::contradicted || why.state == State::ambiguous)
+        {
+            const char* marker = why.state == State::missing ? "[отсутствует] " :
+                why.state == State::implied ? "[подразумевается] " :
+                why.state == State::contradicted ? "[противоречие] " : "[неоднозначно] ";
+            text += ru(marker) + localizeGeneratedText(utf8String(why.ruleId)) + "\n";
+        }
+    }
+    return text + "\n";
+}
+
+void SmartImproviserARAEditor::updateMaterialSelection()
+{
+    const int selected = strategySelector.getSelectedId() - 1;
+    const auto layer = static_cast<smartimproviser::harmony::ViewerLayer>(
+        juce::jlimit(0, 5, layerSelector.getSelectedId() - 1));
+    const int range = juce::jlimit(1, 3, fretSelector.getSelectedId());
+    const int first = range == 1 ? 0 : range == 2 ? 5 : 12;
+    materialViewer.showMaterial(smartimproviser::harmony::buildMaterialView(
+        cachedResult, cachedExplanation, selected < 0 ? cachedExplanation.items.size()
+                                                   : static_cast<std::size_t>(selected)),
+        layer, first, first + 12);
 }
 
 void SmartImproviserARAEditor::setActivePanel(Panel panel)
@@ -611,7 +767,9 @@ void SmartImproviserARAEditor::refreshPanelView(bool resetScroll)
         case Panel::ara: text = &araText; break;
     }
 
-    if (detailsView.getText() != *text)
+    const juce::String content = (activePanel == Panel::material || activePanel == Panel::sources)
+        ? selectedMaterialText() + *text : *text;
+    if (detailsView.getText() != content)
     {
         detailsView.setText({}, false);
         const auto ordinary = juce::Colour::fromRGB(225, 230, 238);
@@ -621,13 +779,13 @@ void SmartImproviserARAEditor::refreshPanelView(bool resetScroll)
         // TextEditor stores the current text colour on each inserted run.
         // Only the ready-made explanation state markers drive this styling.
         int start = 0;
-        while (start < text->length())
+        while (start < content.length())
         {
-            const int newline = text->indexOfChar(start, '\n');
-            const int end = newline < 0 ? text->length() : newline + 1;
-            const auto line = text->substring(start, end);
+            const int newline = content.indexOfChar(start, '\n');
+            const int end = newline < 0 ? content.length() : newline + 1;
+            const auto line = content.substring(start, end);
             auto colour = ordinary;
-            if (activePanel == Panel::material)
+            if (activePanel == Panel::material || activePanel == Panel::sources)
             {
                 if (line.contains(ru("[отсутствует]"))) colour = missing;
                 else if (line.contains(ru("[подразумевается]")) || line.contains(ru("[ожидается]"))) colour = implied;
@@ -653,6 +811,57 @@ void SmartImproviserARAEditor::timerCallback()
     cachedSituation = smartimproviser::harmony::analyzeHarmonicSituation(timeline, patternWindow);
     const auto result = smartimproviser::harmony::analyzeImprovisation(cachedSituation);
     const auto explanation = smartimproviser::harmony::explainImprovisation(result);
+    cachedResult = result;
+    cachedExplanation = explanation;
+    updatingSelector = true;
+    int keep = -1;
+    for (std::size_t i = 0; i < explanation.items.size(); ++i)
+    {
+        const auto& item = explanation.items[i];
+        const auto key = materialSelectionKey(item);
+        if (key == selectedMaterialKey && selectedMaterialKey.isNotEmpty()) keep = static_cast<int>(i);
+    }
+    juce::StringArray labels;
+    for (std::size_t i = 0; i < explanation.items.size(); ++i)
+    {
+        const auto& item = explanation.items[i];
+        juce::String label = localizeGeneratedText(utf8String(item.source.name));
+        if (label.isEmpty()) label = localizeGeneratedText(utf8String(item.idea));
+        if (! item.interpretationIndices.empty())
+        {
+            label += ru(" • трактовка ");
+            for (std::size_t j = 0; j < item.interpretationIndices.size(); ++j)
+                label += (j ? ", " : "") + juce::String(item.interpretationIndices[j] + 1);
+        }
+        else if (item.interpretationIndependent)
+            label += item.source.kind == smartimproviser::harmony::MaterialKind::chordTones
+                ? ru(" • общая опора") : ru(" • от аккорда");
+        if (item.missingTonicApplication)
+            label += ru(" • ожидаемый ")
+                + utf8String(fifthsName(item.missingTonicRootFifths))
+                + ru(" (I отсутствует)");
+        labels.add(label);
+    }
+    bool changed = strategySelector.getNumItems() != labels.size();
+    for (int i = 0; ! changed && i < labels.size(); ++i)
+        changed = strategySelector.getItemText(i) != labels[i];
+    if (changed)
+    {
+        strategySelector.clear(juce::dontSendNotification);
+        for (int i = 0; i < labels.size(); ++i)
+            strategySelector.addItem(labels[i], i + 1);
+    }
+    if (! explanation.items.empty())
+    {
+        const auto index = keep >= 0 ? keep : 0;
+        if (strategySelector.getSelectedId() != index + 1)
+            strategySelector.setSelectedId(index + 1, juce::dontSendNotification);
+        const auto& item = explanation.items[static_cast<std::size_t>(index)];
+        selectedMaterialKey = materialSelectionKey(item);
+    }
+    else selectedMaterialKey.clear();
+    updatingSelector = false;
+    updateMaterialSelection();
     const auto impliedLink = smartimproviser::harmony::explainImpliedDominantLink(cachedSituation);
     const auto debug = ARAContextDebugState::instance().getSnapshot();
 
@@ -688,6 +897,16 @@ void SmartImproviserARAEditor::timerCallback()
             if (layer.harmonic.valid)
                 summaryLocal += ru(" (") + harmonicFunctionNameRu(layer.harmonic.effectiveFunction) + ")";
         }
+    }
+    if (cachedSituation.localKey.valid
+        && cachedSituation.localKey.evidence.confidence
+            == smartimproviser::harmony::ConfidenceLevel::confirmed
+        && cachedSituation.primaryInterpretationIndex >= 0)
+    {
+        // The project key remains in the Core/explanation diagnostics. The
+        // compact playing context follows the established local cadence.
+        summaryMeta = summaryLocal;
+        summaryLocal.clear();
     }
 
     const auto* activePattern = &cachedSituation.pattern;
@@ -780,6 +999,7 @@ void SmartImproviserARAEditor::timerCallback()
             if (strategy.source.kind != smartimproviser::harmony::MaterialKind::scale)
                 continue;
             if (! strategy.interpretationIndependent
+                && ! strategy.missingTonicApplication
                 && primaryIndex >= 0
                 && strategy.interpretationIndex != primaryIndex)
                 continue;
@@ -792,6 +1012,9 @@ void SmartImproviserARAEditor::timerCallback()
             else
                 item = utf8String(strategy.source.name);
 
+            if (strategy.missingTonicApplication)
+                item += ru(" [ожидаемый ")
+                    + utf8String(fifthsName(strategy.missingTonicRootFifths)) + "]";
             if (item.isNotEmpty())
                 thoughts.addIfNotAlreadyThere(item);
         }
@@ -810,8 +1033,10 @@ void SmartImproviserARAEditor::timerCallback()
             {
                 if (i > 0)
                     summaryThinking += "  ";
-                summaryThinking += juce::String(pitchClassName(strategy.resolution.moves[i].fromPitchClass))
-                    + "->" + pitchClassName(strategy.resolution.moves[i].toPitchClass);
+                summaryThinking += pitchText(strategy.resolution.moves[i].fromPitchClass,
+                                              strategy.actualChord, strategy.source.chordRelativeNotes)
+                    + "->" + pitchText(strategy.resolution.moves[i].toPitchClass,
+                                         strategy.nextChord, strategy.targetNotes);
             }
             if (strategy.resolution.targetChord.valid)
                 summaryThinking += ru(" в ")
@@ -879,6 +1104,15 @@ void SmartImproviserARAEditor::timerCallback()
                 }
             }
 
+            if (scalar.missingTonicApplication)
+            {
+                sourcesText += ru("ГИПОТЕЗА НЕЗАВЕРШЁННОГО II–V: ожидаемый ")
+                    + utf8String(fifthsName(scalar.missingTonicRootFifths))
+                    + ru(" [отсутствует], далее фактически ")
+                    + utf8String(smartimproviser::harmony::normalizedChordSymbol(scalar.nextChord))
+                    + ru("; разрешение не подтверждено.\n");
+            }
+
             sourcesText += localizeGeneratedText(utf8String(scalar.source.name)) + "\n";
             for (const auto& note : scalar.source.notes)
                 sourcesText += utf8String(note.spelling) + " ";
@@ -886,9 +1120,11 @@ void SmartImproviserARAEditor::timerCallback()
             if (! scalar.sourceReference.empty())
             {
                 sourcesText += "\n" + localizeGeneratedText(utf8String(scalar.idea));
-                sourcesText += ru("\nМыслить: ")
-                    + utf8String(smartimproviser::harmony::normalizedChordSymbol(scalar.thinkingStructure));
-                sourcesText += ru("\nОтносительно аккорда: ");
+                if (scalar.thinkingStructure.valid)
+                    sourcesText += ru("\nМыслить: ")
+                        + utf8String(smartimproviser::harmony::normalizedChordSymbol(scalar.thinkingStructure));
+                sourcesText += ru("\nТе же звуки относительно ")
+                    + utf8String(smartimproviser::harmony::normalizedChordSymbol(scalar.actualChord)) + ": ";
                 for (const auto& note : scalar.source.chordRelativeNotes)
                     sourcesText += utf8String(note.spelling) + " ";
             }
@@ -898,8 +1134,9 @@ void SmartImproviserARAEditor::timerCallback()
             {
                 sourcesText += ru("\nНеобязательные движения красок: ");
                 for (const auto& move : scalar.sourceTransitions)
-                    sourcesText += juce::String(pitchClassName(move.fromPitchClass)) + "->"
-                        + pitchClassName(move.toPitchClass) + " ";
+                    sourcesText += pitchText(move.fromPitchClass, scalar.actualChord,
+                                             scalar.source.chordRelativeNotes) + "->"
+                        + pitchText(move.toPitchClass, scalar.nextChord, scalar.targetNotes) + " ";
             }
         }
 
@@ -908,15 +1145,16 @@ void SmartImproviserARAEditor::timerCallback()
 
         sourcesText += ru("\n\nОПОРНЫЕ НОТЫ АККОРДА\n");
         for (const auto& note : strategy.source.notes)
-            sourcesText += juce::String(pitchClassName(note.pitchClass)) + " ";
-        sourcesText += ru("\n(классы высот)");
+            sourcesText += utf8String(smartimproviser::harmony::spelledChordNote(strategy.actualChord, note)) + " ";
 
-        sourcesText += ru("\n\nНАПРАВЛЯЮЩИЕ ТОНЫ (3 / 7)\n") + notesText(strategy.guideNotes);
-        sourcesText += ru("\n\nХАРАКТЕРНЫЕ НОТЫ\n") + notesText(strategy.characteristicNotes);
+        sourcesText += ru("\n\nНАПРАВЛЯЮЩИЕ ТОНЫ (3 / 7)\n")
+            + notesText(strategy.guideNotes, strategy.actualChord);
+        sourcesText += ru("\n\nХАРАКТЕРНЫЕ НОТЫ\n")
+            + notesText(strategy.characteristicNotes, strategy.actualChord);
         sourcesText += ru("\n\nЦЕЛИ СЛЕДУЮЩЕГО АККОРДА\n");
         if (strategy.nextChord.valid)
             sourcesText += utf8String(smartimproviser::harmony::normalizedChordSymbol(strategy.nextChord))
-                + ": " + notesText(strategy.targetNotes);
+                + ": " + notesText(strategy.targetNotes, strategy.nextChord);
         else
             sourcesText += ru("Нет следующего аккорда");
 
@@ -930,14 +1168,14 @@ void SmartImproviserARAEditor::timerCallback()
             sourcesText += utf8String(
                 smartimproviser::harmony::normalizedChordSymbol(strategy.resolution.targetChord)) + "\n";
             for (std::size_t i = 0; i < strategy.resolution.moveCount; ++i)
-                sourcesText += moveText(strategy.resolution.moves[i]);
+                sourcesText += moveText(strategy.resolution.moves[i], strategy);
             if (strategy.resolution.moveCount == 0)
                 sourcesText += ru("Нет доступных структурных движений");
         }
         else
         {
             for (const auto& move : strategy.suggestedTransitions)
-                sourcesText += moveText(move);
+                sourcesText += moveText(move, strategy);
             if (strategy.suggestedTransitions.empty())
                 sourcesText += ru("Нет");
             sourcesText += ru("\n(не подтверждённое гармоническое разрешение)");
@@ -1094,7 +1332,7 @@ void SmartImproviserARAEditor::paint(juce::Graphics& g)
 
     g.setColour(juce::Colour::fromRGB(150, 156, 168));
     g.setFont(14.0f);
-    g.drawText(ru("0.4 • материал для импровизации и гармонический контекст"),
+    g.drawText(ru("0.4a • визуальный просмотр материала"),
                24, 47, getWidth() - 48, 22, juce::Justification::centredLeft);
 
     g.setColour(juce::Colour::fromRGB(42, 46, 53));

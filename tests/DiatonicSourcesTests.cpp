@@ -140,10 +140,16 @@ int main()
     result = analyzeImprovisation(analyzeHarmonicSituation(snapshot));
     expect(!scale(result) && result.strategies.front().resolution.confirmed, "minor target keeps anchors, not Mixo");
     snapshot.nextChordAvailable = false;
-    expect(!scale(analyzeImprovisation(analyzeHarmonicSituation(snapshot))), "unresolved dominant no default Mixo");
+    result = analyzeImprovisation(analyzeHarmonicSituation(snapshot));
+    expect(scale(result) && scale(result)->ruleId == "chord-local.mixolydian"
+           && scale(result)->interpretationIndependent && !scale(result)->resolution.confirmed,
+           "unresolved dominant retains a chord-local Mixo without invented tonic");
     snapshot.nextChordAvailable = true;
     snapshot.nextChord = makeChord(0,{0,4,7,10});
-    expect(!scale(analyzeImprovisation(analyzeHarmonicSituation(snapshot))), "chain not major tonic");
+    result = analyzeImprovisation(analyzeHarmonicSituation(snapshot));
+    expect(scale(result) && scale(result)->ruleId == "chord-local.mixolydian"
+           && result.dominantContext == DominantContext::toDominant,
+           "dominant chain receives material while retaining its non-tonic target");
     snapshot.currentChord = makeChord(-5,{0,4,7,10});
     snapshot.nextChord = makeChord(0,{0,4,7,11});
     expect(!scale(analyzeImprovisation(analyzeHarmonicSituation(snapshot))), "SubV excludes basic diatonic source");

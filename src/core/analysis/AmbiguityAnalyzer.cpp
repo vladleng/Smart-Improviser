@@ -191,7 +191,11 @@ void analyzeAmbiguityAndConfidence(HarmonicSituation& situation) noexcept
 
     auto globalInterpretation = makeGlobalInterpretation(situation);
     auto localInterpretation = makeLocalInterpretation(situation);
-    const auto modalInterpretation = makeModalInterpretation(situation);
+    // A confirmed local cadence already explains the written harmony. A
+    // parallel-mode match against the project key alone is not independent
+    // evidence for a competing center (Gm7 in Gm7-C7-Fmaj7 is not C minor).
+    const auto modalInterpretation = localInterpretationIsDecisive(situation)
+        ? HarmonicInterpretation{} : makeModalInterpretation(situation);
 
     // 0.3f: a local-center inference and a modal-interchange reading can point
     // to exactly the same tonal center. Example: Fm7 -> G7 in project C major

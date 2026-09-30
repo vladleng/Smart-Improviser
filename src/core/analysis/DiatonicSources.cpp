@@ -47,6 +47,10 @@ bool containsChord(const ModeDefinition& mode, const NormalizedChord& chord)
         if (chord.hasTone(interval) && explicitDegree != 0 && (explicitDegree - 1) % 7 + 1 != degree)
             return false;
     }
+    if (chord.slashBass
+        && std::find(mode.intervals.begin(), mode.intervals.end(),
+                     wrap(chord.bassPitchClass - chord.rootPitchClass, 12)) == mode.intervals.end())
+        return false;
     return true;
 }
 
@@ -174,6 +178,125 @@ bool appendForInterpretation(ImprovisationResult& result, int index)
     result.strategies.push_back(std::move(strategy));
     return true;
 }
+
+bool appendIncompleteDominant(ImprovisationResult& result)
+{
+    const auto& situation = result.context;
+    const auto& incomplete = situation.incompleteCadence;
+    const auto& chord = situation.currentChord;
+    const auto& mixolydian = modes[4];
+    if (! incomplete.valid || incomplete.positionIndex != 1
+        || ! situation.nextChordAvailable || ! incomplete.actualContinuation.valid
+        || situation.resolution.confirmed || chord.quality != ChordQuality::dominant
+        || chord.rootPitchClass != incomplete.v.rootPitchClass
+        || (chord.rootPitchClass + 5) % 12
+            != circleOfFifthsToPitchClass(incomplete.missingTonicRootFifths)
+        || ! containsChord(mixolydian, chord))
+        return false;
+
+    // Apply the existing major-V source to the already recognized incomplete
+    // ii-V. This is a material hypothesis, not a new local key or resolution.
+    auto strategy = result.strategies.front();
+    strategy.kind = ImprovisationStrategyKind::diatonicColor;
+    strategy.ruleId = mixolydian.rule;
+    strategy.ruleVersion = 3;
+    strategy.priority = 45;
+    strategy.interpretationIndex = -1;
+    strategy.interpretationIndependent = false;
+    strategy.missingTonicApplication = true;
+    strategy.missingTonicRootFifths = incomplete.missingTonicRootFifths;
+    strategy.evidence = {};
+    strategy.evidence.confidence = ConfidenceLevel::low;
+    strategy.evidence.add(EvidenceFlag::patternMatch);
+    strategy.source = {};
+    strategy.source.kind = MaterialKind::scale;
+    strategy.source.mode = mixolydian.mode;
+    strategy.source.rootPitchClass = chord.rootPitchClass;
+    strategy.source.rootFifths = chord.rootFifths;
+    strategy.source.name = spell(chord.rootFifths, 1, chord.rootPitchClass) + " " + mixolydian.name;
+    for (int degree = 1; degree <= 7; ++degree)
+    {
+        const int interval = mixolydian.intervals[static_cast<std::size_t>(degree - 1)];
+        MaterialNote note;
+        note.pitchClass = (chord.rootPitchClass + interval) % 12;
+        note.semitonesFromRoot = interval;
+        note.degree = degree;
+        note.role = MaterialNoteRole::scaleTone;
+        for (const auto& anchor : result.strategies.front().source.notes)
+            if (anchor.pitchClass == note.pitchClass)
+            {
+                note.role = anchor.role;
+                note.characteristic = anchor.characteristic;
+                break;
+            }
+        note.spelling = spell(chord.rootFifths, degree, note.pitchClass);
+        strategy.source.notes.push_back(std::move(note));
+    }
+    strategy.source.chordRelativeNotes = strategy.source.notes;
+    strategy.idea = "Connect the chord anchors using " + strategy.source.name + ".";
+    strategy.explanation = "Major-V material on an incomplete ii-V; the expected I did not sound.";
+    strategy.conditions = "The absent I is a source hypothesis only. Follow the actual next chord; no major resolution is confirmed.";
+    strategy.usageHint = "Use chord anchors and targets; the expected I is missing.";
+    result.strategies.push_back(std::move(strategy));
+    return true;
+}
+
+bool appendChordLocalDominant(ImprovisationResult& result)
+{
+    const auto& chord = result.context.currentChord;
+    const auto& mixolydian = modes[4];
+    if (chord.quality != ChordQuality::dominant
+        || result.dominantContext == DominantContext::toMinor
+        || ! containsChord(mixolydian, chord))
+        return false;
+    for (std::uint8_t i = 0; i < result.context.interpretationCount; ++i)
+        if (result.context.interpretations[i].valid
+            && (result.context.interpretations[i].harmonic.substituteDominantConfirmed
+                || result.context.interpretations[i].harmonic.substituteDominantCandidate))
+            return false;
+
+    // Membership of the *written* chord is enough to offer a baseline. This
+    // neither chooses an interpretation nor claims that the next chord is I.
+    auto strategy = result.strategies.front();
+    strategy.kind = ImprovisationStrategyKind::diatonicColor;
+    strategy.ruleId = "chord-local.mixolydian";
+    strategy.ruleVersion = 1;
+    strategy.priority = 45;
+    strategy.interpretationIndependent = true;
+    strategy.interpretationIndex = -1;
+    strategy.evidence = {};
+    strategy.source = {};
+    strategy.source.kind = MaterialKind::scale;
+    strategy.source.mode = mixolydian.mode;
+    strategy.source.rootPitchClass = chord.rootPitchClass;
+    strategy.source.rootFifths = chord.rootFifths;
+    strategy.source.name = spell(chord.rootFifths, 1, chord.rootPitchClass) + " Mixolydian";
+    for (int degree = 1; degree <= 7; ++degree)
+    {
+        const int interval = mixolydian.intervals[static_cast<std::size_t>(degree - 1)];
+        MaterialNote note;
+        note.pitchClass = wrap(chord.rootPitchClass + interval, 12);
+        note.semitonesFromRoot = interval;
+        note.degree = degree;
+        note.role = MaterialNoteRole::scaleTone;
+        for (const auto& anchor : result.strategies.front().source.notes)
+            if (anchor.pitchClass == note.pitchClass)
+            {
+                note.role = anchor.role;
+                note.characteristic = anchor.characteristic;
+                break;
+            }
+        note.spelling = spell(chord.rootFifths, degree, note.pitchClass);
+        strategy.source.notes.push_back(std::move(note));
+    }
+    strategy.source.chordRelativeNotes = strategy.source.notes;
+    strategy.idea = "Chord-local Mixolydian on the written dominant.";
+    strategy.explanation = "Compatible chord-scale material; no tonic or local key is inferred.";
+    strategy.conditions = "Optional material from explicit chord tones. Follow the actual next chord; a dominant chain is not a confirmed tonic resolution.";
+    strategy.usageHint = "Chord-local source; use written guides and actual next-chord targets.";
+    result.strategies.push_back(std::move(strategy));
+    return true;
+}
 }
 
 void addDiatonicSource(ImprovisationResult& result)
@@ -184,7 +307,17 @@ void addDiatonicSource(ImprovisationResult& result)
     const auto& situation = result.context;
     bool added = false;
     for (std::uint8_t i = 0; i < situation.interpretationCount; ++i)
+    {
+        if (situation.localKey.valid
+            && situation.localKey.evidence.confidence == ConfidenceLevel::confirmed
+            && situation.primaryInterpretationIndex >= 0
+            && i != situation.primaryInterpretationIndex)
+            continue;
         added = appendForInterpretation(result, static_cast<int>(i)) || added;
+    }
+    added = appendIncompleteDominant(result) || added;
+    if (! added)
+        added = appendChordLocalDominant(result);
 
     if (added)
     {

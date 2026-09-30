@@ -36,6 +36,7 @@ add_library(SmartImproviserCore STATIC
     src/core/analysis/DiatonicSources.cpp
     src/core/analysis/DiatonicSources.h
     src/core/analysis/Explanation.h
+    src/core/analysis/MaterialViewer.h
     src/core/analysis/SpecialSources.cpp
     src/core/analysis/SpecialSources.h
     src/core/analysis/HarmonicConcepts.cpp
@@ -146,6 +147,8 @@ target_sources(SmartImproviserARA
         src/ara/ARAContextDocumentController.h
         src/ara/ARAPluginEditor.cpp
         src/ara/ARAPluginEditor.h
+        src/ara/MaterialViewerComponent.cpp
+        src/ara/MaterialViewerComponent.h
         src/ara/ARAPluginProcessor.cpp
         src/ara/ARAPluginProcessor.h
 )
@@ -160,7 +163,7 @@ target_compile_definitions(SmartImproviserARA
         JUCE_WEB_BROWSER=0
         JUCE_USE_CURL=0
         JUCE_VST3_CAN_REPLACE_VST2=0
-        SMART_IMPROVISER_BUILD_VERSION="0.4"
+        SMART_IMPROVISER_BUILD_VERSION="0.4a upd3"
 )
 
 target_link_libraries(SmartImproviserARA
@@ -308,3 +311,10 @@ if(MSVC)
     target_compile_options(SmartImproviserExplanationTests PRIVATE /utf-8)
 endif()
 add_test(NAME SmartImproviserExplanationTests COMMAND SmartImproviserExplanationTests)
+
+add_executable(SmartImproviserMaterialViewerTests tests/MaterialViewerTests.cpp)
+target_link_libraries(SmartImproviserMaterialViewerTests PRIVATE SmartImproviserCore)
+if(MSVC)
+    target_compile_options(SmartImproviserMaterialViewerTests PRIVATE /utf-8)
+endif()
+add_test(NAME SmartImproviserMaterialViewerTests COMMAND SmartImproviserMaterialViewerTests)

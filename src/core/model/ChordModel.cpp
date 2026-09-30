@@ -253,6 +253,8 @@ std::string normalizedChordSymbol(const NormalizedChord& chord)
                 else if (nine) result += "m9";
                 else result += "m7";
             }
+            else if (maj7)
+                result += "m(maj7)";
             else if (six)
                 result += nine ? "m6/9" : "m6";
             else

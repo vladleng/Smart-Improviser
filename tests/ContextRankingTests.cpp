@@ -159,8 +159,10 @@ int main()
         hasInterpretation0 |= strategy.interpretationIndex == 0;
         hasInterpretation1 |= strategy.interpretationIndex == 1;
     }
-    expect(hasInterpretation0 && hasInterpretation1,
-           "borrowed ambiguity retains material from both harmonic readings");
+    expect((hasInterpretation0 || hasInterpretation1)
+           && borrowed.context.interpretationCount == 2
+           && borrowed.context.primaryInterpretationIndex == -1,
+           "borrowed ambiguity remains unresolved even when a reading has no compatible scale");
 
     const auto borrowedAgain = analyzeImprovisation(borrowedSituation);
     expect(signature(borrowed) == signature(borrowedAgain),
@@ -214,8 +216,8 @@ int main()
     for (std::size_t i = firstDependent; i < established.strategies.size(); ++i)
         hasAlternative |= established.strategies[i].interpretationIndex
             != establishedSituation.primaryInterpretationIndex;
-    expect(hasAlternative,
-           "confirmed primary does not erase alternative interpretation material");
+    expect(!hasAlternative && establishedSituation.interpretationCount > 1,
+           "confirmed local cadence uses local playing material and retains global diagnostic context");
 
     std::cout << "SmartImproviser ContextRankingTests: OK\n";
     return 0;
