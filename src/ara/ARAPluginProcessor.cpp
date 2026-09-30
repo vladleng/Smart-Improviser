@@ -115,7 +115,7 @@ void SmartImproviserARAProcessor::setStateInformation(const void* data, int size
     if (stream.readString() != "SmartImproviserARAStateV2") return;
     const auto width = stream.readInt(), height = stream.readInt();
     const auto count = stream.readInt();
-    if (width < 940 || width > 1900 || height < 1100 || height > 1800
+    if (width < 940 || width > 1900 || height < 1000 || height > 1800
         || count < 0 || count > 10000) return;
     std::map<std::string, int> restored;
     for (int i = 0; i < count; ++i)

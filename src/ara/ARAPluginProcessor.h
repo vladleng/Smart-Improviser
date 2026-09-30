@@ -52,7 +52,7 @@ private:
     std::atomic<bool> araBound { false };
     mutable juce::CriticalSection stateLock;
     std::map<std::string, int> manualTensions;
-    juce::Point<int> savedEditorSize {1120, 1220};
+    juce::Point<int> savedEditorSize {1120, 1000};
     bool hasPublishedTransport = false;
     bool lastPublishedTransportAvailable = false;
     bool lastPublishedTransportPlaying = false;

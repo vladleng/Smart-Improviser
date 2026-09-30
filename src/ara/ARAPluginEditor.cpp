@@ -580,7 +580,7 @@ SmartImproviserARAEditor::SmartImproviserARAEditor(SmartImproviserARAProcessor& 
     : juce::AudioProcessorEditor(p), processor(p)
 {
     setResizable(true, true);
-    setResizeLimits(940, 1100, 1900, 1800);
+    setResizeLimits(940, 1000, 1900, 1800);
     const auto size = processor.editorSize();
     setSize(size.x, size.y);
 
@@ -614,7 +614,7 @@ SmartImproviserARAEditor::SmartImproviserARAEditor(SmartImproviserARAProcessor& 
     fretSelector.addItem(ru("Лады 12–24"), 3);
     fretSelector.setSelectedId(1, juce::dontSendNotification);
     strategyList.setModel(this);
-    strategyList.setRowHeight(36);
+    strategyList.setRowHeight(32);
     strategyList.setMultipleSelectionEnabled(false);
     strategyList.setColour(juce::ListBox::backgroundColourId,
                            juce::Colour::fromRGB(42, 46, 53));
@@ -647,7 +647,7 @@ void SmartImproviserARAEditor::resized()
     processor.setEditorSize({getWidth(), getHeight()});
     const int margin = 24;
     const int gap = 8;
-    const int buttonY = 522;
+    const int buttonY = 484;
     const int buttonH = 36;
     const int available = getWidth() - margin * 2 - gap * 3;
     const int buttonW = available / 4;
@@ -658,11 +658,11 @@ void SmartImproviserARAEditor::resized()
     araButton.setBounds(margin + 3 * (buttonW + gap), buttonY,
                         getWidth() - margin - (margin + 3 * (buttonW + gap)), buttonH);
 
-    strategyList.setBounds(40, 268, getWidth() - 80, 236);
-    layerSelector.setBounds(getWidth() - 376, 570, 207, 32);
-    fretSelector.setBounds(getWidth() - 161, 570, 137, 32);
-    materialViewer.setBounds(margin, 610, getWidth() - margin * 2, 296);
-    detailsView.setBounds(margin, 918, getWidth() - margin * 2, getHeight() - 960);
+    strategyList.setBounds(40, 268, getWidth() - 80, 194);
+    layerSelector.setBounds(getWidth() - 376, 532, 207, 32);
+    fretSelector.setBounds(getWidth() - 161, 532, 137, 32);
+    materialViewer.setBounds(margin, 572, getWidth() - margin * 2, 296);
+    detailsView.setBounds(margin, 880, getWidth() - margin * 2, getHeight() - 922);
 }
 
 int SmartImproviserARAEditor::getNumRows()
@@ -1491,7 +1491,7 @@ void SmartImproviserARAEditor::paint(juce::Graphics& g)
                24, 47, getWidth() - 48, 22, juce::Justification::centredLeft);
 
     g.setColour(juce::Colour::fromRGB(42, 46, 53));
-    g.fillRoundedRectangle(24.0f, 82.0f, static_cast<float>(getWidth() - 48), 426.0f, 8.0f);
+    g.fillRoundedRectangle(24.0f, 82.0f, static_cast<float>(getWidth() - 48), 388.0f, 8.0f);
 
     g.setColour(juce::Colour::fromRGB(150, 156, 168));
     g.setFont(12.5f);
