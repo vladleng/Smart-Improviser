@@ -1,4 +1,8 @@
-# 0.4b — Tension Engine contract (live test pending)
+# 0.4b — Tension Engine contract (accepted)
+
+Vlad accepted the Windows Build #383 VST3 in Studio Pro on 2026-09-30.
+PR #46 was merged into main (`dffae06`). Stage 4 Issue #5 remains open;
+the next checkpoint is `0.4c` for musical Level 1 rules.
 
 `0.4a upd4` was accepted by Vlad and merged through PR #45. Stable remains
 `0.4`, Stage 4 Issue #5 stays open. This checkpoint adds the Core contract
@@ -48,4 +52,4 @@ Studio Pro smoke check for 0.4b: replace the VST3, verify the version label
 `0.4b`, compare `G7→Cmaj7`, `G7→Cm7` and an unresolved/unknown continuation
 while seeking and playing. Existing source notes, real targets, legend and
 text must remain synchronized; no T1/T2/T3 classification or control is
-promised in this contract checkpoint. Vlad's live acceptance is still needed.
+promised in this contract checkpoint. This live gate was accepted by Vlad.
