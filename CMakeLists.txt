@@ -29,6 +29,7 @@ add_library(SmartImproviserCore STATIC
     src/core/model/KeyModel.h
     src/core/model/Phrase.h
     src/core/model/ResolutionTarget.h
+    src/core/model/TensionProfile.h
     src/core/analysis/AmbiguityAnalyzer.cpp
     src/core/analysis/AmbiguityAnalyzer.h
     src/core/analysis/ContextRanking.cpp
@@ -39,6 +40,8 @@ add_library(SmartImproviserCore STATIC
     src/core/analysis/MaterialViewer.h
     src/core/analysis/SpecialSources.cpp
     src/core/analysis/SpecialSources.h
+    src/core/analysis/TensionEngine.cpp
+    src/core/analysis/TensionEngine.h
     src/core/analysis/HarmonicConcepts.cpp
     src/core/analysis/HarmonicConcepts.h
     src/core/analysis/ImprovisationEngine.cpp
@@ -163,7 +166,7 @@ target_compile_definitions(SmartImproviserARA
         JUCE_WEB_BROWSER=0
         JUCE_USE_CURL=0
         JUCE_VST3_CAN_REPLACE_VST2=0
-        SMART_IMPROVISER_BUILD_VERSION="0.4a upd4"
+        SMART_IMPROVISER_BUILD_VERSION="0.4b"
 )
 
 target_link_libraries(SmartImproviserARA
@@ -318,3 +321,11 @@ if(MSVC)
     target_compile_options(SmartImproviserMaterialViewerTests PRIVATE /utf-8)
 endif()
 add_test(NAME SmartImproviserMaterialViewerTests COMMAND SmartImproviserMaterialViewerTests)
+
+add_executable(SmartImproviserTensionContractTests tests/TensionContractTests.cpp)
+target_link_libraries(SmartImproviserTensionContractTests PRIVATE SmartImproviserCore)
+target_compile_features(SmartImproviserTensionContractTests PRIVATE cxx_std_20)
+if(MSVC)
+    target_compile_options(SmartImproviserTensionContractTests PRIVATE /utf-8)
+endif()
+add_test(NAME SmartImproviserTensionContractTests COMMAND SmartImproviserTensionContractTests)

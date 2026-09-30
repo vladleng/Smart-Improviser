@@ -1,8 +1,10 @@
-# 0.4a — Visual Material Viewer (accepted; upd4 live-test pending)
+# 0.4a — Visual Material Viewer (accepted through upd4)
 
 Vlad accepted the `0.4a` viewer after the `upd3` Studio Pro test on 2026-09-30;
 PR #44 was merged into main. The historical live-check sections below document
-earlier revision gates. `upd4` is a new follow-up and requires its own test.
+earlier revision gates. Vlad accepted `upd4` after its Studio Pro check on
+2026-09-30; PR #45 was merged into main (`724c7af`). Historical pending
+statements below describe the status at the time of each revision.
 
 ## Scope
 
