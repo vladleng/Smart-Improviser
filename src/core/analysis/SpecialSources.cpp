@@ -86,14 +86,14 @@ int functionalSubVRootFifths(const ImprovisationResult& result, const Normalized
         ? candidate : chord.rootFifths;
 }
 
-void append(ImprovisationResult& result, const Rule& rule, int index, bool subV = false)
+void append(ImprovisationResult& result, const Rule& rule, int index,
+            bool subV = false, bool missingTonic = false)
 {
     const auto& chord = result.context.currentChord;
     if (!compatible(rule, chord)) return;
-    if (index < 0 || index >= result.context.interpretationCount
-        || static_cast<std::size_t>(index) >= result.context.interpretations.size()) return;
-    const auto& interpretation = result.context.interpretations[static_cast<std::size_t>(index)];
-    if (!interpretation.valid) return;
+    if (! missingTonic && (index < 0 || index >= result.context.interpretationCount
+        || static_cast<std::size_t>(index) >= result.context.interpretations.size()
+        || ! result.context.interpretations[static_cast<std::size_t>(index)].valid)) return;
 
     auto strategy = result.strategies.front();
     const auto chordSpellingFifths = subV ? functionalSubVRootFifths(result, chord) : chord.rootFifths;
@@ -109,8 +109,16 @@ void append(ImprovisationResult& result, const Rule& rule, int index, bool subV 
     strategy.ruleVersion = subV ? 3 : 2;
     strategy.priority = 40; // Catalog/recommendation order, never harmonic confidence.
     strategy.interpretationIndependent = false;
-    strategy.interpretationIndex = index;
-    strategy.evidence = interpretation.evidence;
+    strategy.interpretationIndex = missingTonic ? -1 : index;
+    strategy.missingTonicApplication = missingTonic;
+    if (missingTonic)
+    {
+        strategy.missingTonicRootFifths = result.context.incompleteCadence.missingTonicRootFifths;
+        strategy.evidence = {};
+        strategy.evidence.confidence = ConfidenceLevel::low;
+        strategy.evidence.add(EvidenceFlag::patternMatch);
+    }
+    else strategy.evidence = result.context.interpretations[static_cast<std::size_t>(index)].evidence;
     strategy.source = {};
     strategy.source.kind = MaterialKind::scale;
     strategy.source.rootFifths = chordSpellingFifths + rule.sourceFifthsOffset;
@@ -123,8 +131,10 @@ void append(ImprovisationResult& result, const Rule& rule, int index, bool subV 
     strategy.usageHint = rule.hint;
     strategy.idea = rule.application;
     strategy.explanation = strategy.sourceReference;
-    strategy.conditions = "Use with harmonic interpretation " + std::to_string(index + 1)
-        + "; source root is not a song key. ";
+    strategy.conditions = missingTonic
+        ? "Incomplete ii-V: the expected major I did not sound; source root is not an established key. "
+        : "Use with harmonic interpretation " + std::to_string(index + 1)
+            + "; source root is not a song key. ";
     strategy.conditions += rule.hint;
     if (rule.omittedInterval >= 0 && chord.hasTone(rule.omittedInterval))
         strategy.omittedChordTones.push_back(wrap(chord.rootPitchClass + rule.omittedInterval));
@@ -250,6 +260,20 @@ void addSpecialSources(ImprovisationResult& result)
             append(result, halfDim, index);
         else if (chord.quality == ChordQuality::diminished && chord.hasTone(9))
             append(result, diminished, index);
+    }
+
+    const auto& incomplete = situation.incompleteCadence;
+    if (incomplete.valid && incomplete.positionIndex == 1
+        && incomplete.actualContinuation.valid && situation.nextChordAvailable
+        && ! situation.resolution.confirmed && chord.quality == ChordQuality::dominant
+        && chord.rootPitchClass == incomplete.v.rootPitchClass
+        && (chord.rootPitchClass + 5) % 12
+            == circleOfFifthsToPitchClass(incomplete.missingTonicRootFifths))
+    {
+        // Same established catalog as V -> major, but with explicitly
+        // provisional provenance and the real next chord retained as target.
+        append(result, lydian, -1, false, true);
+        append(result, altered, -1, false, true);
     }
 }
 }

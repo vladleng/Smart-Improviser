@@ -3,6 +3,8 @@
 #include <JuceHeader.h>
 #include "context/SharedHarmonicContextData.h"
 #include "core/model/HarmonicSituation.h"
+#include "core/analysis/Explanation.h"
+#include "ara/MaterialViewerComponent.h"
 
 class SmartImproviserARAProcessor;
 
@@ -29,10 +31,16 @@ private:
     void setActivePanel(Panel panel);
     void refreshPanelView(bool resetScroll);
     void updatePanelButtons();
+    void updateMaterialSelection();
+    juce::String selectedMaterialText() const;
 
     SmartImproviserARAProcessor& processor;
     SharedHarmonicContextSnapshot cachedShared;
     smartimproviser::harmony::HarmonicSituation cachedSituation;
+    smartimproviser::harmony::ImprovisationResult cachedResult;
+    smartimproviser::harmony::ExplanationResult cachedExplanation;
+    juce::String selectedMaterialKey;
+    bool updatingSelector = false;
 
     Panel activePanel = Panel::material;
 
@@ -52,6 +60,10 @@ private:
     juce::TextButton harmonicButton;
     juce::TextButton araButton;
     juce::TextEditor detailsView;
+    juce::ComboBox strategySelector;
+    juce::ComboBox layerSelector;
+    juce::ComboBox fretSelector;
+    MaterialViewerComponent materialViewer;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(SmartImproviserARAEditor)
 };

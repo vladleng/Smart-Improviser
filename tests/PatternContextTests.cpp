@@ -3,6 +3,7 @@
 #include "core/analysis/ImprovisationEngine.h"
 
 #include <array>
+#include <algorithm>
 #include <cstdlib>
 #include <initializer_list>
 #include <iostream>
@@ -229,6 +230,31 @@ int main()
     expect(! falseEbDominant.localKey.valid
            && falseEbDominant.localPattern.type != HarmonicPatternType::majorIiVI,
            "Bb7 with known Em7 future does not keep false Eb-major 2/3 candidate");
+    const auto falseEbMaterial = analyzeImprovisation(falseEbDominant);
+    const auto missingEbSource = std::find_if(falseEbMaterial.strategies.begin(), falseEbMaterial.strategies.end(),
+        [](const auto& strategy)
+        {
+            return strategy.missingTonicApplication
+                && strategy.source.mode == DiatonicMode::mixolydian;
+        });
+    expect(missingEbSource != falseEbMaterial.strategies.end()
+           && missingEbSource->source.name == "Bb Mixolydian"
+           && missingEbSource->missingTonicRootFifths == -3
+           && missingEbSource->interpretationIndex == -1
+           && ! missingEbSource->interpretationIndependent,
+           "incomplete Bb7 offers major-V material tied to the missing Eb, not a new primary interpretation");
+    expect(! missingEbSource->resolution.confirmed
+           && missingEbSource->nextChord.rootPitchClass == 4
+           && missingEbSource->nextChord.quality == ChordQuality::minor,
+           "missing Eb remains unconfirmed and actual Em7 remains next-chord target");
+    expect(std::any_of(falseEbMaterial.strategies.begin(), falseEbMaterial.strategies.end(),
+               [](const auto& strategy)
+               { return strategy.missingTonicApplication && strategy.kind == ImprovisationStrategyKind::alteredDominant; }),
+           "the existing altered major-V source is also available on incomplete Bb7");
+    const auto falseEbExplanation = explainImprovisation(falseEbMaterial);
+    expect(std::any_of(falseEbExplanation.items.begin(), falseEbExplanation.items.end(),
+                       [](const auto& item) { return item.missingTonicApplication; }),
+           "presentation keeps provisional material provenance");
 
     // fix4: retain ii-V as an incomplete template without undoing fix2's veto.
     for (int position = 0; position < 2; ++position)
@@ -254,8 +280,16 @@ int main()
     expect(! analyzeWindow(cMajor, unknownEbFuture, 0).incompleteCadence.valid
            && ! analyzeWindow(cMajor, unknownEbFuture, 1).incompleteCadence.valid,
            "unknown future is not declared an absent tonic");
+    const auto unknownEbMaterial = analyzeImprovisation(analyzeWindow(cMajor, unknownEbFuture, 1));
+    expect(std::none_of(unknownEbMaterial.strategies.begin(), unknownEbMaterial.strategies.end(),
+               [](const auto& strategy) { return strategy.missingTonicApplication; }),
+           "unknown continuation does not acquire a missing-tonic source");
     const auto ebMaj7 = makeChord(-3, { 0, 4, 7, 11 }, 8.0);
     const std::array completedEb { fMin7, bFlat7, ebMaj7 };
+    const auto completedEbMaterial = analyzeImprovisation(analyzeWindow(cMajor, completedEb, 1));
+    expect(std::none_of(completedEbMaterial.strategies.begin(), completedEbMaterial.strategies.end(),
+               [](const auto& strategy) { return strategy.missingTonicApplication; }),
+           "actual Ebmaj7 uses confirmed resolution sources, not the incomplete-cadence label");
     for (int position = 0; position < 3; ++position)
     {
         const auto completed = analyzeWindow(cMajor, completedEb, position);
@@ -323,6 +357,17 @@ int main()
     expect(falseCDominant.pattern.type != HarmonicPatternType::majorIiVI
            && falseCDominant.localPattern.type != HarmonicPatternType::majorIiVI,
            "G7 with known D7/A future does not keep false C-major 2/3 candidate");
+    const auto falseCMaterial = analyzeImprovisation(falseCDominant);
+    expect(std::any_of(falseCMaterial.strategies.begin(), falseCMaterial.strategies.end(),
+               [](const auto& strategy)
+               {
+                   return strategy.missingTonicApplication
+                       && strategy.source.name == "G Mixolydian"
+                       && strategy.missingTonicRootFifths == 0
+                       && strategy.nextChord.rootPitchClass == 2
+                       && ! strategy.resolution.confirmed;
+               }),
+           "G7 of Dm7-G7-D7/A gets V material without inventing C resolution");
 
     const auto aMin7At4 = makeChord(3, { 0, 3, 7, 10 }, 4.0);
     const auto dMin7At8 = makeChord(2, { 0, 3, 7, 10 }, 8.0);

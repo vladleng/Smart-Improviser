@@ -111,6 +111,8 @@ int main()
            "diagnostic text exposes global C layer");
     expect(basicText.find("ЦЕЛЬ: Cmaj7 [OK]") != std::string::npos,
            "diagnostic text exposes confirmed target");
+    expect(basicText.find("ВАЖНЫЕ НОТЫ: B F") != std::string::npos,
+           "unspelled G7 guides are formatted as chord-relative note names");
 
     // Identical presentation material from two interpretations must collapse,
     // while provenance remains explicit.
