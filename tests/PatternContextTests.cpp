@@ -616,6 +616,29 @@ int main()
                    && local.localPattern.positionIndex == position - 2
                    && local.localPattern.length == 3,
                    "following Gm7-C7-Fmaj7 remains separate local F-major 1/3 through 3/3");
+            if (variant == 0 && position < 4)
+            {
+                expect(local.primaryInterpretationIndex >= 0
+                       && local.interpretations[static_cast<std::size_t>(local.primaryInterpretationIndex)].kind
+                           == HarmonicInterpretationKind::localCenter
+                       && std::none_of(local.interpretations.begin(),
+                                       local.interpretations.begin() + local.interpretationCount,
+                                       [](const auto& reading)
+                                       { return reading.kind == HarmonicInterpretationKind::modalInterchange; }),
+                       "confirmed F cadence does not invent parallel C minor from Gm7");
+                const auto material = analyzeImprovisation(local);
+                expect(std::none_of(material.strategies.begin(), material.strategies.end(),
+                                   [&local](const auto& strategy)
+                                   { return strategy.interpretationIndex >= 0
+                                       && strategy.interpretationIndex != local.primaryInterpretationIndex; }),
+                       "playing sources follow confirmed local F, while global C stays diagnostic context");
+                if (position == 3)
+                    expect(std::any_of(material.strategies.begin(), material.strategies.end(),
+                                       [](const auto& strategy)
+                                       { return strategy.ruleId == "project.melodic-minor.bVII-overlay"
+                                           && strategy.source.name == "Bb melodic minor"; }),
+                           "C7 in local F major exposes Bb melodic minor bVII overlay");
+            }
         }
     }
 

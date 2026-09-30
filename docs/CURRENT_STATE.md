@@ -1,6 +1,6 @@
 # Smart Improviser — Current State
 
-> Обновлено 2026-09-30: Stage 3 принят, текущая stable — `0.4`. После успешного Windows Build #376 живой тест `0.4a upd1` выявил пробел D7/A и доминантовой diminished-палитры; `0.4a upd2` исправляет покрытие и добавляет [карту оборотов и мышления](HARMONIC_THINKING_MAP.md). Приёмка Stage 4 всё ещё ожидается; Tension Engine начинается позже. Song workspace и редактор остаются Stage 7–8.
+> Обновлено 2026-09-30: Stage 3 принят, текущая stable — `0.4`. Живой тест `0.4a upd2` выявил лишние C major/C minor в игровом контексте локального Gm7–C7–Fmaj7, отсутствие ♭VII melodic minor и недостаточное покрытие A7♭13. `0.4a upd3` адресует эти случаи и обновляет [карту оборотов и мышления](HARMONIC_THINKING_MAP.md). Приёмка Stage 4 ожидает живого теста; Tension Engine начинается позже. Song workspace и редактор остаются Stage 7–8.
 
 > Короткая точка входа для нового чата или рабочей сессии. Подробная архитектура — в `PROJECT_CONTEXT.md`, этапы — в `ROADMAP.md`, правила версий — в `VERSIONING.md`, фактический прогресс — в GitHub Issues.
 
@@ -24,7 +24,7 @@
 - **Windows Build #331:** success; 14/14 test targets green
 - **Следующий Stage:** Stage 4 — Visual Material Viewer (`0.4a`), затем Tension Engine (`0.4b → 0.4x`)
 
-Для `0.4b` согласована первая лестница V7 → мажорной цели: исходный Mixolydian, затем T1 Dm6 / D melodic minor, T2 Fm6 / F melodic minor и T3 Abm6 / Ab melodic minor. Это пока спецификация, не классификация в текущем 0.4a; правила совместимости с реальным V7alt и ноты каждой структуры приведены в [IMPROVISATION_METHOD.md](IMPROVISATION_METHOD.md).
+Для `0.4b` согласована первая лестница V7 → мажорной цели: исходный Mixolydian, затем T1 Dm6 / D melodic minor, T2 Fm6 / F melodic minor и T3 Abm6 / Ab melodic minor. Источники в `0.4a upd3` доступны с условиями, но классы T1–T3 пока спецификация, не классификация; правила совместимости с реальным V7alt и ноты каждой структуры приведены в [IMPROVISATION_METHOD.md](IMPROVISATION_METHOD.md).
 
 0.3h принят 2026-09-29. Fix1: ожидаемая отсутствующая тоника отдельна от распознанного `III–VI–II–V`, G7 получает Mixolydian и допустимые альтернативы, Am7 в C major не навязывается Am6. Fix2: компактные крупные римские ступени с серой I на позициях 1/4–4/4 при известном обходе тоники. Fix3: UTF-8 для `–`, `ø`, `→` в Windows UI. Windows Build #360 — success, 15/15 tests и VST3 artifact; пользователь принял результат в Studio Pro. PR #39 → #38 → #37 merged в main (`b587408`). Stable `0.4` упакована с отдельным Windows build/artifact; музыкальная логика относительно принятого fix3 не менялась.
 

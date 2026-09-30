@@ -139,8 +139,16 @@ int main()
     auto result = analyzeImprovisation(analyzeHarmonicSituation(snapshot));
     auto lyd = rule(result,"boyko.melodic-minor.V");
     auto alt = rule(result,"boyko.melodic-minor.bII");
-    expect(lyd && alt && rule(result,"levine.dominant.half-whole")
-           && result.strategies.size() == 5,"major V exposes basic and optional diminished colors");
+    const auto overlay = rule(result,"project.melodic-minor.bVII-overlay");
+    expect(lyd && alt && overlay && rule(result,"levine.dominant.half-whole")
+           && result.strategies.size() == 6,"major V offers bVII overlay alongside basic and diminished colors");
+    expect(overlay->source.name == "F melodic minor"
+           && normalizedChordSymbol(overlay->thinkingStructure) == "Fm6"
+           && overlay->omittedChordTones.size() == 1
+           && overlay->omittedChordTones[0] == 11
+           && overlay->guideNotes.size() >= 2,
+           "F melodic is a conditional overlay retaining G7's written B guide outside the source");
+    expectPitches(overlay->source,{5,7,8,10,0,2,4});
     expect(lyd->source.name == "D melodic minor" && normalizedChordSymbol(lyd->thinkingStructure) == "Dm6","fifth source and separate m6 thinking");
     expectPitches(lyd->source,{2,4,5,7,9,11,1});
     expect(lyd->source.chordRelativeNotes.back().degree == 11 && lyd->source.chordRelativeNotes.back().spelling == "C#","lydian #11 relative to G, not source seventh");
@@ -155,6 +163,8 @@ int main()
     alt = rule(result,"boyko.melodic-minor.bII");
     expect(alt && !rule(result,"boyko.melodic-minor.V") && !scale(result),"minor target gets altered, not major-only source");
     expect(alt->targetNotes[1].pitchClass == 3 && alt->resolution.targetQuality == ChordQuality::minor,"actual Eb minor target");
+    expect(rule(result,"project.melodic-minor.minor-V-b13"),
+           "minor-target V has a compatible melodic-minor fifth-mode option");
     // An explicit b9 is retained; a natural 9 or 13 cannot disappear into altered.
     snapshot.currentChord = makeChord(1,{0,1,4,7,10});
     result = analyzeImprovisation(analyzeHarmonicSituation(snapshot));
@@ -171,6 +181,25 @@ int main()
     snapshot.currentChord.intervals.values[8] = 13;
     expect(!rule(analyzeImprovisation(analyzeHarmonicSituation(snapshot)),"levine.dominant.half-whole"),
            "explicit b13 blocks half-whole even in a dominant context");
+    auto b13 = analyzeImprovisation(analyzeHarmonicSituation(snapshot));
+    expect(rule(b13,"project.melodic-minor.minor-V-b13")
+           && rule(b13,"boyko.melodic-minor.bII"),
+           "written b13 still offers compatible fifth-mode and altered choices");
+    snapshot = makeSnapshot(key,makeChord(4,{0,3,7,10}),makeChord(3,{0,4,7,8,10}),makeChord(2,{0,4,7,10}));
+    snapshot.currentChord.intervals.values[8] = 13;
+    b13 = analyzeImprovisation(analyzeHarmonicSituation(snapshot));
+    const auto b13Mode = rule(b13,"project.melodic-minor.minor-V-b13");
+    expect(b13Mode && b13Mode->source.name == "D melodic minor"
+           && b13Mode->interpretationIndependent
+           && b13.dominantContext == DominantContext::toDominant
+           && b13Mode->nextChord.quality == ChordQuality::dominant
+           && rule(b13,"boyko.melodic-minor.bII"),
+           "Em7-A7b13-D7 receives chord-local options without inventing D minor");
+    snapshot = makeSnapshot(key,makeChord(2,{0,3,7,10}),makeChord(1,{0,4,7,10}),makeChord(0,{0,3,7}));
+    snapshot.currentChord = makeChord(1,{0,2,4,7,10});
+    expect(!rule(analyzeImprovisation(analyzeHarmonicSituation(snapshot)),"project.melodic-minor.bVII-overlay"),
+           "explicit natural 9 blocks bVII melodic overlay's b9");
+    snapshot = makeSnapshot(key,makeChord(2,{0,3,7,10}),makeChord(1,{0,4,7,10}),makeChord(0,{0,4,7,11}));
     snapshot.currentChord = makeChord(1,{0,3,4,8,10});
     snapshot.currentChord.intervals.values[3] = 9;
     snapshot.currentChord.intervals.values[8] = 5;

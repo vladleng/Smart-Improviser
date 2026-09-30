@@ -40,6 +40,14 @@ const Rule halfDim {"boyko.melodic-minor.bIII", ImprovisationStrategyKind::melod
 const Rule lydian {"boyko.melodic-minor.V", ImprovisationStrategyKind::lydianDominantColor, 1,
     "Lydian dominant", "Levine, chapter 4, pp. 96-100; Boyko, section 2, pp. 96-97", "#11 color; resolve to the shown target.",
     {1,0,9,0,3,0,11,5,0,13,7,0}, -1};
+const Rule flatSevenOverlay {"project.melodic-minor.bVII-overlay", ImprovisationStrategyKind::melodicMinorApplication, -2,
+    "Melodic-minor overlay from bVII", "Project Fm6 / F melodic-minor application; this is not the altered scale",
+    "Optional m6 overlay: keep the written dominant third as an anchor outside this source; the source's b3 is a color, not a replacement third.",
+    {1,9,0,3,0,11,0,5,0,13,7,0}, 4};
+const Rule minorTargetColor {"project.melodic-minor.minor-V-b13", ImprovisationStrategyKind::melodicMinorApplication, -1,
+    "Mixolydian b6 from melodic minor", "Melodic minor fifth mode; project application to a compatible V7(b13)",
+    "b13 belongs to the written dominant. This color does not prove that the next chord is minor; follow the actual next chord.",
+    {1,0,9,0,3,11,0,5,13,0,7,0}, -1};
 const Rule altered {"boyko.melodic-minor.bII", ImprovisationStrategyKind::alteredDominant, -5,
     "Altered dominant", "Levine, chapter 4, pp. 104-106; Boyko, section 2, pp. 101-102", "b9/#9/b5/b13; omit natural 5 in this line.",
     {1,9,0,9,3,0,5,0,13,0,7,0}, 7};
@@ -63,7 +71,7 @@ bool compatible(const Rule& rule, const NormalizedChord& chord)
         const int simpleGiven = given ? (given - 1) % 7 + 1 : 0;
         if (interval == rule.omittedInterval)
         {
-            const int allowed = interval == 7 ? 5 : 7;
+            const int allowed = interval == 7 ? 5 : interval == 4 ? 3 : 7;
             if (given && simpleGiven != allowed) return false;
             continue;
         }
@@ -240,6 +248,11 @@ void addSpecialSources(ImprovisationResult& result)
     for (std::uint8_t i = 0; i < situation.interpretationCount; ++i)
     {
         const int index = static_cast<int>(i);
+        if (situation.localKey.valid
+            && situation.localKey.evidence.confidence == ConfidenceLevel::confirmed
+            && situation.primaryInterpretationIndex >= 0
+            && index != situation.primaryInterpretationIndex)
+            continue;
         const auto& interpretation = situation.interpretations[i];
         if (!interpretation.valid || !interpretation.center.valid || !interpretation.center.key.valid
             || (interpretation.center.key.mode != KeyMode::major && interpretation.center.key.mode != KeyMode::minor))
@@ -268,7 +281,12 @@ void addSpecialSources(ImprovisationResult& result)
             else if (!interpretation.harmonic.substituteDominantCandidate)
             {
                 if (result.dominantContext == DominantContext::toMajor || expectedMajor)
+                {
                     append(result, lydian, index);
+                    append(result, flatSevenOverlay, index);
+                }
+                if (result.dominantContext == DominantContext::toMinor)
+                    append(result, minorTargetColor, index);
                 append(result, altered, index);
                 append(result, dominantDiminished, index);
                 if (chord.hasAlteration(ChordAlteration::sharpFifth) && ! chord.hasTone(7))
@@ -305,6 +323,7 @@ void addSpecialSources(ImprovisationResult& result)
         // Same established catalog as V -> major, but with explicitly
         // provisional provenance and the real next chord retained as target.
         append(result, lydian, -1, false, true);
+        append(result, flatSevenOverlay, -1, false, true);
         append(result, altered, -1, false, true);
         append(result, dominantDiminished, -1, false, true);
         if (chord.hasAlteration(ChordAlteration::sharpFifth) && ! chord.hasTone(7))
@@ -323,6 +342,16 @@ void addSpecialSources(ImprovisationResult& result)
         };
         if (! hasRule(dominantDiminished.id))
             append(result, dominantDiminished, -1, false, false, true);
+        // An explicit b13 is a dominant alteration, not a reason to suppress
+        // the entire palette. These sources are chord-local when a minor I is
+        // not confirmed (e.g. Em7-A7b13-D7 in a dominant chain).
+        if (chord.hasTone(8) && chord.degrees[8] == 13)
+        {
+            if (! hasRule(minorTargetColor.id))
+                append(result, minorTargetColor, -1, false, false, true);
+            if (! hasRule(altered.id))
+                append(result, altered, -1, false, false, true);
+        }
         if (chord.hasAlteration(ChordAlteration::sharpFifth) && ! chord.hasTone(7)
             && ! hasRule(wholeTone.id))
             append(result, wholeTone, -1, false, false, true);

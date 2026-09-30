@@ -307,7 +307,14 @@ void addDiatonicSource(ImprovisationResult& result)
     const auto& situation = result.context;
     bool added = false;
     for (std::uint8_t i = 0; i < situation.interpretationCount; ++i)
+    {
+        if (situation.localKey.valid
+            && situation.localKey.evidence.confidence == ConfidenceLevel::confirmed
+            && situation.primaryInterpretationIndex >= 0
+            && i != situation.primaryInterpretationIndex)
+            continue;
         added = appendForInterpretation(result, static_cast<int>(i)) || added;
+    }
     added = appendIncompleteDominant(result) || added;
     if (! added)
         added = appendChordLocalDominant(result);

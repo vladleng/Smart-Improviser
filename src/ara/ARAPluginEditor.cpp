@@ -898,6 +898,16 @@ void SmartImproviserARAEditor::timerCallback()
                 summaryLocal += ru(" (") + harmonicFunctionNameRu(layer.harmonic.effectiveFunction) + ")";
         }
     }
+    if (cachedSituation.localKey.valid
+        && cachedSituation.localKey.evidence.confidence
+            == smartimproviser::harmony::ConfidenceLevel::confirmed
+        && cachedSituation.primaryInterpretationIndex >= 0)
+    {
+        // The project key remains in the Core/explanation diagnostics. The
+        // compact playing context follows the established local cadence.
+        summaryMeta = summaryLocal;
+        summaryLocal.clear();
+    }
 
     const auto* activePattern = &cachedSituation.pattern;
     if (cachedSituation.localPattern.recognized())
