@@ -1,6 +1,7 @@
 #include "core/analysis/HarmonicEngine.h"
 #include "core/analysis/Explanation.h"
 #include "core/analysis/ImprovisationEngine.h"
+#include "core/analysis/ManualTensionKey.h"
 
 #include <array>
 #include <algorithm>
@@ -249,11 +250,31 @@ int main()
     expect(falseEb.pattern.type != HarmonicPatternType::majorIiVI
            && falseEb.localPattern.type != HarmonicPatternType::majorIiVI,
            "contradicted ii-V does not present major ii-V-I 1/3");
+    const auto falseEbIiMaterial = analyzeImprovisation(falseEb);
+    expect(std::any_of(falseEbIiMaterial.strategies.begin(), falseEbIiMaterial.strategies.end(),
+               [](const auto& strategy)
+               { return strategy.source.name == "F Dorian" && strategy.missingTonicApplication; }),
+           "provisional major ii-V retains its Dorian ii source without C-minor interpretation");
+    expect(std::any_of(falseEbIiMaterial.strategies.begin(), falseEbIiMaterial.strategies.end(),
+               [](const auto& strategy)
+               { return strategy.source.name == "F melodic minor"
+                   && strategy.interpretationIndependent; }),
+           "optional F melodic minor color is chord-local, not a C-minor reading");
     const auto falseEbDominant = analyzeWindow(cMajor, falseEbCadence, 1);
     expect(! falseEbDominant.localKey.valid
            && falseEbDominant.localPattern.type != HarmonicPatternType::majorIiVI,
            "Bb7 with known Em7 future does not keep false Eb-major 2/3 candidate");
     const auto falseEbMaterial = analyzeImprovisation(falseEbDominant);
+    const auto sourceKey = [&](const ImprovisationResult& result, const std::string& rule)
+    {
+        const auto items = buildExplanation(result);
+        for (const auto& item : items.items)
+            if (!item.strategyIndices.empty()
+                && result.strategies[item.strategyIndices.front()].ruleId == rule)
+                return manualTensionKey(result, item);
+        return std::string{};
+    };
+    const auto bbMixolydianKey = sourceKey(falseEbMaterial, "diatonic.mixolydian");
     const auto missingEbSource = std::find_if(falseEbMaterial.strategies.begin(), falseEbMaterial.strategies.end(),
         [](const auto& strategy)
         {
@@ -295,6 +316,9 @@ int main()
                && ! situation.harmonic.dominantResolutionConfirmed
                && ! situation.pattern.evidence.has(EvidenceFlag::confirmedResolution),
                "missing tonic is descriptive only, never an established Eb key or resolution");
+        expect(situation.interpretationCount == 1
+               && situation.primaryInterpretationIndex == 0,
+               "incomplete major ii-V does not expose unrelated C-minor modal reading");
     }
     expect(! analyzeWindow(cMajor, falseEbCadence, 2).incompleteCadence.valid,
            "actual Em7 is not the absent I or a fictitious 3/3 member");
@@ -310,6 +334,9 @@ int main()
     const auto ebMaj7 = makeChord(-3, { 0, 4, 7, 11 }, 8.0);
     const std::array completedEb { fMin7, bFlat7, ebMaj7 };
     const auto completedEbMaterial = analyzeImprovisation(analyzeWindow(cMajor, completedEb, 1));
+    expect(!bbMixolydianKey.empty(), "manual preference has a relative key for incomplete V");
+    expect(bbMixolydianKey == sourceKey(completedEbMaterial, "diatonic.mixolydian"),
+           "same manual source preference covers completed and unfinished major ii-V");
     expect(std::none_of(completedEbMaterial.strategies.begin(), completedEbMaterial.strategies.end(),
                [](const auto& strategy) { return strategy.missingTonicApplication; }),
            "actual Ebmaj7 uses confirmed resolution sources, not the incomplete-cadence label");
@@ -336,6 +363,10 @@ int main()
             expect(transposedSituation.incompleteCadence.valid
                    && transposedSituation.incompleteCadence.missingTonicRootFifths == tonicFifths,
                    "incomplete ii-V template and expected tonic spelling work in all 12 keys");
+            if (position == 1)
+                expect(sourceKey(analyzeImprovisation(transposedSituation), "diatonic.mixolydian")
+                       == bbMixolydianKey,
+                       "manual preference transfers to equivalent local ii-V in every key");
         }
     }
 

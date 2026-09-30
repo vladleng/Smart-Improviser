@@ -179,26 +179,31 @@ bool appendForInterpretation(ImprovisationResult& result, int index)
     return true;
 }
 
-bool appendIncompleteDominant(ImprovisationResult& result)
+bool appendIncompleteCadenceMode(ImprovisationResult& result)
 {
     const auto& situation = result.context;
     const auto& incomplete = situation.incompleteCadence;
     const auto& chord = situation.currentChord;
-    const auto& mixolydian = modes[4];
-    if (! incomplete.valid || incomplete.positionIndex != 1
+    if (! incomplete.valid || incomplete.positionIndex < 0 || incomplete.positionIndex > 1
         || ! situation.nextChordAvailable || ! incomplete.actualContinuation.valid
-        || situation.resolution.confirmed || chord.quality != ChordQuality::dominant
-        || chord.rootPitchClass != incomplete.v.rootPitchClass
-        || (chord.rootPitchClass + 5) % 12
-            != circleOfFifthsToPitchClass(incomplete.missingTonicRootFifths)
-        || ! containsChord(mixolydian, chord))
+        || situation.resolution.confirmed)
         return false;
+    const bool onIi = incomplete.positionIndex == 0;
+    const auto& mode = onIi ? modes[1] : modes[4]; // Dorian ii, Mixolydian V.
+    if (onIi ? (chord.quality != ChordQuality::minor
+                 || chord.rootPitchClass != incomplete.ii.rootPitchClass)
+             : (chord.quality != ChordQuality::dominant
+                 || chord.rootPitchClass != incomplete.v.rootPitchClass
+                 || (chord.rootPitchClass + 5) % 12
+                     != circleOfFifthsToPitchClass(incomplete.missingTonicRootFifths)))
+        return false;
+    if (! containsChord(mode, chord)) return false;
 
-    // Apply the existing major-V source to the already recognized incomplete
-    // ii-V. This is a material hypothesis, not a new local key or resolution.
+    // The two members share a provisional major center without declaring its
+    // absent I played. The actual next chord remains the only factual target.
     auto strategy = result.strategies.front();
     strategy.kind = ImprovisationStrategyKind::diatonicColor;
-    strategy.ruleId = mixolydian.rule;
+    strategy.ruleId = mode.rule;
     strategy.ruleVersion = 3;
     strategy.priority = 45;
     strategy.interpretationIndex = -1;
@@ -210,13 +215,13 @@ bool appendIncompleteDominant(ImprovisationResult& result)
     strategy.evidence.add(EvidenceFlag::patternMatch);
     strategy.source = {};
     strategy.source.kind = MaterialKind::scale;
-    strategy.source.mode = mixolydian.mode;
+    strategy.source.mode = mode.mode;
     strategy.source.rootPitchClass = chord.rootPitchClass;
     strategy.source.rootFifths = chord.rootFifths;
-    strategy.source.name = spell(chord.rootFifths, 1, chord.rootPitchClass) + " " + mixolydian.name;
+    strategy.source.name = spell(chord.rootFifths, 1, chord.rootPitchClass) + " " + mode.name;
     for (int degree = 1; degree <= 7; ++degree)
     {
-        const int interval = mixolydian.intervals[static_cast<std::size_t>(degree - 1)];
+        const int interval = mode.intervals[static_cast<std::size_t>(degree - 1)];
         MaterialNote note;
         note.pitchClass = (chord.rootPitchClass + interval) % 12;
         note.semitonesFromRoot = interval;
@@ -234,7 +239,7 @@ bool appendIncompleteDominant(ImprovisationResult& result)
     }
     strategy.source.chordRelativeNotes = strategy.source.notes;
     strategy.idea = "Connect the chord anchors using " + strategy.source.name + ".";
-    strategy.explanation = "Major-V material on an incomplete ii-V; the expected I did not sound.";
+    strategy.explanation = "Major ii-V material on an incomplete cadence; the expected I did not sound.";
     strategy.conditions = "The absent I is a source hypothesis only. Follow the actual next chord; no major resolution is confirmed.";
     strategy.usageHint = "Use chord anchors and targets; the expected I is missing.";
     result.strategies.push_back(std::move(strategy));
@@ -315,7 +320,7 @@ void addDiatonicSource(ImprovisationResult& result)
             continue;
         added = appendForInterpretation(result, static_cast<int>(i)) || added;
     }
-    added = appendIncompleteDominant(result) || added;
+    added = appendIncompleteCadenceMode(result) || added;
     if (! added)
         added = appendChordLocalDominant(result);
 

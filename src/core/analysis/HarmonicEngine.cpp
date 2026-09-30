@@ -1205,6 +1205,8 @@ HarmonicSituation analyzeHarmonicSituation(const TimelineHarmonicSnapshot& snaps
 
     applyPatternWindowContext(result, patternWindow);
     describeIncompleteCadence(result, patternWindow);
+    if (result.incompleteCadence.valid)
+        analyzeAmbiguityAndConfidence(result);
     describeExpectedTonic(result, patternWindow);
 
     if (result.evidence.interpretation == InterpretationStatus::unknown)

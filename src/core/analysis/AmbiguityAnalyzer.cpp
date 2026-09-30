@@ -185,6 +185,9 @@ void analyzeAmbiguityAndConfidence(HarmonicSituation& situation) noexcept
     situation.interpretations = {};
     situation.interpretationCount = 0;
     situation.primaryInterpretationIndex = -1;
+    situation.evidence.flags &= ~(evidenceMask(EvidenceFlag::alternativeInterpretation)
+        | evidenceMask(EvidenceFlag::globalLocalConflict)
+        | evidenceMask(EvidenceFlag::borrowedAmbiguity));
 
     if (! situation.valid)
         return;
@@ -194,7 +197,11 @@ void analyzeAmbiguityAndConfidence(HarmonicSituation& situation) noexcept
     // A confirmed local cadence already explains the written harmony. A
     // parallel-mode match against the project key alone is not independent
     // evidence for a competing center (Gm7 in Gm7-C7-Fmaj7 is not C minor).
-    const auto modalInterpretation = localInterpretationIsDecisive(situation)
+    // A descriptive ordinary major ii-V without its I supplies stronger
+    // structural evidence than a parallel-minor reading of its ii chord.
+    // The expected major tonic is not promoted to an established key.
+    const auto modalInterpretation = (localInterpretationIsDecisive(situation)
+        || situation.incompleteCadence.valid)
         ? HarmonicInterpretation{} : makeModalInterpretation(situation);
 
     // 0.3f: a local-center inference and a modal-interchange reading can point

@@ -37,6 +37,7 @@ add_library(SmartImproviserCore STATIC
     src/core/analysis/DiatonicSources.cpp
     src/core/analysis/DiatonicSources.h
     src/core/analysis/Explanation.h
+    src/core/analysis/ManualTensionKey.h
     src/core/analysis/MaterialViewer.h
     src/core/analysis/FretboardLayout.h
     src/core/analysis/SpecialSources.cpp

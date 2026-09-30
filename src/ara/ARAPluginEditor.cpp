@@ -6,6 +6,7 @@
 #include "context/TimelineContextMapper.h"
 #include "core/analysis/HarmonicEngine.h"
 #include "core/analysis/ImprovisationEngine.h"
+#include "core/analysis/ManualTensionKey.h"
 #include "core/analysis/TensionEngine.h"
 #include "core/model/ChordModel.h"
 #include "core/model/KeyModel.h"
@@ -646,7 +647,7 @@ void SmartImproviserARAEditor::resized()
     processor.setEditorSize({getWidth(), getHeight()});
     const int margin = 24;
     const int gap = 8;
-    const int buttonY = 484;
+    const int buttonY = 340;
     const int buttonH = 36;
     const int available = getWidth() - margin * 2 - gap * 3;
     const int buttonW = available / 4;
@@ -658,11 +659,11 @@ void SmartImproviserARAEditor::resized()
                         getWidth() - margin - (margin + 3 * (buttonW + gap)), buttonH);
 
     const int columnX = getWidth() / 2;
-    strategyList.setBounds(columnX + 16, 122, getWidth() - columnX - 56, 338);
-    layerSelector.setBounds(getWidth() - 376, 532, 207, 32);
-    fretSelector.setBounds(getWidth() - 161, 532, 137, 32);
-    materialViewer.setBounds(margin, 572, getWidth() - margin * 2, 296);
-    detailsView.setBounds(margin, 880, getWidth() - margin * 2, getHeight() - 922);
+    strategyList.setBounds(columnX + 16, 122, getWidth() - columnX - 56, 204);
+    layerSelector.setBounds(getWidth() - 376, 388, 207, 32);
+    fretSelector.setBounds(getWidth() - 161, 388, 137, 32);
+    materialViewer.setBounds(margin, 428, getWidth() - margin * 2, 350);
+    detailsView.setBounds(margin, 790, getWidth() - margin * 2, getHeight() - 832);
 }
 
 int SmartImproviserARAEditor::getNumRows()
@@ -683,15 +684,9 @@ void SmartImproviserARAEditor::rebuildStrategyRows()
     std::vector<StrategyRow> rows;
     for (int level : {1, 2, 3, 0})
     {
-        bool headingAdded = false;
         for (int index = 0; index < strategyLabels.size(); ++index)
         {
-            if (manualTension(index) != level) continue;
-            if (!headingAdded)
-            {
-                rows.push_back({-1, level});
-                headingAdded = true;
-            }
+            if (manualTension(index) != level || redundantSixStructure(index)) continue;
             rows.push_back({index, level});
         }
     }
@@ -704,21 +699,41 @@ void SmartImproviserARAEditor::rebuildStrategyRows()
         strategyRows = std::move(rows);
         updatingSelector = true;
         strategyList.updateContent();
-        strategyList.selectRow(rowForMaterial(selectedMaterialIndex));
+        const int selectedRow = rowForMaterial(selectedMaterialIndex);
+        if (selectedRow >= 0) strategyList.selectRow(selectedRow);
+        else strategyList.deselectAllRows();
         updatingSelector = false;
     }
     strategyList.repaint();
 }
 
+bool SmartImproviserARAEditor::redundantSixStructure(int index) const
+{
+    if (index < 0 || index >= static_cast<int>(cachedExplanation.items.size())) return false;
+    const auto& item = cachedExplanation.items[static_cast<std::size_t>(index)];
+    if (item.strategyIndices.empty()
+        || item.strategyIndices.front() >= cachedResult.strategies.size()
+        || cachedResult.strategies[item.strategyIndices.front()].ruleId != "project.t1.major-V-m6")
+        return false;
+    // The four-tone m6 T1 contract remains in Core, while the UI presents its
+    // parent melodic-minor source only once when both have the same root.
+    for (const auto& other : cachedExplanation.items)
+    {
+        if (other.strategyIndices.empty()
+            || other.strategyIndices.front() >= cachedResult.strategies.size()) continue;
+        const auto& strategy = cachedResult.strategies[other.strategyIndices.front()];
+        if (strategy.ruleId == "boyko.melodic-minor.V"
+            && other.source.rootFifths == item.source.rootFifths)
+            return true;
+    }
+    return false;
+}
+
 std::string SmartImproviserARAEditor::tensionKey(int index) const
 {
     if (index < 0 || index >= static_cast<int>(cachedExplanation.items.size())) return {};
-    const auto& item = cachedExplanation.items[static_cast<std::size_t>(index)];
-    juce::String key = utf8String(smartimproviser::harmony::normalizedChordSymbol(item.actualChord))
-        + "|" + materialSelectionKey(item);
-    if (item.missingTonicApplication)
-        key += "|" + juce::String(item.missingTonicRootFifths);
-    return key.toStdString();
+    return smartimproviser::harmony::manualTensionKey(
+        cachedResult, cachedExplanation.items[static_cast<std::size_t>(index)]);
 }
 
 int SmartImproviserARAEditor::manualTension(int index) const
@@ -737,15 +752,12 @@ void SmartImproviserARAEditor::paintListBoxItem(int row, juce::Graphics& g,
     const auto gray = juce::Colour::fromRGB(154, 165, 179);
     const auto level = entry.level;
     const auto dot = level == 1 ? blue : level == 2 ? orange : level == 3 ? red : gray;
-    if (entry.materialIndex < 0)
+    const bool groupStart = row > 0
+        && strategyRows[static_cast<std::size_t>(row - 1)].level != level;
+    if (groupStart)
     {
-        g.setColour(dot);
-        g.fillEllipse(12.0f, (height - 7) * 0.5f, 7.0f, 7.0f);
-        g.setFont(juce::FontOptions(11.5f, juce::Font::bold));
-        const auto heading = level == 0 ? ru("БЕЗ МЕТКИ")
-            : juce::String("T") + juce::String(level);
-        g.drawText(heading, 27, 0, width - 37, height, juce::Justification::centredLeft);
-        return;
+        g.setColour(juce::Colour::fromRGB(76, 84, 94));
+        g.drawHorizontalLine(0, 8.0f, static_cast<float>(width - 8));
     }
     const auto frame = juce::Rectangle<float>(1.0f, 1.0f,
                                               static_cast<float>(width - 3),
@@ -782,22 +794,13 @@ void SmartImproviserARAEditor::selectMaterial(int index)
 void SmartImproviserARAEditor::selectedRowsChanged(int row)
 {
     if (updatingSelector || row < 0 || row >= static_cast<int>(strategyRows.size())) return;
-    const int index = strategyRows[static_cast<std::size_t>(row)].materialIndex;
-    if (index < 0)
-    {
-        updatingSelector = true;
-        strategyList.selectRow(rowForMaterial(selectedMaterialIndex));
-        updatingSelector = false;
-        return;
-    }
-    selectMaterial(index);
+    selectMaterial(strategyRows[static_cast<std::size_t>(row)].materialIndex);
 }
 
 void SmartImproviserARAEditor::listBoxItemClicked(int row, const juce::MouseEvent& event)
 {
     if (row < 0 || row >= static_cast<int>(strategyRows.size())) return;
     const int index = strategyRows[static_cast<std::size_t>(row)].materialIndex;
-    if (index < 0) return;
     selectMaterial(index);
     if (event.x < 34) openTensionMenu(index, event);
 }
@@ -857,7 +860,7 @@ juce::String SmartImproviserARAEditor::selectedMaterialText() const
             : ru("Источник от написанного аккорда • без выбора тонального центра\n");
     if (item.missingTonicApplication)
     {
-        text += ru("Материал V в незавершённом ii–V • ожидаемый I: ")
+        text += ru("Материал незавершённого ii–V • ожидаемый I: ")
             + utf8String(fifthsName(item.missingTonicRootFifths))
             + ru(" [отсутствует]\n");
         if (item.targetChord.valid)
@@ -1041,15 +1044,13 @@ void SmartImproviserARAEditor::timerCallback()
         const auto& item = explanation.items[i];
         juce::String label = localizeGeneratedText(utf8String(item.source.name));
         if (label.isEmpty()) label = localizeGeneratedText(utf8String(item.idea));
-        if (! item.interpretationIndices.empty())
+        if (cachedSituation.interpretationCount > 1
+            && ! item.interpretationIndices.empty())
         {
             label += ru(" • трактовка ");
             for (std::size_t j = 0; j < item.interpretationIndices.size(); ++j)
                 label += (j ? ", " : "") + juce::String(item.interpretationIndices[j] + 1);
         }
-        else if (item.interpretationIndependent)
-            label += item.source.kind == smartimproviser::harmony::MaterialKind::chordTones
-                ? ru(" • общая опора") : ru(" • от аккорда");
         labels.add(label);
     }
     bool changed = strategyLabels.size() != labels.size();
@@ -1062,12 +1063,13 @@ void SmartImproviserARAEditor::timerCallback()
     rebuildStrategyRows();
     if (! explanation.items.empty())
     {
-        const auto index = keep >= 0 ? keep : 0;
+        const auto index = keep >= 0 && rowForMaterial(keep) >= 0
+            ? keep : (strategyRows.empty() ? -1 : strategyRows.front().materialIndex);
         selectedMaterialIndex = index;
-        if (strategyList.getSelectedRow() != rowForMaterial(index))
+        if (index >= 0 && strategyList.getSelectedRow() != rowForMaterial(index))
             strategyList.selectRow(rowForMaterial(index));
-        const auto& item = explanation.items[static_cast<std::size_t>(index)];
-        selectedMaterialKey = materialSelectionKey(item);
+        if (index >= 0)
+            selectedMaterialKey = materialSelectionKey(explanation.items[static_cast<std::size_t>(index)]);
     }
     else { selectedMaterialKey.clear(); selectedMaterialIndex = -1; }
     updatingSelector = false;
@@ -1120,6 +1122,20 @@ void SmartImproviserARAEditor::timerCallback()
         // The project key remains in the Core/explanation diagnostics. The
         // compact playing context follows the established local cadence.
         summaryMeta = summaryLocal;
+        summaryLocal.clear();
+    }
+    if (cachedSituation.incompleteCadence.valid)
+    {
+        // Core has recognized an ordinary ii-V with an unplayed major I.
+        // A project-key SubV candidate is unrelated to this turn; show its
+        // provisional functional direction here and keep global diagnostics
+        // in the harmonic analysis panel.
+        summaryMeta = ru("Направление II–V: ")
+            + utf8String(fifthsName(cachedSituation.incompleteCadence.missingTonicRootFifths))
+            + ru(" мажор");
+        summaryGlobalFunction = ru("Функция в обороте: ")
+            + (cachedSituation.incompleteCadence.positionIndex == 0
+                ? ru("Субдоминанта") : ru("Доминанта"));
         summaryLocal.clear();
     }
 
@@ -1484,7 +1500,7 @@ void SmartImproviserARAEditor::paint(juce::Graphics& g)
                24, 47, getWidth() - 48, 22, juce::Justification::centredLeft);
 
     g.setColour(juce::Colour::fromRGB(42, 46, 53));
-    g.fillRoundedRectangle(24.0f, 82.0f, static_cast<float>(getWidth() - 48), 388.0f, 8.0f);
+    g.fillRoundedRectangle(24.0f, 82.0f, static_cast<float>(getWidth() - 48), 246.0f, 8.0f);
     const int columnX = getWidth() / 2;
     const int leftWidth = columnX - 64;
 
@@ -1511,7 +1527,7 @@ void SmartImproviserARAEditor::paint(juce::Graphics& g)
 
     g.setColour(juce::Colour::fromRGB(76, 84, 94));
     g.drawLine(static_cast<float>(columnX), 99.0f,
-               static_cast<float>(columnX), 454.0f);
+               static_cast<float>(columnX), 318.0f);
     g.setColour(juce::Colour::fromRGB(207, 215, 227));
     g.setFont(juce::FontOptions(12.0f, juce::Font::bold));
     g.drawText(ru("СПОСОБЫ ОБЫГРЫВАНИЯ"), columnX + 16, 94,

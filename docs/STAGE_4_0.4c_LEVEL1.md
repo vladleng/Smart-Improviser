@@ -27,8 +27,9 @@ context shows the harmonic context on the left and every available material
 in a compact, vertically scrollable column on the right. The former
 "Thinking" line is removed; the source list carries that choice without
 repeating the expected/missing tonic status in each row. Detailed evidence
-remains in the explanation. The column groups rows by their manually assigned
-T1, T2, T3 or unmarked level, preserving Core's order within each group.
+remains in the explanation. The column orders rows by manually assigned
+T1, T2, T3, then unmarked; colored circles and fine separators distinguish
+groups without taking a row for a heading. The panel height is reduced.
 Selecting a row updates staff, fretboard and explanation together with
 seek/PLAY/STOP. A separate circle beside each row opens a colored menu for a
 **manual** T1/T2/T3 label or no label. The manual label never reclassifies Core
@@ -36,6 +37,23 @@ evidence, changes the source, or declares a tonic; unmarked is the default.
 These UI labels and window dimensions are saved in the plugin instance's host
 state and restored when the host restores the plugin. This is not a saved Song
 workspace. Core's T2/T3 algorithms remain for later checkpoints.
+
+Manual labels now use a transposition-independent key: the Core source rule,
+source-root interval over the written chord, chord quality/tones/slash bass and
+harmonic role. Thus equivalent major ii–V contexts, including completed and
+incomplete turns and local key changes, share a label without assigning the
+same label to unrelated dominant or minor situations. This affects new labels;
+old per-chord keys in existing host state are harmless but cannot be inferred
+as general preferences. The four-note T1 m6 remains a separate Core subset of
+the full seven-note melodic minor. When both have the same root, the compact
+UI displays the full source once; its details still describe source notes and
+Core keeps the four-tone safety contract.
+
+In an incomplete ordinary major ii–V, Core no longer offers a parallel-minor
+modal candidate solely from the ii chord. It provides provisional Dorian on
+ii and Mixolydian on V; the global key and any unconfirmed SubV hypothesis are
+kept for diagnostics, not the compact playing function. The actual next chord
+remains the only factual target.
 
 The editor window can be resized within fixed bounds; fonts, controls and
 noteheads retain their pixel size as available space changes. The fretboard
@@ -50,16 +68,25 @@ root. This checkpoint does not add rhythm, phrase entry or song persistence.
 Fm7–B♭7–Em7 with missing I, candidate ii–V with unknown future, isolated
 dominant with unknown future, Dm7/Cmaj7 natural 9, passing major 4, sus,
 preserved ambiguous context and the viewer's chord/source split.
+The incomplete-turn regression also checks that C minor is not inferred from
+Fm7 in this explicit ii–V and that F Dorian remains available. Relative manual
+keys are compared across all twelve transpositions and completed/incomplete
+turns.
 `FretboardLayoutTests` checks nut/0/1 geometry and Roman markers. All previous test
 suites and Windows CTest must pass. The Windows workflow packages
 `Smart-Improviser-0.4c-Windows` VST3.
 
 Studio Pro live check: install the VST3; confirm version `0.4c`. At
-G7→Cmaj7, select Dm6 and compare four source notes D F A B and G in the chord
-layer. For Fm7–B♭7–Em7, confirm provisional Fm6 without E♭ as a played tonic
-or target. Check G7b9 and G7#5 do not offer ordinary Dm6. Assign and clear
+G7→Cmaj7, select D melodic minor and compare its full seven-note source with
+the written G chord layer; Core's four-note Dm6 subset remains covered by
+`TensionLevel1Tests`, without a duplicate list row. For Fm7–B♭7–Em7, confirm
+F Dorian on ii, a provisional major-V palette on B♭7 without E♭ as a played
+tonic or target, and no C-minor reading. Check G7b9 and G7#5 do not offer
+ordinary Dm6. Assign and clear
 colored labels to two rows, seek away/back and save/reopen the Studio Pro
-project. Resize the editor; compare fixed text/notehead size. In ranges 0–12,
+project. Confirm that equivalent ii–V turns in another key inherit the labels,
+that Fm6 is not repeated next to F melodic minor, and that the compact panel
+has no group headings. Resize the editor; compare fixed text/notehead size. In ranges 0–12,
 5–17 and 12–24, check the nut and Roman positions. Seek and PLAY/STOP should
 keep selected text, staff and fretboard synchronized. Acceptance remains
 pending Vlad's live confirmation.

@@ -46,6 +46,7 @@ private:
     void openTensionMenu(int index, const juce::MouseEvent& event);
     void rebuildStrategyRows();
     int rowForMaterial(int index) const;
+    bool redundantSixStructure(int index) const;
     std::string tensionKey(int index) const;
     int manualTension(int index) const;
 

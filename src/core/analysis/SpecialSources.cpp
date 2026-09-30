@@ -312,6 +312,15 @@ void addSpecialSources(ImprovisationResult& result)
         }
         else if (chord.quality == ChordQuality::minor)
         {
+            if (situation.incompleteCadence.valid
+                && situation.incompleteCadence.positionIndex == 0
+                && chord.rootPitchClass == situation.incompleteCadence.ii.rootPitchClass)
+            {
+                // A melodic-minor overlay on the written ii is optional chord
+                // color, not evidence for the global project's parallel mode.
+                if (index == 0) append(result, minor, -1, false, false, true);
+                continue;
+            }
             // Native m6 / m(maj7), or a visibly conditional overlay on m7.
             // Avoid automatic Am6 color for a plain relative vi in major.
             const auto& global = situation.globalKey;
