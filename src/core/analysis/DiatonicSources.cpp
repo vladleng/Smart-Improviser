@@ -174,6 +174,68 @@ bool appendForInterpretation(ImprovisationResult& result, int index)
     result.strategies.push_back(std::move(strategy));
     return true;
 }
+
+bool appendIncompleteDominant(ImprovisationResult& result)
+{
+    const auto& situation = result.context;
+    const auto& incomplete = situation.incompleteCadence;
+    const auto& chord = situation.currentChord;
+    const auto& mixolydian = modes[4];
+    if (! incomplete.valid || incomplete.positionIndex != 1
+        || ! situation.nextChordAvailable || ! incomplete.actualContinuation.valid
+        || situation.resolution.confirmed || chord.quality != ChordQuality::dominant
+        || chord.rootPitchClass != incomplete.v.rootPitchClass
+        || (chord.rootPitchClass + 5) % 12
+            != circleOfFifthsToPitchClass(incomplete.missingTonicRootFifths)
+        || ! containsChord(mixolydian, chord))
+        return false;
+
+    // Apply the existing major-V source to the already recognized incomplete
+    // ii-V. This is a material hypothesis, not a new local key or resolution.
+    auto strategy = result.strategies.front();
+    strategy.kind = ImprovisationStrategyKind::diatonicColor;
+    strategy.ruleId = mixolydian.rule;
+    strategy.ruleVersion = 3;
+    strategy.priority = 45;
+    strategy.interpretationIndex = -1;
+    strategy.interpretationIndependent = false;
+    strategy.missingTonicApplication = true;
+    strategy.missingTonicRootFifths = incomplete.missingTonicRootFifths;
+    strategy.evidence = {};
+    strategy.evidence.confidence = ConfidenceLevel::low;
+    strategy.evidence.add(EvidenceFlag::patternMatch);
+    strategy.source = {};
+    strategy.source.kind = MaterialKind::scale;
+    strategy.source.mode = mixolydian.mode;
+    strategy.source.rootPitchClass = chord.rootPitchClass;
+    strategy.source.rootFifths = chord.rootFifths;
+    strategy.source.name = spell(chord.rootFifths, 1, chord.rootPitchClass) + " " + mixolydian.name;
+    for (int degree = 1; degree <= 7; ++degree)
+    {
+        const int interval = mixolydian.intervals[static_cast<std::size_t>(degree - 1)];
+        MaterialNote note;
+        note.pitchClass = (chord.rootPitchClass + interval) % 12;
+        note.semitonesFromRoot = interval;
+        note.degree = degree;
+        note.role = MaterialNoteRole::scaleTone;
+        for (const auto& anchor : result.strategies.front().source.notes)
+            if (anchor.pitchClass == note.pitchClass)
+            {
+                note.role = anchor.role;
+                note.characteristic = anchor.characteristic;
+                break;
+            }
+        note.spelling = spell(chord.rootFifths, degree, note.pitchClass);
+        strategy.source.notes.push_back(std::move(note));
+    }
+    strategy.source.chordRelativeNotes = strategy.source.notes;
+    strategy.idea = "Connect the chord anchors using " + strategy.source.name + ".";
+    strategy.explanation = "Major-V material on an incomplete ii-V; the expected I did not sound.";
+    strategy.conditions = "The absent I is a source hypothesis only. Follow the actual next chord; no major resolution is confirmed.";
+    strategy.usageHint = "Use chord anchors and targets; the expected I is missing.";
+    result.strategies.push_back(std::move(strategy));
+    return true;
+}
 }
 
 void addDiatonicSource(ImprovisationResult& result)
@@ -185,6 +247,7 @@ void addDiatonicSource(ImprovisationResult& result)
     bool added = false;
     for (std::uint8_t i = 0; i < situation.interpretationCount; ++i)
         added = appendForInterpretation(result, static_cast<int>(i)) || added;
+    added = appendIncompleteDominant(result) || added;
 
     if (added)
     {

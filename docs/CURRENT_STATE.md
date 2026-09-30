@@ -1,6 +1,6 @@
 # Smart Improviser — Current State
 
-> Обновлено 2026-09-29: Stage 3 принят, текущая stable — `0.4`. Следующий Stage 4 начинается с визуализации нот `0.4a`, затем Tension Engine; Song workspace и редактор остаются Stage 7–8.
+> Обновлено 2026-09-30: Stage 3 принят, текущая stable — `0.4`. `0.4a upd1` добавляет ограниченные правила Левина к viewer/Core и ожидает Windows CI и live-тест Studio Pro; Tension Engine начинается позже. Song workspace и редактор остаются Stage 7–8.
 
 > Короткая точка входа для нового чата или рабочей сессии. Подробная архитектура — в `PROJECT_CONTEXT.md`, этапы — в `ROADMAP.md`, правила версий — в `VERSIONING.md`, фактический прогресс — в GitHub Issues.
 

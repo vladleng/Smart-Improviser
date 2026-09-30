@@ -29,23 +29,29 @@ struct Rule
     // Chord-relative pitch intervals; zero means a non-member, otherwise a degree.
     std::array<int, 12> degrees;
     int omittedInterval;
-    bool diminished = false;
+    enum class Form { melodicMinor, wholeHalf, halfWhole, wholeTone } form = Form::melodicMinor;
 };
 const Rule minor {"boyko.melodic-minor.root", ImprovisationStrategyKind::melodicMinorApplication, 0,
-    "Minor melodic color", "Boyko, section 2, pp. 88-89, 121", "Major 7th on m7: passing to root, not an anchor.",
-    {1,0,9,3,0,11,0,5,0,13,0,7}, 10};
+    "Minor melodic color", "Levine, chapter 4, pp. 88-90; Boyko, section 2, pp. 88-89", "Use on an explicit minor-sixth or minor-major-seventh chord; preserve the written seventh.",
+    {1,0,9,3,0,11,0,5,0,13,0,7}, -1};
 const Rule halfDim {"boyko.melodic-minor.bIII", ImprovisationStrategyKind::melodicMinorApplication, -3,
-    "Locrian natural 2", "Boyko, section 2, pp. 92-93, 121", "Natural 9 color; keep b3, b5 and b7 anchors.",
+    "Locrian natural 2", "Levine, chapter 4, pp. 101-103; Boyko, section 2, pp. 92-93", "Natural 9 color; keep b3, b5 and b7 anchors.",
     {1,0,9,3,0,11,5,0,13,0,7,0}, -1};
 const Rule lydian {"boyko.melodic-minor.V", ImprovisationStrategyKind::lydianDominantColor, 1,
-    "Lydian dominant", "Boyko, section 2, pp. 96-97, 121", "#11 color; resolve to the shown target.",
+    "Lydian dominant", "Levine, chapter 4, pp. 96-100; Boyko, section 2, pp. 96-97", "#11 color; resolve to the shown target.",
     {1,0,9,0,3,0,11,5,0,13,7,0}, -1};
 const Rule altered {"boyko.melodic-minor.bII", ImprovisationStrategyKind::alteredDominant, -5,
-    "Altered dominant", "Boyko, section 2, pp. 101-102, 121", "b9/#9/b5/b13; omit natural 5 in this line.",
+    "Altered dominant", "Levine, chapter 4, pp. 104-106; Boyko, section 2, pp. 101-102", "b9/#9/b5/b13; omit natural 5 in this line.",
     {1,9,0,9,3,0,5,0,13,0,7,0}, 7};
 const Rule diminished {"boyko.diminished.whole-half", ImprovisationStrategyKind::diminishedApplication, 0,
-    "Diminished whole-half", "Boyko, section 2, p. 112, example 176", "Whole-half on dim7; follow the actual next chord.",
-    {1,0,9,3,0,11,5,0,13,7,0,7}, -1, true};
+    "Diminished whole-half", "Levine, chapter 5, pp. 112-124; Boyko, section 2, p. 112", "Whole-half on dim7; follow the actual next chord.",
+    {1,0,9,3,0,11,5,0,13,7,0,7}, -1, Rule::Form::wholeHalf};
+const Rule dominantDiminished {"levine.dominant.half-whole", ImprovisationStrategyKind::diminishedDominant, 0,
+    "Dominant half-whole diminished", "Levine, chapter 5, pp. 112-124", "Use for an explicit dominant b9; #9 and #11 are colors, not mandatory landing notes.",
+    {1,9,0,9,3,0,11,5,0,13,7,0}, -1, Rule::Form::halfWhole};
+const Rule wholeTone {"levine.dominant.whole-tone", ImprovisationStrategyKind::wholeToneDominant, 0,
+    "Dominant whole-tone", "Levine, chapter 5, pp. 124-127", "Use for an explicit augmented dominant; the natural fifth is absent.",
+    {1,0,9,0,3,0,11,0,5,0,7,0}, -1, Rule::Form::wholeTone};
 
 bool compatible(const Rule& rule, const NormalizedChord& chord)
 {
@@ -86,14 +92,14 @@ int functionalSubVRootFifths(const ImprovisationResult& result, const Normalized
         ? candidate : chord.rootFifths;
 }
 
-void append(ImprovisationResult& result, const Rule& rule, int index, bool subV = false)
+void append(ImprovisationResult& result, const Rule& rule, int index,
+            bool subV = false, bool missingTonic = false)
 {
     const auto& chord = result.context.currentChord;
     if (!compatible(rule, chord)) return;
-    if (index < 0 || index >= result.context.interpretationCount
-        || static_cast<std::size_t>(index) >= result.context.interpretations.size()) return;
-    const auto& interpretation = result.context.interpretations[static_cast<std::size_t>(index)];
-    if (!interpretation.valid) return;
+    if (! missingTonic && (index < 0 || index >= result.context.interpretationCount
+        || static_cast<std::size_t>(index) >= result.context.interpretations.size()
+        || ! result.context.interpretations[static_cast<std::size_t>(index)].valid)) return;
 
     auto strategy = result.strategies.front();
     const auto chordSpellingFifths = subV ? functionalSubVRootFifths(result, chord) : chord.rootFifths;
@@ -106,39 +112,67 @@ void append(ImprovisationResult& result, const Rule& rule, int index, bool subV 
     }
     strategy.kind = rule.kind;
     strategy.ruleId = subV ? "project.subv.melodic-minor.V" : rule.id;
-    strategy.ruleVersion = subV ? 3 : 2;
+    strategy.ruleVersion = 3;
     strategy.priority = 40; // Catalog/recommendation order, never harmonic confidence.
     strategy.interpretationIndependent = false;
-    strategy.interpretationIndex = index;
-    strategy.evidence = interpretation.evidence;
+    strategy.interpretationIndex = missingTonic ? -1 : index;
+    strategy.missingTonicApplication = missingTonic;
+    if (missingTonic)
+    {
+        strategy.missingTonicRootFifths = result.context.incompleteCadence.missingTonicRootFifths;
+        strategy.evidence = {};
+        strategy.evidence.confidence = ConfidenceLevel::low;
+        strategy.evidence.add(EvidenceFlag::patternMatch);
+    }
+    else strategy.evidence = result.context.interpretations[static_cast<std::size_t>(index)].evidence;
     strategy.source = {};
     strategy.source.kind = MaterialKind::scale;
     strategy.source.rootFifths = chordSpellingFifths + rule.sourceFifthsOffset;
     strategy.source.rootPitchClass = circleOfFifthsToPitchClass(strategy.source.rootFifths);
-    strategy.source.name = spell(strategy.source.rootFifths, 1, strategy.source.rootPitchClass)
-        + (rule.diminished ? " whole-half diminished" : " melodic minor");
+    const auto rootName = spell(strategy.source.rootFifths, 1, strategy.source.rootPitchClass);
+    switch (rule.form)
+    {
+        case Rule::Form::melodicMinor: strategy.source.name = rootName + " melodic minor"; break;
+        case Rule::Form::wholeHalf: strategy.source.name = rootName + " whole-half diminished"; break;
+        case Rule::Form::halfWhole: strategy.source.name = rootName + " half-whole diminished"; break;
+        case Rule::Form::wholeTone: strategy.source.name = rootName + " whole-tone"; break;
+    }
     strategy.characteristicNotes.clear();
     strategy.sourceReference = rule.reference;
     if (subV) strategy.sourceReference += "; SubV context application: project rule, not a quoted author rule";
     strategy.usageHint = rule.hint;
     strategy.idea = rule.application;
     strategy.explanation = strategy.sourceReference;
-    strategy.conditions = "Use with harmonic interpretation " + std::to_string(index + 1)
-        + "; source root is not a song key. ";
+    strategy.conditions = missingTonic
+        ? "Incomplete ii-V: the expected major I did not sound; source root is not an established key. "
+        : "Use with harmonic interpretation " + std::to_string(index + 1)
+            + "; source root is not a song key. ";
     strategy.conditions += rule.hint;
     if (rule.omittedInterval >= 0 && chord.hasTone(rule.omittedInterval))
         strategy.omittedChordTones.push_back(wrap(chord.rootPitchClass + rule.omittedInterval));
-    if (rule.omittedInterval == 10 && !chord.hasTone(10))
-        strategy.usageHint = "Melodic minor color; keep the actual chord anchors.";
     constexpr int melodic[] = {0,2,3,5,7,9,11};
     constexpr int wholeHalf[] = {0,2,3,5,6,8,9,11};
     constexpr int wholeHalfDegrees[] = {1,2,3,4,5,6,7,7};
-    const int count = rule.diminished ? 8 : 7;
+    constexpr int halfWhole[] = {0,1,3,4,6,7,9,10};
+    constexpr int wholeToneIntervals[] = {0,2,4,6,8,10};
+    const int count = rule.form == Rule::Form::wholeHalf || rule.form == Rule::Form::halfWhole ? 8
+        : rule.form == Rule::Form::wholeTone ? 6 : 7;
     for (int i = 0; i < count; ++i)
     {
         MaterialNote note;
-        note.semitonesFromRoot = rule.diminished ? wholeHalf[i] : melodic[i];
-        note.degree = rule.diminished ? wholeHalfDegrees[i] : i + 1;
+        switch (rule.form)
+        {
+            case Rule::Form::melodicMinor:
+                note.semitonesFromRoot = melodic[i]; note.degree = i + 1; break;
+            case Rule::Form::wholeHalf:
+                note.semitonesFromRoot = wholeHalf[i]; note.degree = wholeHalfDegrees[i]; break;
+            case Rule::Form::halfWhole:
+                note.semitonesFromRoot = halfWhole[i];
+                note.degree = rule.degrees[static_cast<std::size_t>(halfWhole[i])]; break;
+            case Rule::Form::wholeTone:
+                note.semitonesFromRoot = wholeToneIntervals[i];
+                note.degree = rule.degrees[static_cast<std::size_t>(wholeToneIntervals[i])]; break;
+        }
         note.pitchClass = wrap(strategy.source.rootPitchClass + note.semitonesFromRoot);
         note.spelling = spell(strategy.source.rootFifths, note.degree, note.pitchClass);
         const int relative = wrap(note.pitchClass - chord.rootPitchClass);
@@ -146,8 +180,6 @@ void append(ImprovisationResult& result, const Rule& rule, int index, bool subV 
         note.characteristic = !chord.hasTone(relative);
         for (const auto& guide : strategy.guideNotes)
             if (guide.pitchClass == note.pitchClass) note.role = MaterialNoteRole::guideTone;
-        if (rule.omittedInterval == 10 && chord.hasTone(10) && relative == 11)
-            note.role = MaterialNoteRole::passingTone;
         strategy.source.notes.push_back(note);
         auto chordNote = note;
         chordNote.semitonesFromRoot = relative;
@@ -158,7 +190,7 @@ void append(ImprovisationResult& result, const Rule& rule, int index, bool subV 
         strategy.source.chordRelativeNotes.push_back(chordNote);
         if (note.characteristic) strategy.characteristicNotes.push_back(chordNote);
     }
-    if (!rule.diminished)
+    if (rule.form == Rule::Form::melodicMinor)
     {
         ChordContext thinking;
         thinking.available = thinking.defined = true;
@@ -231,25 +263,40 @@ void addSpecialSources(ImprovisationResult& result)
                 if (result.dominantContext == DominantContext::toMajor || expectedMajor)
                     append(result, lydian, index);
                 append(result, altered, index);
+                if (chord.hasTone(1)) append(result, dominantDiminished, index);
+                if (chord.hasAlteration(ChordAlteration::sharpFifth) && ! chord.hasTone(7))
+                    append(result, wholeTone, index);
             }
         }
         else if (chord.quality == ChordQuality::minor)
         {
-            // A diatonic vi in its explicit global major key is the relative
-            // minor, not an automatic melodic-minor tonicization or Am6.
-            const auto& global = situation.globalKey;
-            const bool relativeMinor = global.valid && global.key.mode == KeyMode::major
-                && interpretation.kind == HarmonicInterpretationKind::globalContext
-                && interpretation.center.key.rootPitchClass == global.key.rootPitchClass
-                && chord.rootPitchClass
-                    == circleOfFifthsToPitchClass(global.key.rootFifths + 3);
-            if (! relativeMinor || chord.hasTone(9) || chord.hasTone(11))
+            // Levine treats melodic minor as the native minor-major sound.
+            // An ordinary m7's explicit b7 is not silently replaced with 7;
+            // an explicit m6 or m(maj7) is enough, including a relative vi.
+            if (! chord.hasTone(10) && (chord.hasTone(9) || chord.hasTone(11)))
                 append(result, minor, index);
         }
         else if (chord.quality == ChordQuality::halfDiminished)
             append(result, halfDim, index);
         else if (chord.quality == ChordQuality::diminished && chord.hasTone(9))
             append(result, diminished, index);
+    }
+
+    const auto& incomplete = situation.incompleteCadence;
+    if (incomplete.valid && incomplete.positionIndex == 1
+        && incomplete.actualContinuation.valid && situation.nextChordAvailable
+        && ! situation.resolution.confirmed && chord.quality == ChordQuality::dominant
+        && chord.rootPitchClass == incomplete.v.rootPitchClass
+        && (chord.rootPitchClass + 5) % 12
+            == circleOfFifthsToPitchClass(incomplete.missingTonicRootFifths))
+    {
+        // Same established catalog as V -> major, but with explicitly
+        // provisional provenance and the real next chord retained as target.
+        append(result, lydian, -1, false, true);
+        append(result, altered, -1, false, true);
+        if (chord.hasTone(1)) append(result, dominantDiminished, -1, false, true);
+        if (chord.hasAlteration(ChordAlteration::sharpFifth) && ! chord.hasTone(7))
+            append(result, wholeTone, -1, false, true);
     }
 }
 }

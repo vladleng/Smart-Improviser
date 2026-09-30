@@ -1,5 +1,6 @@
 #include "core/analysis/ImprovisationEngine.h"
 #include "core/analysis/HarmonicEngine.h"
+#include "core/analysis/MaterialViewer.h"
 
 #include <cstdlib>
 #include <initializer_list>
@@ -197,18 +198,63 @@ int main()
     auto situation = withSelectedCenter(makeKey(-1,false),makeChord(1,{0,3,7,10}));
     result = analyzeImprovisation(situation);
     auto min = rule(result,"boyko.melodic-minor.root");
-    expect(min && min->source.name == "G melodic minor","minor root source");
-    expect(min->source.notes.back().role == MaterialNoteRole::passingTone && min->source.notes.back().spelling == "F#","major seventh on m7 is passing");
-    expect(min->omittedChordTones.size()==1 && min->omittedChordTones[0]==5,"m7 foundation F explicitly separate from melodic source");
+    expect(!min,"written Gm7 is not silently converted into melodic minor");
     expect(result.strategies.front().source.notes.back().pitchClass==5,"foundation not rewritten");
+    situation = withSelectedCenter(makeKey(-1,false),makeChord(1,{0,3,7,11}));
+    result = analyzeImprovisation(situation);
+    min = rule(result,"boyko.melodic-minor.root");
+    expect(min && min->source.name == "G melodic minor","explicit Gm(maj7) gets minor melodic source");
+    expect(normalizedChordSymbol(result.context.currentChord)=="Gm(maj7)","minor-major seventh symbol preserves written quality");
+    expect(min->source.notes.back().spelling == "F#" && min->omittedChordTones.empty(),"major seventh is explicit chord tone");
     const auto relativeVi = withSelectedCenter(key, makeChord(3,{0,3,7,10}));
     expect(!rule(analyzeImprovisation(relativeVi),"boyko.melodic-minor.root"),
            "diatonic Am7 in C major does not suggest Am6 automatically");
     const auto explicitAm6 = withSelectedCenter(key, makeChord(3,{0,3,7,9}));
     expect(rule(analyzeImprovisation(explicitAm6),"boyko.melodic-minor.root"),
            "an explicitly written Am6 retains compatible melodic minor color");
-    situation.currentChord.degrees[10]=9;
+    situation = withSelectedCenter(makeKey(-1,false),makeChord(1,{0,3,7,9}));
+    situation.currentChord.degrees[9]=7;
     expect(!rule(analyzeImprovisation(situation),"boyko.melodic-minor.root"),"omission does not hide wrong explicit degree");
+    // Levine distinguishes dominant half-whole from whole-half on dim7,
+    // and whole-tone from the melodic-minor Lydian dominant application.
+    snapshot = makeSnapshot(key,makeChord(2,{0,3,7,10}),makeChord(1,{0,1,4,7,10}),makeChord(0,{0,4,7,11}));
+    result = analyzeImprovisation(analyzeHarmonicSituation(snapshot));
+    const auto* domDim = rule(result,"levine.dominant.half-whole");
+    expect(domDim && domDim->source.name=="G half-whole diminished" && !domDim->tensionClassified,
+           "explicit G7b9 receives unclassified half-whole source");
+    expectPitches(domDim->source,{7,8,10,11,1,2,4,5});
+    expect(domDim->source.notes[2].spelling=="A#" && domDim->source.notes[4].spelling=="C#",
+           "dominant #9/#11 spelling is chord-relative");
+    MaterialView dimView;
+    bool projectedHalfWhole = false;
+    const auto dimExplanation = buildExplanation(result);
+    for (std::size_t i=0;i<dimExplanation.items.size();++i)
+        if (dimExplanation.items[i].source.name=="G half-whole diminished")
+        {
+            dimView=buildMaterialView(result,dimExplanation,i);
+            projectedHalfWhole=true;
+        }
+    expect(projectedHalfWhole && dimView.valid && dimView.targets.size()==4
+           && dimView.current.size()==8 && dimView.current[2].spelling=="A#",
+           "viewer receives eight named tones and the actual next-chord targets");
+    snapshot.currentChord=makeChord(1,{0,4,7,10});
+    expect(!rule(analyzeImprovisation(analyzeHarmonicSituation(snapshot)),"levine.dominant.half-whole"),
+           "unqualified G7 is not automatically G7b9");
+    snapshot.currentChord=makeChord(1,{0,4,8,10});
+    result=analyzeImprovisation(analyzeHarmonicSituation(snapshot));
+    const auto* wt = rule(result,"levine.dominant.whole-tone");
+    expect(wt && wt->source.name=="G whole-tone" && !wt->tensionClassified,
+           "explicit G7#5 receives unclassified whole-tone source");
+    expectPitches(wt->source,{7,9,11,1,3,5});
+    expect(wt->source.notes[4].spelling=="D#" && wt->source.notes[3].spelling=="C#",
+           "whole-tone spells #5 and #11 over G7");
+    snapshot.currentChord=makeChord(1,{0,4,7,8,10});
+    expect(!rule(analyzeImprovisation(analyzeHarmonicSituation(snapshot)),"levine.dominant.whole-tone"),
+           "explicit natural fifth blocks whole-tone source");
+    snapshot.currentChord=makeChord(1,{0,4,8,10});
+    snapshot.nextChord=makeChord(0,{0,4,7,10});
+    expect(!rule(analyzeImprovisation(analyzeHarmonicSituation(snapshot)),"levine.dominant.whole-tone"),
+           "dominant chain does not invent major tonic");
     situation = withSelectedCenter(key,makeChord(4,{0,3,6,10}));
     result = analyzeImprovisation(situation);
     auto half = rule(result,"boyko.melodic-minor.bIII");

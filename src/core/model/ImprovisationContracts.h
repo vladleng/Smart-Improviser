@@ -29,7 +29,8 @@ enum class ImprovisationStrategyKind : std::uint8_t
     tritoneSuperimposition,
     chromaticEnclosure,
     sideSlipOutside,
-    diminishedApplication
+    diminishedApplication,
+    wholeToneDominant
 };
 
 enum class PhraseRole : std::uint8_t
@@ -83,6 +84,8 @@ struct ImprovisationStrategy
     int priority = 0; // Higher first; ties resolved by ruleId.
     int interpretationIndex = -1; // -1: no selected interpretation.
     bool interpretationIndependent = false;
+    bool missingTonicApplication = false; // Source for the V of a descriptive, incomplete ii-V.
+    int missingTonicRootFifths = 0; // Expected only; never a confirmed target/key.
     bool tensionClassified = false; // Stage 4 policy; default enum is not a claim.
     NormalizedChord actualChord;
     NormalizedChord thinkingStructure;
