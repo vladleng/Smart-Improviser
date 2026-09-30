@@ -23,7 +23,12 @@ five selected stable notes. This is Smart Improviser's own T1 policy, not a
 T1 label in Levine's book.
 
 The viewer offers T1 items alongside the original Core material. The current
-context lists every available material in a vertically scrollable column.
+context shows the harmonic context on the left and every available material
+in a compact, vertically scrollable column on the right. The former
+"Thinking" line is removed; the source list carries that choice without
+repeating the expected/missing tonic status in each row. Detailed evidence
+remains in the explanation. The column groups rows by their manually assigned
+T1, T2, T3 or unmarked level, preserving Core's order within each group.
 Selecting a row updates staff, fretboard and explanation together with
 seek/PLAY/STOP. A separate circle beside each row opens a colored menu for a
 **manual** T1/T2/T3 label or no label. The manual label never reclassifies Core

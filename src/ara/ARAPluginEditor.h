@@ -7,6 +7,7 @@
 #include "ara/MaterialViewerComponent.h"
 
 #include <string>
+#include <vector>
 
 class SmartImproviserARAProcessor;
 
@@ -43,6 +44,8 @@ private:
     void selectedRowsChanged(int row) override;
     void selectMaterial(int index);
     void openTensionMenu(int index, const juce::MouseEvent& event);
+    void rebuildStrategyRows();
+    int rowForMaterial(int index) const;
     std::string tensionKey(int index) const;
     int manualTension(int index) const;
 
@@ -53,6 +56,8 @@ private:
     smartimproviser::harmony::ExplanationResult cachedExplanation;
     juce::String selectedMaterialKey;
     juce::StringArray strategyLabels;
+    struct StrategyRow { int materialIndex; int level; };
+    std::vector<StrategyRow> strategyRows;
     int selectedMaterialIndex = -1;
     bool updatingSelector = false;
 
@@ -60,10 +65,10 @@ private:
 
     juce::String summaryContext;
     juce::String summaryMeta;
+    juce::String summaryGlobalFunction;
     juce::String summaryLocal;
     juce::String summaryPattern;
     juce::AttributedString summaryPatternDisplay;
-    juce::String summaryThinking;
     juce::String materialText;
     juce::String sourcesText;
     juce::String harmonicText;
