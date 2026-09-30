@@ -123,6 +123,12 @@ juce::String localizeGeneratedText(juce::String text)
     text = text.replace("Diminished whole-half", ru("Уменьшённая тон–полутон"));
     text = text.replace("Dominant half-whole diminished", ru("Доминантовая уменьшённая полутон–тон"));
     text = text.replace("Dominant whole-tone", ru("Доминантовая целотоновая"));
+    text = text.replace("Harmonic-minor V fragment", ru("Фрагмент гармонического минора на V"));
+    text = text.replace("Rare fifth-mode melodic-minor color", ru("Редкий цвет пятого лада мелодического минора"));
+    text = text.replace("Rare conditional color on written b13: 11 and b13 can clash when sustained. It does not imply a minor next chord; follow the actual target.",
+                        ru("Редкий условный цвет на записанной ♭13: удержанные 11 и ♭13 могут конфликтовать. Качество цели определяется следующим аккордом."));
+    text = text.replace("Six-note V fragment for confirmed minor resolution and written b9 or b13; omit 11, and treat b13 as a passing color unless supported by the melody.",
+                        ru("Шестизвучный фрагмент V при подтверждённой минорной цели и записанной ♭9 или ♭13; 11 опущена, ♭13 — проходящая краска без подтверждения мелодией."));
     text = text.replace("Chord-local Mixolydian on the written dominant.",
                         ru("Миксолидийский лад от написанной доминанты, без вывода тоники."));
     text = text.replace("Chord-local source; use written guides and actual next-chord targets.",
@@ -147,6 +153,7 @@ juce::String localizeGeneratedText(juce::String text)
     text = text.replace(" whole-half diminished", ru(" уменьшённая (тон–полутон)"));
     text = text.replace(" half-whole diminished", ru(" уменьшённая (полутон–тон)"));
     text = text.replace(" whole-tone", ru(" целотоновая"));
+    text = text.replace(" harmonic-minor V fragment", ru(" фрагмент V гармонического минора"));
 
     text = text.replace("Material on ", ru("Материал на "));
     text = text.replace(" [passing]", ru(" [проходящая]"));
@@ -313,6 +320,7 @@ juce::String patternName(smartimproviser::harmony::HarmonicPatternType type)
         case HarmonicPatternType::none: return ru("Нет");
         case HarmonicPatternType::majorIiVI: return ru("Мажорный ii-V-I");
         case HarmonicPatternType::minorIiHalfDimVi: return ru("Минорный iiø-V-i");
+        case HarmonicPatternType::halfDiminishedIiViMajor: return ru("iiø–V–I в мажорную цель");
         case HarmonicPatternType::minorIvVi: return ru("Минорный iv-V-i");
         case HarmonicPatternType::dominantToTonic: return "V-I";
         case HarmonicPatternType::turnaroundIVIiiV: return "I-VI-ii-V";
@@ -340,6 +348,7 @@ juce::String summaryPatternName(smartimproviser::harmony::HarmonicPatternType ty
     {
         case HarmonicPatternType::majorIiVI: return ru("II–V–I");
         case HarmonicPatternType::minorIiHalfDimVi: return ru("IIø–V–I");
+        case HarmonicPatternType::halfDiminishedIiViMajor: return ru("IIø–V–Imaj");
         case HarmonicPatternType::minorIvVi: return ru("IV–V–I");
         case HarmonicPatternType::dominantToTonic: return ru("V–I");
         case HarmonicPatternType::turnaroundIVIiiV: return ru("I–VI–II–V");

@@ -163,12 +163,29 @@ int main()
     alt = rule(result,"boyko.melodic-minor.bII");
     expect(alt && !rule(result,"boyko.melodic-minor.V") && !scale(result),"minor target gets altered, not major-only source");
     expect(alt->targetNotes[1].pitchClass == 3 && alt->resolution.targetQuality == ChordQuality::minor,"actual Eb minor target");
-    expect(rule(result,"project.melodic-minor.minor-V-b13"),
-           "minor-target V has a compatible melodic-minor fifth-mode option");
+    expect(!rule(result,"project.melodic-minor.minor-V-b13")
+           && !rule(result,"levine.harmonic-minor.minor-V-fragment"),
+           "plain V-to-minor does not promote rare fifth mode or harmonic-minor fragment");
     // An explicit b9 is retained; a natural 9 or 13 cannot disappear into altered.
     snapshot.currentChord = makeChord(1,{0,1,4,7,10});
+    snapshot.currentChord.intervals.values[1] = 9;
     result = analyzeImprovisation(analyzeHarmonicSituation(snapshot));
     expect(rule(result,"boyko.melodic-minor.bII"),"b9 compatible with altered");
+    const auto fragment = rule(result,"levine.harmonic-minor.minor-V-fragment");
+    expect(fragment && fragment->kind == ImprovisationStrategyKind::harmonicMinorFragment
+           && fragment->source.name == "G harmonic-minor V fragment"
+           && result.dominantContext == DominantContext::toMinor,
+           "written G7b9 resolving to Cm offers a six-note Levine V fragment");
+    expectPitches(fragment->source,{7,8,11,2,3,5});
+    expect(fragment->source.notes[1].spelling == "Ab"
+           && fragment->source.notes[4].spelling == "Eb"
+           && fragment->source.chordRelativeNotes[4].spelling == "Eb",
+           "minor V fragment preserves b9 and b13 spelling and omits C11");
+    snapshot.nextChord = makeChord(0,{0,4,7,11});
+    expect(!rule(analyzeImprovisation(analyzeHarmonicSituation(snapshot)),
+                 "levine.harmonic-minor.minor-V-fragment"),
+           "actual major I excludes minor V fragment despite written b9");
+    snapshot.nextChord = makeChord(0,{0,3,7});
     snapshot.currentChord = makeChord(1,{0,2,4,7,10});
     expect(!rule(analyzeImprovisation(analyzeHarmonicSituation(snapshot)),"boyko.melodic-minor.bII"),"explicit natural 9 blocks altered");
     expect(!rule(analyzeImprovisation(analyzeHarmonicSituation(snapshot)),"levine.dominant.half-whole"),
@@ -185,6 +202,15 @@ int main()
     expect(rule(b13,"project.melodic-minor.minor-V-b13")
            && rule(b13,"boyko.melodic-minor.bII"),
            "written b13 still offers compatible fifth-mode and altered choices");
+    expect(rule(b13,"project.melodic-minor.minor-V-b13")->priority <
+               rule(b13,"boyko.melodic-minor.bII")->priority
+           && rule(b13,"levine.harmonic-minor.minor-V-fragment"),
+           "rare fifth mode remains conditional below altered, while minor resolution permits V fragment");
+    snapshot.currentChord.intervals.values[8] = 5;
+    expect(!rule(analyzeImprovisation(analyzeHarmonicSituation(snapshot)),
+                 "levine.harmonic-minor.minor-V-fragment"),
+           "written sharp fifth cannot silently become fragment flat thirteenth");
+    snapshot.currentChord.intervals.values[8] = 13;
     snapshot = makeSnapshot(key,makeChord(4,{0,3,7,10}),makeChord(3,{0,4,7,8,10}),makeChord(2,{0,4,7,10}));
     snapshot.currentChord.intervals.values[8] = 13;
     b13 = analyzeImprovisation(analyzeHarmonicSituation(snapshot));
@@ -195,6 +221,8 @@ int main()
            && b13Mode->nextChord.quality == ChordQuality::dominant
            && rule(b13,"boyko.melodic-minor.bII"),
            "Em7-A7b13-D7 receives chord-local options without inventing D minor");
+    expect(!rule(b13,"levine.harmonic-minor.minor-V-fragment"),
+           "b13 into dominant D7 does not imply D minor harmonic source");
     snapshot = makeSnapshot(key,makeChord(2,{0,3,7,10}),makeChord(1,{0,4,7,10}),makeChord(0,{0,3,7}));
     snapshot.currentChord = makeChord(1,{0,2,4,7,10});
     expect(!rule(analyzeImprovisation(analyzeHarmonicSituation(snapshot)),"project.melodic-minor.bVII-overlay"),

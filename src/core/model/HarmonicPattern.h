@@ -24,7 +24,8 @@ enum class HarmonicPatternType : std::uint8_t
     passingDiminished,
     commonToneDiminished,
     dominantChain,
-    modalVamp
+    modalVamp,
+    halfDiminishedIiViMajor
 };
 
 enum class PatternMemberRole : std::uint8_t

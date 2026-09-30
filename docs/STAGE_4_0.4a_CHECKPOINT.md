@@ -1,4 +1,8 @@
-# 0.4a — Visual Material Viewer (live-test pending)
+# 0.4a — Visual Material Viewer (accepted; upd4 live-test pending)
+
+Vlad accepted the `0.4a` viewer after the `upd3` Studio Pro test on 2026-09-30;
+PR #44 was merged into main. The historical live-check sections below document
+earlier revision gates. `upd4` is a new follow-up and requires its own test.
 
 ## Scope
 
@@ -181,3 +185,31 @@ Live checklist for upd2:
    fretboard, current chord, source label and text must remain synchronized.
 
 `0.4a` still awaits Vlad's live acceptance; stable remains `0.4`.
+
+## 0.4a upd4 — Levine/map alignment (live test pending)
+
+The accepted viewer is unchanged. This revision applies three bounded cases
+from [HARMONIC_THINKING_MAP.md](HARMONIC_THINKING_MAP.md) to the Core result:
+
+- `Dø–G7–Cmaj7` is a distinct confirmed `iiø–V–Imaj`, including when C is
+  local to another project key. `Dø–G7–Cm` remains minor. The actual I chord,
+  not the ii quality, decides the target quality (Levine, pp. 110–111, 299–300).
+- Melodic minor fifth mode is no longer offered on plain `G7→Cm`. For a
+  written `V7b13`, it remains a low-priority, explicitly rare conditional
+  color with a warning about sustained 11 and b13. `A7b13→D7` does not become
+  D minor (Levine, pp. 98–100).
+- On a confirmed `V7b9` or `V7b13` to minor, Core offers a six-note harmonic
+  minor **V fragment**. For `G7b9→Cm`, the displayed notes are
+  `G Ab B D Eb F`; C (11) is deliberately excluded. It is a line fragment,
+  not a seven-note safe scale, and Eb is described as a color requiring
+  melodic context for a sustained note (Levine, pp. 529–531). A major I,
+  unconfirmed future, explicit conflicting extension or slash bass does not
+  gain an invented minor-center version. No T1/T2/T3 is computed.
+
+Live test in Studio Pro: compare `Dø–G7b9–Cmaj7` with
+`Dø–G7b9–Cm7`, then `G7→Cm7`, `G7b13→Cm7` and `Em7–A7b13–D7`.
+Inspect pattern, target quality, source name and written Ab/Eb on staff and
+fretboard, and seek/PLAY/STOP through the progression. The rare fifth mode
+must be labeled conditional; the minor fragment appears only with the real
+minor target. `upd4` requires Vlad's acceptance; Stage 4 Issue #5 remains
+open and stable stays `0.4`.

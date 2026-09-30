@@ -158,6 +158,29 @@ int main()
            && minorIiTonic.pattern.positionIndex == 2,
            "minor ii-half-diminished-V-i keeps 3/3 on tonic");
 
+    const auto cMaj7 = makeChord(0, { 0, 4, 7, 11 }, 8.0);
+    const std::array halfDiminishedToMajor { dHalfDim7, g7, cMaj7 };
+    for (int index = 0; index < 3; ++index)
+    {
+        const auto situation = analyzeWindow(cMajor, halfDiminishedToMajor, index);
+        expect(situation.patternContext.valid
+               && situation.patternContext.topLevel.type == HarmonicPatternType::halfDiminishedIiViMajor
+               && situation.patternContext.topLevel.positionIndex == index
+               && situation.patternContext.center.mode == KeyMode::major,
+               "real major target makes ii-half-diminished-V-Imaj a distinct confirmed cadence");
+    }
+    const auto halfDimFallback = makeSnapshot(cMajor, halfDiminishedToMajor, 1);
+    const auto majorResolution = analyzeHarmonicSituation(halfDimFallback);
+    expect(majorResolution.pattern.type == HarmonicPatternType::halfDiminishedIiViMajor
+           && majorResolution.localPattern.type != HarmonicPatternType::minorIiHalfDimVi,
+           "bounded previous-current-next also preserves actual major target");
+    const auto localMajorResolution = analyzeWindow(fMajor, halfDiminishedToMajor, 1);
+    expect(localMajorResolution.localKey.valid
+           && localMajorResolution.localKey.key.rootPitchClass == 0
+           && localMajorResolution.localKey.key.mode == KeyMode::major
+           && localMajorResolution.localPattern.type == HarmonicPatternType::halfDiminishedIiViMajor,
+           "ii-half-diminished-V-Cmaj establishes local C major over unrelated project key");
+
     const auto fMin7 = makeChord(-1, { 0, 3, 7, 10 }, 0.0);
     const std::array minorIvCadence { fMin7, g7, cMin7 };
     const auto minorIvTonic = analyzeWindow(cMinor, minorIvCadence, 2);

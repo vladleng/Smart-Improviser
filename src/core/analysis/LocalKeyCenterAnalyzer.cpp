@@ -107,7 +107,8 @@ bool isPredominantForRoot(const NormalizedChord& chord,
         return false;
 
     if (mode == KeyMode::major)
-        return chord.quality == ChordQuality::minor;
+        return chord.quality == ChordQuality::minor
+            || chord.quality == ChordQuality::halfDiminished;
     if (mode == KeyMode::minor)
         return chord.quality == ChordQuality::halfDiminished;
     return false;
@@ -275,7 +276,9 @@ void analyzeLocalKeyCenter(HarmonicSituation& situation,
                     ? HarmonicPatternType::minorIvVi
                     : (mode == KeyMode::minor
                         ? HarmonicPatternType::minorIiHalfDimVi
-                        : HarmonicPatternType::majorIiVI));
+                        : situation.previousChord.quality == ChordQuality::halfDiminished
+                            ? HarmonicPatternType::halfDiminishedIiViMajor
+                            : HarmonicPatternType::majorIiVI));
             const auto role = substitute
                 ? PatternMemberRole::substituteDominant
                 : PatternMemberRole::dominant;
