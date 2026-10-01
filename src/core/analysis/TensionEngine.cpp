@@ -95,7 +95,8 @@ TensionCandidate makeNaturalNine(const ImprovisationStrategy& source,
         strategy.source.notes.push_back(note);
         if (i < full.chordRelativeNotes.size())
             strategy.source.chordRelativeNotes.push_back(full.chordRelativeNotes[i]);
-        addRole(candidate, note, anchors.actualChord.hasTone(relative)
+        addRole(candidate, note, (anchors.actualChord.hasTone(relative)
+            || note.role == MaterialNoteRole::bassTone)
             ? (note.role == MaterialNoteRole::guideTone
                 ? TensionRole::guideTone : TensionRole::chordAnchor)
             : TensionRole::stableExtension);

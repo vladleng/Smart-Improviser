@@ -90,3 +90,7 @@
 ## Конкретные идеи 0.3e
 
 [Harmonic concepts](STAGE_3_0.3e_LIVE_TEST.md) связывают принятые источники с применением: chord anchors, guide targeting, contextual 9/11/13 и m6 skeleton. Хроматические подходы/enclosure описаны символическими смещениями от реальной цели, без генерации Phrase. Их форма — правило проекта, не цитата из книги. Подготовительные звуки оцениваются на текущем аккорде, цель отдельно связана с текущим или следующим аккордом. Уровни напряжения не назначаются автоматически.
+
+## Corrections after the 0.4c audit
+
+[STAGE_4_0.4c_FIXES.md](STAGE_4_0.4c_FIXES.md) records implementation fixes; [SOURCE_REFERENCE_CORRECTIONS.md](SOURCE_REFERENCE_CORRECTIONS.md) supersedes incorrect rows of the preliminary generated chart. A half-diminished melodic-minor source starts at ♭III. Levine printed pp. 88–127 are in chapter 3. Full source scales and classified four-note T1 structures remain separate, accessible through one compact row.

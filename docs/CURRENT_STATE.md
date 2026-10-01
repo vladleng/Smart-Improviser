@@ -1,4 +1,4 @@
-> Debugging: `0.4c-fix1` restores full accompaniment and separates the T1 subset from its full source; live acceptance pending. See [STAGE_4_0.4c_FIXES.md](STAGE_4_0.4c_FIXES.md).
+> Debugging: `0.4c-fix2` includes fix1 accompaniment/selection corrections and completes explanation/source-reference corrections; live acceptance pending. See [STAGE_4_0.4c_FIXES.md](STAGE_4_0.4c_FIXES.md).
 
 # Smart Improviser — Current State
 

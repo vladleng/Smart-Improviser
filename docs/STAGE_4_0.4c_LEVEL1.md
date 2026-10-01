@@ -1,5 +1,7 @@
 # 0.4c — Level 1 / Stable (live test pending)
 
+`0.4c-fix2` includes the accompaniment, source grouping, T1 source-form switch and explanation corrections in [STAGE_4_0.4c_FIXES.md](STAGE_4_0.4c_FIXES.md). The source-form button makes the four-note subset accessible without another compact list row; full scales are not automatically T1.
+
 Stage 4 Issue #5 remains open; stable is `0.4`. This checkpoint applies the
 accepted 0.4b profile contract to an already analyzed Core result. The
 `analyzeStableTension` policy does not detect a key, reinterpret a chord or

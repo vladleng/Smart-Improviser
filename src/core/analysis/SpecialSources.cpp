@@ -33,20 +33,20 @@ struct Rule
     enum class Form { melodicMinor, wholeHalf, halfWhole, wholeTone, harmonicMinorFragment } form = Form::melodicMinor;
 };
 const Rule minor {"boyko.melodic-minor.root", ImprovisationStrategyKind::melodicMinorApplication, 0,
-    "Minor melodic color", "Levine, chapter 4, pp. 88-90; Boyko, section 2, pp. 88-89", "On m7 this is an optional overlay: keep the written b7 as an anchor and use the major 7 only as a passing color.",
+    "Minor melodic color", "Levine, chapter 3, pp. 88-90; Boyko, section 2, pp. 88-89", "On m7 this is an optional overlay: keep the written b7 as an anchor and use the major 7 only as a passing color.",
     {1,0,9,3,0,11,0,5,0,13,0,7}, 10};
 const Rule halfDim {"boyko.melodic-minor.bIII", ImprovisationStrategyKind::melodicMinorApplication, -3,
-    "Locrian natural 2", "Levine, chapter 4, pp. 101-103; Boyko, section 2, pp. 92-93", "Natural 9 color; keep b3, b5 and b7 anchors.",
+    "Locrian natural 2", "Levine, chapter 3, pp. 101-103; Boyko, section 2, pp. 92-93", "Natural 9 color; keep b3, b5 and b7 anchors.",
     {1,0,9,3,0,11,5,0,13,0,7,0}, -1};
 const Rule lydian {"boyko.melodic-minor.V", ImprovisationStrategyKind::lydianDominantColor, 1,
-    "Lydian dominant", "Levine, chapter 4, pp. 96-100; Boyko, section 2, pp. 96-97", "#11 color; resolve to the shown target.",
+    "Lydian dominant", "Levine, chapter 3, pp. 96-100; Boyko, section 2, pp. 96-97", "#11 color; resolve to the shown target.",
     {1,0,9,0,3,0,11,5,0,13,7,0}, -1};
 const Rule flatSevenOverlay {"project.melodic-minor.bVII-overlay", ImprovisationStrategyKind::melodicMinorApplication, -2,
     "Melodic-minor overlay from bVII", "Project Fm6 / F melodic-minor application; this is not the altered scale",
     "Optional m6 overlay: keep the written dominant third as an anchor outside this source; the source's b3 is a color, not a replacement third.",
     {1,9,0,3,0,11,0,5,0,13,7,0}, 4};
 const Rule minorTargetColor {"project.melodic-minor.minor-V-b13", ImprovisationStrategyKind::melodicMinorApplication, -1,
-    "Rare fifth-mode melodic-minor color", "Levine, chapter 4, pp. 98-100: fifth mode is rare; conditional project application to written V7(b13)",
+    "Rare fifth-mode melodic-minor color", "Levine, chapter 3, pp. 98-100: fifth mode is rare; conditional project application to written V7(b13)",
     "Rare conditional color on written b13: 11 and b13 can clash when sustained. It does not imply a minor next chord; follow the actual target.",
     {1,0,9,0,3,11,0,5,13,0,7,0}, -1};
 const Rule harmonicMinorVFragment {"levine.harmonic-minor.minor-V-fragment", ImprovisationStrategyKind::harmonicMinorFragment, 0,
@@ -54,16 +54,16 @@ const Rule harmonicMinorVFragment {"levine.harmonic-minor.minor-V-fragment", Imp
     "Six-note V fragment for confirmed minor resolution and written b9 or b13; omit 11, and treat b13 as a passing color unless supported by the melody.",
     {1,9,0,0,3,0,0,5,13,0,7,0}, -1, Rule::Form::harmonicMinorFragment};
 const Rule altered {"boyko.melodic-minor.bII", ImprovisationStrategyKind::alteredDominant, -5,
-    "Altered dominant", "Levine, chapter 4, pp. 104-106; Boyko, section 2, pp. 101-102", "b9/#9/b5/b13; omit natural 5 in this line.",
+    "Altered dominant", "Levine, chapter 3, pp. 104-106; Boyko, section 2, pp. 101-102", "b9/#9/b5/b13; omit natural 5 in this line.",
     {1,9,0,9,3,0,5,0,13,0,7,0}, 7};
 const Rule diminished {"boyko.diminished.whole-half", ImprovisationStrategyKind::diminishedApplication, 0,
-    "Diminished whole-half", "Levine, chapter 5, pp. 112-124; Boyko, section 2, p. 112", "Whole-half on dim7; follow the actual next chord.",
+    "Diminished whole-half", "Levine, chapter 3, pp. 112-124; Boyko, section 2, p. 112", "Whole-half on dim7; follow the actual next chord.",
     {1,0,9,3,0,11,5,0,13,7,0,7}, -1, Rule::Form::wholeHalf};
 const Rule dominantDiminished {"levine.dominant.half-whole", ImprovisationStrategyKind::diminishedDominant, 0,
-    "Dominant half-whole diminished", "Levine, chapter 5, pp. 112-124", "Optional b9/#9/#11 color on a compatible dominant; written natural 9 or b13 blocks this collection.",
+    "Dominant half-whole diminished", "Levine, chapter 3, pp. 112-124", "Optional b9/#9/#11 color on a compatible dominant; written natural 9 or b13 blocks this collection.",
     {1,9,0,9,3,0,11,5,0,13,7,0}, -1, Rule::Form::halfWhole};
 const Rule wholeTone {"levine.dominant.whole-tone", ImprovisationStrategyKind::wholeToneDominant, 0,
-    "Dominant whole-tone", "Levine, chapter 5, pp. 124-127", "Use for an explicit augmented dominant; the natural fifth is absent.",
+    "Dominant whole-tone", "Levine, chapter 3, pp. 124-127", "Use for an explicit augmented dominant; the natural fifth is absent.",
     {1,0,9,0,3,0,11,0,5,0,7,0}, -1, Rule::Form::wholeTone};
 
 bool compatible(const Rule& rule, const NormalizedChord& chord)

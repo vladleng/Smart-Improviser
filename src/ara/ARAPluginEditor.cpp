@@ -118,6 +118,29 @@ juce::String localizeGeneratedText(juce::String text)
     text = text.replace(" Approach notes are passing; chord membership does not guarantee stability. No Phrase or MIDI is generated.",
                         ru(" Подходящие ноты являются проходящими; принадлежность аккорду не гарантирует устойчивость. Фразы и MIDI не генерируются."));
 
+    text = text.replace("Use with harmonic interpretation ", ru("Применяется в трактовке "));
+    text = text.replace("; source root is not a song key.", ru("; корень источника не является тональностью песни."));
+    text = text.replace("Incomplete ii-V: the expected major I did not sound; source root is not an established key.",
+                        ru("Незавершённый ii–V: ожидаемая мажорная I не прозвучала; корень источника не является установленной тональностью."));
+    text = text.replace("Chord-local optional color; no tonic, key or functional resolution is inferred.",
+                        ru("Дополнительная краска от аккорда; тоника, тональность и функциональное разрешение не выводятся."));
+    text = text.replace("Resolve to the actual major target (including its major third).",
+                        ru("Разрешай в реальную мажорную цель, включая её большую терцию."));
+    text = text.replace("Resolve to the actual minor target (including its minor third).",
+                        ru("Разрешай в реальную минорную цель, включая её малую терцию."));
+    text = text.replace("Optional m6 overlay: keep the written dominant third as an anchor outside this source; the source's b3 is a color, not a replacement third.",
+                        ru("Дополнительное наложение m6: записанная терция доминанты остаётся опорой вне источника; малая терция источника — краска, а не замена терции аккорда."));
+    text = text.replace("Scale notes are available material, not equally stable landing notes; use the chord anchors and targets.",
+                        ru("Ноты гаммы — доступный материал, но не одинаково устойчивые опоры; используй аккордовые и целевые ноты."));
+    text = text.replace(" Treat the natural 4th as a passing tone against the major 3rd.",
+                        ru(" Натуральную 4 используй как проходящую против большой 3."));
+    text = text.replace("The absent I is a source hypothesis only. Follow the actual next chord; no major resolution is confirmed.",
+                        ru("Отсутствующая I — гипотеза источника. Следуй реальному следующему аккорду; мажорное разрешение не подтверждено."));
+    text = text.replace("Optional material from explicit chord tones. Follow the actual next chord; a dominant chain is not a confirmed tonic resolution.",
+                        ru("Дополнительный материал от записанного аккорда. Следуй реальному следующему аккорду; цепь доминант не подтверждает разрешение в тонику."));
+    text = text.replace("Confirmed moves come from harmonic analysis; suggested moves are optional.",
+                        ru("Подтверждённые движения взяты из гармонического анализа; предложенные движения необязательны."));
+
     text = text.replace("Connect the chord anchors using ", ru("Соединяй опорные ноты, используя "));
     text = text.replace("Use chord anchors and targets.", ru("Используй опорные и целевые ноты."));
     text = text.replace("Natural 4th: passing against major 3rd.",
@@ -922,7 +945,12 @@ juce::String SmartImproviserARAEditor::selectedMaterialText() const
     }
     if (cachedSituation.primaryInterpretationIndex < 0 && cachedSituation.interpretationCount > 1)
         text += ru("[неоднозначно] Выбор показа не определяет главную трактовку.\n");
+    if (!showStableSubset
+        && smartimproviser::harmony::stableSubsetIndex(cachedExplanation, selectedMaterialIndex) >= 0)
+        text += ru("Полная гамма не объявлена T1. Кнопка «Материал» переключает на четыре звука T1 m6.\n");
     text += localizeGeneratedText(utf8String(item.idea)) + "\n";
+    for (const auto& condition : item.applicationConditions)
+        text += ru("Условия: ") + localizeGeneratedText(utf8String(condition)) + "\n";
     if (! item.usageHint.empty())
         text += localizeGeneratedText(utf8String(item.usageHint)) + "\n";
     const auto view = smartimproviser::harmony::buildMaterialView(
@@ -1355,8 +1383,10 @@ void SmartImproviserARAEditor::timerCallback()
         const auto& strategy = result.strategies.front();
         bool hasScale = false;
         int lastInterpretationIndex = -999;
-        for (const auto& scalar : result.strategies)
+        for (const auto& sourceItem : cachedExplanation.items)
         {
+            if (sourceItem.strategyIndices.empty()) continue;
+            const auto& scalar = result.strategies[sourceItem.strategyIndices.front()];
             if (scalar.source.kind != smartimproviser::harmony::MaterialKind::scale)
                 continue;
 
@@ -1396,7 +1426,7 @@ void SmartImproviserARAEditor::timerCallback()
                     + utf8String(fifthsName(scalar.missingTonicRootFifths))
                     + ru(" [отсутствует], далее фактически ")
                     + utf8String(smartimproviser::harmony::normalizedChordSymbol(scalar.nextChord))
-                    + ru("; разрешение не подтверждено.\n");
+                    + ru("; разрешение в ожидаемый мажорный I не подтверждено.\n");
             }
 
             sourcesText += (scalar.tensionClassified ? ru("T1 • ") : juce::String())
@@ -1417,6 +1447,16 @@ void SmartImproviserARAEditor::timerCallback()
             }
 
             sourcesText += "\n" + localizeGeneratedText(utf8String(scalar.usageHint));
+            for (const auto& condition : sourceItem.applicationConditions)
+                sourcesText += ru("\nУсловия: ") + localizeGeneratedText(utf8String(condition));
+            if (sourceItem.interpretationIndices.size() > 1)
+            {
+                sourcesText += ru("\nТрактовки: ");
+                for (const int index : sourceItem.interpretationIndices)
+                    sourcesText += juce::String(index + 1) + " ";
+            }
+            if (!scalar.sourceReference.empty())
+                sourcesText += ru("\nИсточник правила: ") + utf8String(scalar.sourceReference);
             if (! scalar.sourceTransitions.empty())
             {
                 sourcesText += ru("\nНеобязательные движения красок: ");

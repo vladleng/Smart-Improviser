@@ -3,6 +3,7 @@
 #include "core/analysis/MaterialViewer.h"
 #include "core/analysis/MaterialSelection.h"
 #include "core/analysis/TensionEngine.h"
+#include "core/analysis/ExplanationText.h"
 #include <cstdlib>
 #include <iostream>
 using namespace smartimproviser::harmony;
@@ -81,5 +82,28 @@ int main() {
         expect(item.applicationConditions.size()==2,"merged source retains conditions of each interpretation");
     }
     expect(count==1,"identical melodic minor is shown once across interpretations");
+    const auto diagnostic = explanationDiagnosticText(borrowed);
+    for (const auto& item : merged.items)
+        for (const auto& condition : item.applicationConditions)
+            expect(diagnostic.find(condition) != std::string::npos,
+                   "diagnostic explanation renders all preserved application conditions");
+
+    TimelineHarmonicSnapshot minor; minor.positionAvailable = true; minor.ppq=4;
+    minor.globalKey.available=minor.globalKey.defined=true; minor.globalKey.root=0;
+    for (int n : {0,2,4,5,7,9,11}) minor.globalKey.intervals.values[n]=0xFF;
+    minor.previousChordAvailable=true; minor.previousChord=chord(4,{0,3,7,10});
+    minor.currentChord=chord(3,{0,4,7,10});
+    minor.nextChordAvailable=true; minor.nextChord=chord(2,{0,3,7,10});
+    PatternTimelineWindow window; window.chordCount=3; window.currentIndex=1;
+    window.chords[0]=minor.previousChord; window.chords[1]=minor.currentChord; window.chords[2]=minor.nextChord;
+    for (int i=0;i<3;++i) window.chords[i].startPpq=i*4;
+    const auto actualMinor=analyzeImprovisation(analyzeHarmonicSituation(minor,window));
+    expect(actualMinor.context.incompleteCadence.valid && actualMinor.context.resolution.confirmed,
+           "missing major I coexists with factual minor resolution");
+    const auto minorText=explanationDiagnosticText(actualMinor);
+    expect(minorText.find("expected major-I resolution unconfirmed")!=std::string::npos
+           && minorText.find("Dm7 [OK]")!=std::string::npos,
+           "explanation distinguishes hypothetical major I from confirmed Dm7");
+
     std::cout << "Material regression tests passed\n";
 }

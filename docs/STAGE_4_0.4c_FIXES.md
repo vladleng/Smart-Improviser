@@ -14,3 +14,14 @@ Base: PR #48 head `c65f79a`. Acceptance in Studio Pro is pending.
 `MaterialRegressionTests` covers these cases, including all twelve transpositions of the dominant example. Existing suites remain required.
 
 Live check: G7→Cmaj7, choose Ab melodic minor and the chord layer (G B D F); switch D melodic minor between full scale and T1 Dm6 (C# absent from T1); check G7sus4, D5 and Cmaj7/F#; Fm7 in C major must show F melodic minor once with both interpretations. Seek/PLAY/STOP should keep text and viewer synchronized.
+
+## 0.4c-fix2 — explanations and source references
+
+Includes fix1. Acceptance in Studio Pro is pending.
+
+- Selected material and the source catalog show every retained application condition. Identical catalog sources are grouped with all interpretation indices; conditions are not silently discarded.
+- Text distinguishes an unplayed expected **major I** from a confirmed resolution to the real minor chord. The diagnostic explanation uses the same distinction.
+- Melodic-minor, diminished and whole-tone references point to Levine chapter 3 in the supplied edition; printed page ranges are retained.
+- [SOURCE_REFERENCE_CORRECTIONS.md](SOURCE_REFERENCE_CORRECTIONS.md) supersedes erroneous/unconditional rows of the supplied generated chart, including III → ♭III for melodic minor on half-diminished chords. The existing Core interval was already correct.
+
+Live check additionally: Em7–A7–Dm7 must retain confirmed A7→Dm7 while calling the expected D-major I unplayed; select F melodic minor on G7 and inspect its conditional-overlay warning; compare merged F melodic minor on Fm7 with both retained interpretation conditions.
