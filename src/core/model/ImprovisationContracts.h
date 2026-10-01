@@ -31,7 +31,8 @@ enum class ImprovisationStrategyKind : std::uint8_t
     sideSlipOutside,
     diminishedApplication,
     wholeToneDominant,
-    harmonicMinorFragment
+    harmonicMinorFragment,
+    harmonicMinorApplication
 };
 
 enum class PhraseRole : std::uint8_t

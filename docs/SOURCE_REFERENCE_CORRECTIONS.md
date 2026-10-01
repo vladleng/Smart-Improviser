@@ -25,3 +25,7 @@ Page numbers above refer to the printed edition, not to an arbitrary PDF split.
 
 This document corrects project references; it does not attribute Smart
 Improviser's T1/T2/T3 policy to either author or alter the uploaded books.
+
+## fix3 contextual clarification
+
+The supplied Em7–A7(b13)–D7 example in C major supports a presumed Dm destination from tonal context; the changed-quality D7 remains the factual continuation. The primary full collection is D harmonic minor (D E F G A Bb C#), with 11 on A used as passing. This context rule is a project interpretation, not a quoted Levine rule. D melodic minor (D E F G A B C#) is retained only as a rare fifth-mode alternative with natural 9 on A. The existing Levine harmonic-minor V fragment remains a separate six-note application; full-scale material is not given its stability claim.

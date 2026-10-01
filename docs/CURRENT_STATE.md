@@ -1,4 +1,4 @@
-> Debugging: `0.4c-fix2` includes fix1 accompaniment/selection corrections and completes explanation/source-reference corrections; live acceptance pending. See [STAGE_4_0.4c_FIXES.md](STAGE_4_0.4c_FIXES.md).
+> Debugging: `0.4c-fix3` includes fix1/fix2 and adds diminished-triad sources, characteristic ninths, one contextual foundation and a hypothetical minor destination distinct from the actual continuation. Live acceptance pending. See [STAGE_4_0.4c_FIXES.md](STAGE_4_0.4c_FIXES.md).
 
 # Smart Improviser — Current State
 

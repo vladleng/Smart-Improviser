@@ -1,3 +1,4 @@
+#include "core/analysis/MajorIiVPalette.h"
 #include "core/analysis/HarmonicConcepts.h"
 #include "ara/ARAPluginEditor.h"
 #include "ara/ARAPluginProcessor.h"
@@ -41,6 +42,13 @@ juce::String utf8String(const std::string& value)
 
 juce::String localizeGeneratedText(juce::String text)
 {
+    text = text.replace("Hypothetical minor I from tonal context, not a played tonic or established local key.",
+                        ru("Предполагаемая минорная i следует из тонального контекста; она не прозвучала и не устанавливает локальную тональность."));
+    text = text.replace("Presumed minor destination follows the turn and tonal context; the actual next chord remains the target. Use 11 as passing against the dominant third; sustain b13 only when melody supports it.",
+                        ru("Минорная цель предполагается по обороту и тональному контексту; реальная цель нот — следующий записанный аккорд. 11 проходящая против терции доминанты; удерживай b13 при поддержке мелодии."));
+    text = text.replace("Harmonic minor from the turn's minor destination", ru("Гармонический минор от предполагаемой минорной цели оборота"));
+    text = text.replace("Whole-half on a diminished triad or dim7; follow the actual next chord.",
+                        ru("Уменьшённая тон–полутон для уменьшённого трезвучия или dim7; следуй реальному следующему аккорду."));
     text = text.replace("Waiting for valid position, chord and key context.",
                         ru("Ожидание корректной позиции, аккорда и тональности."));
     text = text.replace("No explicit chord tones available.",
@@ -200,6 +208,7 @@ juce::String localizeGeneratedText(juce::String text)
     text = text.replace(" whole-half diminished", ru(" уменьшённая (тон–полутон)"));
     text = text.replace(" half-whole diminished", ru(" уменьшённая (полутон–тон)"));
     text = text.replace(" whole-tone", ru(" целотоновая"));
+    text = text.replace(" harmonic minor", ru(" гармонический минор"));
     text = text.replace(" harmonic-minor V fragment", ru(" фрагмент V гармонического минора"));
 
     text = text.replace("Material on ", ru("Материал на "));
@@ -766,18 +775,15 @@ void SmartImproviserARAEditor::rebuildStrategyRows()
 
 bool SmartImproviserARAEditor::isBaseMode(int index) const
 {
-    if (index < 0 || index >= static_cast<int>(cachedExplanation.items.size())) return false;
-    const auto& item = cachedExplanation.items[static_cast<std::size_t>(index)];
-    if (item.strategyIndices.empty()
-        || item.strategyIndices.front() >= cachedResult.strategies.size()) return false;
-    const auto& strategy = cachedResult.strategies[item.strategyIndices.front()];
-    return strategy.kind == smartimproviser::harmony::ImprovisationStrategyKind::diatonicColor
-        && item.source.mode != smartimproviser::harmony::DiatonicMode::none;
+    return index >= 0 && index == smartimproviser::harmony::playingBaseIndex(cachedResult, cachedExplanation);
 }
 
 bool SmartImproviserARAEditor::redundantMaterial(int index) const
 {
-    return smartimproviser::harmony::compactMaterialHidden(cachedExplanation, index);
+    return smartimproviser::harmony::compactMaterialHidden(cachedExplanation, index)
+        || (index >= 0 && index < static_cast<int>(cachedExplanation.items.size())
+            && smartimproviser::harmony::isDiatonicFoundation(cachedExplanation.items[static_cast<std::size_t>(index)])
+            && !isBaseMode(index));
 }
 
 std::string SmartImproviserARAEditor::tensionKey(int index) const
@@ -1135,13 +1141,6 @@ void SmartImproviserARAEditor::timerCallback()
         const auto& item = explanation.items[i];
         juce::String label = localizeGeneratedText(utf8String(item.source.name));
         if (label.isEmpty()) label = localizeGeneratedText(utf8String(item.idea));
-        if (cachedSituation.interpretationCount > 1
-            && ! item.interpretationIndices.empty())
-        {
-            label += ru(" • трактовка ");
-            for (std::size_t j = 0; j < item.interpretationIndices.size(); ++j)
-                label += (j ? ", " : "") + juce::String(item.interpretationIndices[j] + 1);
-        }
         labels.add(label);
     }
     bool changed = strategyLabels.size() != labels.size();
@@ -1238,6 +1237,10 @@ void SmartImproviserARAEditor::timerCallback()
         summaryMeta = ru("Направление II–V: ")
             + utf8String(fifthsName(cachedSituation.incompleteCadence.missingTonicRootFifths))
             + ru(" мажор");
+        if (smartimproviser::harmony::hasContextualMinorIiVTarget(cachedSituation))
+            summaryMeta = ru("Предполагаемая цель оборота: ")
+                + utf8String(fifthsName(cachedSituation.incompleteCadence.missingTonicRootFifths))
+                + ru("m (по тональному контексту)");
         summaryGlobalFunction = ru("Функция в обороте: ")
             + (cachedSituation.incompleteCadence.positionIndex == 0
                 ? ru("Субдоминанта") : ru("Доминанта"));
@@ -1279,7 +1282,8 @@ void SmartImproviserARAEditor::timerCallback()
     const auto& incomplete = cachedSituation.incompleteCadence;
     if (incomplete.valid)
     {
-        showPattern(ru("II–V–"), "I", missingColour, progress(incomplete.positionIndex, 3));
+        showPattern(ru("II–V–"), smartimproviser::harmony::hasContextualMinorIiVTarget(cachedSituation) ? "i" : "I",
+                    missingColour, progress(incomplete.positionIndex, 3));
     }
     else if (impliedLink.valid)
     {

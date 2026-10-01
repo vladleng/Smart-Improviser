@@ -347,9 +347,13 @@ int main()
     expectPitches(dim->source,{7,9,10,0,1,3,4,6});
     expect(dim->source.notes[6].spelling=="Fb" && dim->source.notes[7].spelling=="F#","octatonic seventh spellings");
     situation.currentChord.tones[9]=false;
-    expect(!rule(analyzeImprovisation(situation),"boyko.diminished.whole-half"),"dim triad not automatically dim7 application");
+    result = analyzeImprovisation(situation);
+    dim = rule(result,"boyko.diminished.whole-half");
+    expect(dim && !dim->actualChord.hasTone(9),"dim triad offers whole-half without becoming dim7");
     situation.primaryInterpretationIndex=-1;
-    expect(analyzeImprovisation(situation).strategies.size()==1,"no hidden selected interpretation");
+    result = analyzeImprovisation(situation);
+    expect(result.context.primaryInterpretationIndex == -1
+           && rule(result,"boyko.diminished.whole-half"),"diminished source does not select a hidden interpretation");
     situation = withSelectedCenter(key,makeChord(4,{0,3,6,10}));
     situation.interpretations[0].center.key.mode=KeyMode::custom;
     expect(analyzeImprovisation(situation).strategies.size()==1,"custom center unsupported");

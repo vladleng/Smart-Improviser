@@ -168,7 +168,7 @@ target_compile_definitions(SmartImproviserARA
         JUCE_WEB_BROWSER=0
         JUCE_USE_CURL=0
         JUCE_VST3_CAN_REPLACE_VST2=0
-        SMART_IMPROVISER_BUILD_VERSION="0.4c-fix2"
+        SMART_IMPROVISER_BUILD_VERSION="0.4c-fix3"
 )
 
 target_link_libraries(SmartImproviserARA
@@ -353,3 +353,10 @@ if(MSVC)
     target_compile_options(SmartImproviserMaterialRegressionTests PRIVATE /utf-8)
 endif()
 add_test(NAME SmartImproviserMaterialRegressionTests COMMAND SmartImproviserMaterialRegressionTests)
+
+add_executable(SmartImproviserFix3RegressionTests tests/Fix3RegressionTests.cpp)
+target_link_libraries(SmartImproviserFix3RegressionTests PRIVATE SmartImproviserCore)
+if(MSVC)
+    target_compile_options(SmartImproviserFix3RegressionTests PRIVATE /utf-8)
+endif()
+add_test(NAME SmartImproviserFix3RegressionTests COMMAND SmartImproviserFix3RegressionTests)

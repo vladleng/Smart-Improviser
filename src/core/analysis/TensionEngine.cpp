@@ -80,7 +80,7 @@ TensionCandidate makeNaturalNine(const ImprovisationStrategy& source,
     strategy.tension = TensionLevel::stable;
     strategy.tensionClassified = true;
     strategy.ruleId = "project.t1.diatonic-nine";
-    strategy.ruleVersion = 1;
+    strategy.ruleVersion = 2;
     strategy.source.name = normalizedChordSymbol(anchors.actualChord) + " + 9";
     strategy.source.mode = DiatonicMode::none; // Five-note subset, not the whole mode.
     const auto full = source.source;
@@ -88,13 +88,28 @@ TensionCandidate makeNaturalNine(const ImprovisationStrategy& source,
     strategy.source.chordRelativeNotes.clear();
     for (std::size_t i = 0; i < full.notes.size(); ++i)
     {
-        const auto& note = full.notes[i];
+        auto note = full.notes[i];
         const auto relative = wrap12(note.pitchClass - anchors.actualChord.rootPitchClass);
         if (!anchors.actualChord.hasTone(relative) && relative != 2
             && note.role != MaterialNoteRole::bassTone) continue;
+        const bool addedNine = relative == 2 && !anchors.actualChord.hasTone(2);
+        if (addedNine) { note.characteristic = true; note.role = MaterialNoteRole::colorTone; }
         strategy.source.notes.push_back(note);
         if (i < full.chordRelativeNotes.size())
-            strategy.source.chordRelativeNotes.push_back(full.chordRelativeNotes[i]);
+        {
+            auto relativeNote = full.chordRelativeNotes[i];
+            if (addedNine)
+            {
+                relativeNote.characteristic = true;
+                relativeNote.role = MaterialNoteRole::colorTone;
+                strategy.characteristicNotes.erase(std::remove_if(
+                    strategy.characteristicNotes.begin(), strategy.characteristicNotes.end(),
+                    [&](const auto& n) { return n.pitchClass == note.pitchClass; }),
+                    strategy.characteristicNotes.end());
+                strategy.characteristicNotes.push_back(relativeNote);
+            }
+            strategy.source.chordRelativeNotes.push_back(relativeNote);
+        }
         addRole(candidate, note, (anchors.actualChord.hasTone(relative)
             || note.role == MaterialNoteRole::bassTone)
             ? (note.role == MaterialNoteRole::guideTone
