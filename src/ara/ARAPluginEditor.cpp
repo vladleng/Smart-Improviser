@@ -632,13 +632,30 @@ SmartImproviserARAEditor::SmartImproviserARAEditor(SmartImproviserARAProcessor& 
     detailsView.setColour(juce::TextEditor::focusedOutlineColourId, juce::Colours::transparentBlack);
     addAndMakeVisible(detailsView);
 
-    for (auto* selector : { &layerSelector, &fretSelector })
+    for (auto* selector : { &layerSelector, &fretSelector, &tensionSelector })
     {
         selector->setColour(juce::ComboBox::backgroundColourId, juce::Colour::fromRGB(45, 49, 56));
         selector->setColour(juce::ComboBox::textColourId, juce::Colour::fromRGB(225, 230, 238));
         selector->setColour(juce::ComboBox::outlineColourId, juce::Colour::fromRGB(85, 94, 105));
         addAndMakeVisible(*selector);
     }
+    tensionSelector.addItem(ru("Все материалы"), 1);
+    tensionSelector.addItem(ru("T1 · базовое"), 2);
+    tensionSelector.addItem(ru("T2 · цвет"), 3);
+    tensionSelector.addItem(ru("T3 · максимум"), 4);
+    tensionSelector.setSelectedId(processor.tensionFilter() + 1, juce::dontSendNotification);
+    tensionSelector.setTooltip(ru("Выбор по вашим меткам. Для назначения скрытых материалов выберите «Все материалы»."));
+    tensionSelector.onChange = [this]
+    {
+        processor.setTensionFilter(tensionSelector.getSelectedId() - 1);
+        selectedMaterialKey.clear();
+        showStableSubset = false;
+        timerCallback();
+    };
+    tensionHint.setFont(juce::FontOptions(13.0f));
+    tensionHint.setColour(juce::Label::textColourId, juce::Colour::fromRGB(190, 201, 216));
+    tensionHint.setJustificationType(juce::Justification::centredLeft);
+    addAndMakeVisible(tensionHint);
     layerSelector.addItem(ru("Все роли"), 1);
     layerSelector.addItem(ru("Источник"), 2);
     layerSelector.addItem(ru("Аккорд"), 3);
@@ -723,7 +740,9 @@ void SmartImproviserARAEditor::resized()
                         getWidth() - margin - (margin + 4 * (buttonW + gap)), buttonH);
 
     const int columnX = getWidth() / 2;
-    strategyList.setBounds(columnX + 16, 163, getWidth() - columnX - 56, 214);
+    tensionSelector.setBounds(getWidth() - 205, 136, 165, 28);
+    strategyList.setBounds(columnX + 16, 174, getWidth() - columnX - 56, 166);
+    tensionHint.setBounds(columnX + 16, 344, getWidth() - columnX - 56, 34);
     detailsView.setBounds(margin + 12, 143, getWidth() - margin * 2 - 24, 235);
     sourceFormButton.setBounds(margin, 403, 250, 32);
     layerSelector.setBounds(getWidth() - 376, 403, 207, 32);
@@ -747,18 +766,16 @@ int SmartImproviserARAEditor::rowForMaterial(int index) const
 
 void SmartImproviserARAEditor::rebuildStrategyRows()
 {
-    std::vector<StrategyRow> rows;
+    std::vector<smartimproviser::harmony::TensionFilterItem> items;
     for (int index = 0; index < strategyLabels.size(); ++index)
-        if (isBaseMode(index)) rows.push_back({index, 0, true});
-    for (int level : {1, 2, 3, 0})
-    {
-        for (int index = 0; index < strategyLabels.size(); ++index)
-        {
-            if (isBaseMode(index) || redundantMaterial(index)
-                || manualTension(index) != level) continue;
-            rows.push_back({index, level, false});
-        }
-    }
+        items.push_back({index, manualTension(index), isBaseMode(index), redundantMaterial(index)});
+    auto rows = smartimproviser::harmony::filteredTensionRows(items, processor.tensionFilter());
+    const int filter = processor.tensionFilter();
+    const bool emptyLevel = filter != 0 && !smartimproviser::harmony::hasTensionRecommendation(rows);
+    tensionHint.setText(emptyLevel
+        ? ru("Нет назначений T") + juce::String(filter) + ru(". Метки — в режиме «Все материалы».")
+        : (filter == 0 ? ru("Кружок слева — назначить или снять метку.")
+                       : ru("Метки всех способов — в режиме «Все материалы».")), juce::dontSendNotification);
     bool changed = rows.size() != strategyRows.size();
     for (std::size_t i = 0; ! changed && i < rows.size(); ++i)
         changed = rows[i].materialIndex != strategyRows[i].materialIndex
@@ -918,8 +935,7 @@ void SmartImproviserARAEditor::openTensionMenu(int index, const juce::MouseEvent
                 ru("Настройки tensions"), ru("Не удалось сохранить общий профиль tensions. Проверьте доступ к папке настроек пользователя."));
             return;
         }
-        safe->rebuildStrategyRows();
-        safe->refreshPanelView(false);
+        safe->timerCallback();
     });
 }
 
@@ -1076,6 +1092,8 @@ void SmartImproviserARAEditor::updatePanelButtons()
     configure(harmonicButton, Panel::harmonic, "Гармонический анализ", "Гармонический анализ");
     configure(araButton, Panel::ara, "ARA / диагностика", "ARA / диагностика");
     strategyList.setVisible(activePanel == Panel::context);
+    tensionSelector.setVisible(activePanel == Panel::context);
+    tensionHint.setVisible(activePanel == Panel::context);
     detailsView.setVisible(activePanel != Panel::context);
 }
 
@@ -1129,6 +1147,7 @@ void SmartImproviserARAEditor::refreshPanelView(bool resetScroll)
 void SmartImproviserARAEditor::timerCallback()
 {
     processor.refreshSharedManualTensions();
+    tensionSelector.setSelectedId(processor.tensionFilter() + 1, juce::dontSendNotification);
     cachedShared = SharedHarmonicContextBridge::instance().read();
     const auto ppq = cachedShared.transportAvailable ? cachedShared.transportPpq : -1.0;
     const auto timeline = smartimproviser::harmony::mapTimelineHarmonicSnapshot(cachedShared, ppq);
@@ -1169,14 +1188,14 @@ void SmartImproviserARAEditor::timerCallback()
     rebuildStrategyRows();
     if (! explanation.items.empty())
     {
-        const auto index = keep >= 0 && (rowForMaterial(keep) >= 0 || strategyRows.empty())
-            ? keep : (strategyRows.empty() ? smartimproviser::harmony::literalChordIndex(explanation)
-                                    : strategyRows.front().materialIndex);
+        const auto index = smartimproviser::harmony::filteredMaterialSelection(
+            strategyRows, keep, processor.tensionFilter());
         selectedMaterialIndex = index;
         if (index >= 0 && strategyList.getSelectedRow() != rowForMaterial(index))
             strategyList.selectRow(rowForMaterial(index));
         if (index >= 0)
             selectedMaterialKey = materialSelectionKey(explanation.items[static_cast<std::size_t>(index)]);
+        else { selectedMaterialKey.clear(); strategyList.deselectAllRows(); }
     }
     else { selectedMaterialKey.clear(); selectedMaterialIndex = -1; }
     updatingSelector = false;
@@ -1710,7 +1729,7 @@ void SmartImproviserARAEditor::paint(juce::Graphics& g)
 
     g.setColour(juce::Colour::fromRGB(150, 156, 168));
     g.setFont(14.0f);
-    g.drawText(ru("0.4c • материал и ручные метки напряжения"),
+    g.drawText(ru("0.4d • выбор tension и подсказки"),
                24, 47, getWidth() - 48, 22, juce::Justification::centredLeft);
 
     g.setColour(juce::Colour::fromRGB(42, 46, 53));
@@ -1770,7 +1789,7 @@ void SmartImproviserARAEditor::paint(juce::Graphics& g)
     g.setColour(juce::Colour::fromRGB(207, 215, 227));
     g.setFont(juce::FontOptions(12.0f, juce::Font::bold));
     g.drawText(ru("СПОСОБЫ ОБЫГРЫВАНИЯ"), columnX + 16, 140,
-               getWidth() - columnX - 56, 19,
+               getWidth() - columnX - 230, 19,
                juce::Justification::centredLeft);
     }
 

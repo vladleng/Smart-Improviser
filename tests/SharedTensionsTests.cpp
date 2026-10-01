@@ -1,4 +1,5 @@
 #include "ara/SharedManualTensions.h"
+#include "ara/PluginViewState.h"
 #include <cstdlib>
 #include <iostream>
 #include <thread>
@@ -17,6 +18,39 @@ int main(int argc, char** argv)
             require(writer.assign(std::string(argv[2]) + std::to_string(i), 2), "child writer");
         return 0;
     }
+    for (int level : {0, 1, 2, 3})
+    {
+        PluginViewState saved;
+        saved.width = 1500; saved.height = 1200;
+        saved.degreeLabels = true; saved.tensionFilter = level;
+        saved.labels = {{"kept", 3}, {"cleared", 0}};
+        juce::MemoryBlock data;
+        saved.write(data);
+        const auto restored = PluginViewState::read(data.getData(), static_cast<int>(data.getSize()));
+        require(restored && restored->tensionFilter == level && restored->degreeLabels
+            && restored->width == 1500 && restored->height == 1200
+            && restored->labels == saved.labels, "V5 host state roundtrip preserves filter and existing preferences");
+        // Losing the optional tail falls back to All, not an arbitrary level.
+        const auto shortState = PluginViewState::read(data.getData(), static_cast<int>(data.getSize()) - 1);
+        require(shortState && shortState->tensionFilter == 0, "missing filter defaults to All");
+        auto* bytes = static_cast<unsigned char*>(data.getData());
+        bytes[data.getSize() - 1] = 99;
+        require(PluginViewState::read(data.getData(), static_cast<int>(data.getSize()))->tensionFilter == 0,
+            "invalid stored filter defaults to All");
+    }
+    for (int version : {2, 3, 4})
+    {
+        juce::MemoryBlock data;
+        juce::MemoryOutputStream stream(data, false);
+        stream.writeString("SmartImproviserARAStateV" + juce::String(version));
+        stream.writeInt(1120); stream.writeInt(1000); stream.writeInt(1);
+        stream.writeString("old-label"); stream.writeInt(2);
+        if (version >= 3) stream.writeByte(1);
+        const auto state = PluginViewState::read(data.getData(), static_cast<int>(data.getSize()));
+        require(state && state->tensionFilter == 0 && state->labels.at("old-label") == 2
+            && state->degreeLabels == (version >= 3), "legacy V2/V3/V4 defaults to All and preserves preferences");
+    }
+    require(!PluginViewState::read(nullptr, 0), "empty state is rejected");
     const auto dir = juce::File::getSpecialLocation(juce::File::tempDirectory)
         .getNonexistentChildFile("SmartImproviserSharedTensions", "", false);
     const auto file = dir.getChildFile("nested/preferences.xml");

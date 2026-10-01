@@ -158,6 +158,7 @@ target_sources(SmartImproviserARA
         src/ara/ARAPluginProcessor.cpp
         src/ara/ARAPluginProcessor.h
         src/ara/SharedManualTensions.h
+        src/ara/PluginViewState.h
 )
 
 target_include_directories(SmartImproviserARA
@@ -170,7 +171,7 @@ target_compile_definitions(SmartImproviserARA
         JUCE_WEB_BROWSER=0
         JUCE_USE_CURL=0
         JUCE_VST3_CAN_REPLACE_VST2=0
-        SMART_IMPROVISER_BUILD_VERSION="0.4c-fix5"
+        SMART_IMPROVISER_BUILD_VERSION="0.4d"
 )
 
 target_link_libraries(SmartImproviserARA
@@ -379,3 +380,10 @@ if(MSVC)
     target_compile_options(SmartImproviserFix4RegressionTests PRIVATE /utf-8)
 endif()
 add_test(NAME SmartImproviserFix4RegressionTests COMMAND SmartImproviserFix4RegressionTests)
+
+add_executable(SmartImproviserTensionFilterTests tests/TensionFilterTests.cpp)
+target_link_libraries(SmartImproviserTensionFilterTests PRIVATE SmartImproviserCore)
+if(MSVC)
+    target_compile_options(SmartImproviserTensionFilterTests PRIVATE /utf-8)
+endif()
+add_test(NAME SmartImproviserTensionFilterTests COMMAND SmartImproviserTensionFilterTests)
