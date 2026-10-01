@@ -1,4 +1,5 @@
 #include "core/analysis/SpecialSources.h"
+#include "core/analysis/MajorIiVPalette.h"
 #include <algorithm>
 #include <array>
 #include <cstdlib>
@@ -288,6 +289,19 @@ void addSpecialSources(ImprovisationResult& result)
             if (! confirmedTarget && ! expectedMajor)
                 continue;
 
+            if (hasIncompleteMajorIiVPalette(situation)
+                && result.dominantContext == DominantContext::toMinor)
+            {
+                // Keep an explicitly altered V -> minor fragment where
+                // applicable. The common altered/diminished choices are added
+                // once below for the ii–V shape, without losing the factual
+                // minor resolution or producing two identical list rows.
+                if (chord.hasTone(1) && chord.degrees[1] == 9
+                    || chord.hasTone(8) && chord.degrees[8] == 13)
+                    append(result, harmonicMinorVFragment, index);
+                continue;
+            }
+
             const bool subV = interpretation.harmonic.substituteDominantConfirmed;
             if (subV)
             {
@@ -338,13 +352,7 @@ void addSpecialSources(ImprovisationResult& result)
             append(result, diminished, index);
     }
 
-    const auto& incomplete = situation.incompleteCadence;
-    if (incomplete.valid && incomplete.positionIndex == 1
-        && incomplete.actualContinuation.valid && situation.nextChordAvailable
-        && ! situation.resolution.confirmed && chord.quality == ChordQuality::dominant
-        && chord.rootPitchClass == incomplete.v.rootPitchClass
-        && (chord.rootPitchClass + 5) % 12
-            == circleOfFifthsToPitchClass(incomplete.missingTonicRootFifths))
+    if (hasIncompleteMajorIiVPalette(situation))
     {
         // Same established catalog as V -> major, but with explicitly
         // provisional provenance and the real next chord retained as target.

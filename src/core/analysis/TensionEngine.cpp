@@ -1,4 +1,5 @@
 #include "core/analysis/TensionEngine.h"
+#include "core/analysis/MajorIiVPalette.h"
 
 #include <algorithm>
 
@@ -204,11 +205,8 @@ TensionProfile analyzeStableTension(const ImprovisationResult& result)
         && result.dominantContext == DominantContext::toMajor
         && result.context.resolution.confirmed
         && !result.substituteDominant;
-    const auto& incomplete = result.context.incompleteCadence;
     const bool missingMajorV = chord.quality == ChordQuality::dominant
-        && incomplete.valid && incomplete.positionIndex == 1
-        && chord.rootPitchClass == incomplete.v.rootPitchClass
-        && !result.context.resolution.confirmed
+        && hasIncompleteMajorIiVPalette(result.context)
         && !result.substituteDominant;
     const auto& localPattern = result.context.localPattern;
     const bool pendingMajorV = chord.quality == ChordQuality::dominant

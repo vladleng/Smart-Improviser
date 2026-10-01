@@ -73,6 +73,12 @@ modal candidate solely from the ii chord. It provides provisional Dorian on
 ii and Mixolydian on V; the global key and any unconfirmed SubV hypothesis are
 kept for diagnostics, not the compact playing function. The actual next chord
 remains the only factual target.
+This palette also survives a real V-to-minor resolution when the preceding ii
+is the ordinary m7 form: Em7–A7–Dm7 receives the same source family as the
+transposed Dm7–G7–D7/A, while Dm7 remains the actual minor target and the
+expected major I is unplayed. The rule is interval based in every key, and
+explicitly altered chords still filter incompatible sources. A real minor
+resolution with written b9/b13 can retain its compatible minor V fragment.
 
 The editor window can be resized within fixed bounds; fonts, controls and
 noteheads retain their pixel size as available space changes. The fretboard

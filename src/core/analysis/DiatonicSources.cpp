@@ -1,4 +1,5 @@
 #include "core/analysis/DiatonicSources.h"
+#include "core/analysis/MajorIiVPalette.h"
 #include <array>
 #include <algorithm>
 #include <utility>
@@ -185,17 +186,13 @@ bool appendIncompleteCadenceMode(ImprovisationResult& result)
     const auto& incomplete = situation.incompleteCadence;
     const auto& chord = situation.currentChord;
     if (! incomplete.valid || incomplete.positionIndex < 0 || incomplete.positionIndex > 1
-        || ! situation.nextChordAvailable || ! incomplete.actualContinuation.valid
-        || situation.resolution.confirmed)
+        || ! situation.nextChordAvailable || ! incomplete.actualContinuation.valid)
         return false;
     const bool onIi = incomplete.positionIndex == 0;
     const auto& mode = onIi ? modes[1] : modes[4]; // Dorian ii, Mixolydian V.
     if (onIi ? (chord.quality != ChordQuality::minor
                  || chord.rootPitchClass != incomplete.ii.rootPitchClass)
-             : (chord.quality != ChordQuality::dominant
-                 || chord.rootPitchClass != incomplete.v.rootPitchClass
-                 || (chord.rootPitchClass + 5) % 12
-                     != circleOfFifthsToPitchClass(incomplete.missingTonicRootFifths)))
+             : ! hasIncompleteMajorIiVPalette(situation))
         return false;
     if (! containsChord(mode, chord)) return false;
 

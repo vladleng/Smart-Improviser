@@ -2,12 +2,14 @@
 #include "core/analysis/Explanation.h"
 #include "core/analysis/ImprovisationEngine.h"
 #include "core/analysis/ManualTensionKey.h"
+#include "core/analysis/TensionEngine.h"
 
 #include <array>
 #include <algorithm>
 #include <cstdlib>
 #include <initializer_list>
 #include <iostream>
+#include <set>
 
 using namespace smartimproviser::harmony;
 
@@ -422,6 +424,44 @@ int main()
                        && ! strategy.resolution.confirmed;
                }),
            "G7 of Dm7-G7-D7/A gets V material without inventing C resolution");
+
+    // The next chord can be minor on the expected major-I root. That is a
+    // real V -> minor resolution, but does not erase the ii m7–V7 source
+    // family or recast the preceding ii as a minor-key half-diminished ii.
+    // Compare the complete palette in all twelve transpositions, not names
+    // of individual chords or a single project key.
+    const std::set<std::string> expectedIncompleteRules {
+        "core.explicit-chord-tones", "diatonic.mixolydian",
+        "boyko.melodic-minor.V", "levine.dominant.half-whole",
+        "project.melodic-minor.bVII-overlay", "boyko.melodic-minor.bII"
+    };
+    for (int tonicFifths = -5; tonicFifths < 7; ++tonicFifths)
+    {
+        const auto ii = makeChord(tonicFifths + 2, {0, 3, 7, 10}, 0.0);
+        const auto v = makeChord(tonicFifths + 1, {0, 4, 7, 10}, 4.0);
+        auto minorArrival = makeChord(tonicFifths, {0, 3, 7, 10}, 8.0);
+        auto dominantArrival = makeChord(tonicFifths, {0, 4, 7, 10}, 8.0);
+        dominantArrival.bass = tonicFifths + 1; // A7/D-style slash spelling is retained.
+        const std::array minorTurn {ii, v, minorArrival};
+        const std::array dominantTurn {ii, v, dominantArrival};
+        for (const auto& turn : {minorTurn, dominantTurn})
+        {
+            const auto situation = analyzeWindow(cMajor, turn, 1);
+            const auto result = analyzeImprovisation(situation);
+            expect(situation.incompleteCadence.valid && result.valid,
+                   "ii m7-V7 keeps its provisional major direction with a non-major continuation");
+            std::set<std::string> rules;
+            for (const auto& strategy : result.strategies) rules.insert(strategy.ruleId);
+            expect(rules == expectedIncompleteRules
+                   && result.strategies.size() == expectedIncompleteRules.size(),
+                   "all equivalent ii-V dominants receive one complete source family");
+            const auto profile = analyzeStableTension(result);
+            expect(!profile.bands[0].alternatives.empty()
+                   && profile.bands[0].alternatives.front().strategy.ruleId
+                        == "project.t1.major-V-m6",
+                   "provisional major ii-V also keeps its T1 structure");
+        }
+    }
 
     const auto aMin7At4 = makeChord(3, { 0, 3, 7, 10 }, 4.0);
     const auto dMin7At8 = makeChord(2, { 0, 3, 7, 10 }, 8.0);
