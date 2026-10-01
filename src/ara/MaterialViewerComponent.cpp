@@ -221,9 +221,8 @@ void MaterialViewerComponent::paint(juce::Graphics& g)
             const float x = fretCellCenter(fretStart, fret, left, fretWidth);
             const float y = top + string * spacing;
             const auto& note = **(currentIt != current.end() ? currentIt : targetIt);
-            const int sourceRoot = view.sourceRootPitchClass >= 0
-                ? view.sourceRootPitchClass : view.chord.rootPitchClass;
-            const bool tonic = currentIt != current.end() && sourceRoot >= 0 && pc == sourceRoot;
+            const bool tonic = currentIt != current.end() && view.chord.valid
+                && pc == view.chord.rootPitchClass;
             g.setColour(tonic ? tonicColour : noteColour(note));
             g.fillEllipse(x - 11.0f, y - 10.0f, 22.0f, 20.0f);
             if (targetIt != targets.end())
