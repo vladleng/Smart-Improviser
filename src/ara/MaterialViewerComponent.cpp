@@ -7,6 +7,7 @@
 namespace
 {
 using namespace smartimproviser::harmony;
+const auto tonicColour = juce::Colours::white;
 const auto sourceColour = juce::Colour::fromRGB(189, 197, 210);
 const auto chordColour = juce::Colour::fromRGB(91, 158, 223);
 const auto guideColour = juce::Colour::fromRGB(87, 213, 188);
@@ -220,7 +221,10 @@ void MaterialViewerComponent::paint(juce::Graphics& g)
             const float x = fretCellCenter(fretStart, fret, left, fretWidth);
             const float y = top + string * spacing;
             const auto& note = **(currentIt != current.end() ? currentIt : targetIt);
-            g.setColour(noteColour(note));
+            const int sourceRoot = view.sourceRootPitchClass >= 0
+                ? view.sourceRootPitchClass : view.chord.rootPitchClass;
+            const bool tonic = currentIt != current.end() && sourceRoot >= 0 && pc == sourceRoot;
+            g.setColour(tonic ? tonicColour : noteColour(note));
             g.fillEllipse(x - 11.0f, y - 10.0f, 22.0f, 20.0f);
             if (targetIt != targets.end())
             {
@@ -239,8 +243,8 @@ void MaterialViewerComponent::paint(juce::Graphics& g)
         }
 
     g.setFont(11.0f);
-    const std::array<std::pair<const char*, juce::Colour>, 5> legend {{
-        {"аккорд", chordColour}, {"направляющие", guideColour},
+    const std::array<std::pair<const char*, juce::Colour>, 6> legend {{
+        {"тоника", tonicColour}, {"аккорд", chordColour}, {"направляющие", guideColour},
         {"характерные", characteristicColour}, {"источник", sourceColour},
         {"цели →", targetColour}
     }};
