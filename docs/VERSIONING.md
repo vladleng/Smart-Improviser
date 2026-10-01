@@ -262,7 +262,7 @@ Stage 2 → 0.3
 Stage 3 → 0.4
 ```
 
-Stage 3 — Improvisation Engine принят в `0.3h fix3` (Windows Build #360 и Studio Pro); текущая stable — **0.4**. Следующий этап — Stage 4, рабочая линия `0.4a → 0.4x`: `0.4a` визуализирует материал, `0.4b` и последующие checkpoints строят Tension Engine. Нумерация Stage 5–10 и stable targets сохраняется.
+Stage 3 — Improvisation Engine принят в `0.3h fix3` (Windows Build #360 и Studio Pro); текущая stable — **0.4**. Текущий этап — Stage 4, рабочая линия `0.4a → 0.4g`: 0.4a viewer, 0.4b tension contract, 0.4c гармоническая база и общие ручные назначения, 0.4d фильтр, 0.4e контракт фраз, 0.4f профиль/кривая, 0.4g итоговая интеграция. 0.4a–0.4f приняты; 0.4g ожидает приёмки. Итог Stage 4 — stable `0.5` после всех gates. Нумерация Stage 5–10 и stable targets сохраняется.
 
 Рабочая линия:
 
