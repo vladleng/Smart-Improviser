@@ -1,5 +1,6 @@
 #include "core/analysis/PhraseMatcher.h"
 #include "core/analysis/DominantDestination.h"
+#include "core/analysis/TensionTimeline.h"
 #include <algorithm>
 #include <cmath>
 
@@ -37,7 +38,7 @@ PhraseMatchResult assessPhrase(const Phrase& phrase, const PhraseMatchRequest& r
             out.harmonic = state;
         out.diagnostics.push_back({reason, slot, note, text});
     };
-    if (phrase.notes.empty() || (phrase.tensionClassified && !validLevel(phrase.tensionLevel))
+    if (phrase.notes.empty() || (!phrase.tensionProfile.defined && phrase.tensionClassified && !validLevel(phrase.tensionLevel))
         || (request.requestedTension && !validLevel(*request.requestedTension)))
     {
         report(PhraseCompatibility::incompatible, PhraseMatchReason::invalidPhrase, -1, -1, "Empty phrase or invalid tension metadata.");
@@ -296,10 +297,10 @@ PhraseMatchResult assessPhrase(const Phrase& phrase, const PhraseMatchRequest& r
             report(PhraseCompatibility::incompatible, PhraseMatchReason::unsupportedNote, slot, static_cast<int>(i), "Note does not fulfill its declared role in the actual chord/source.");
     }
     if (out.harmonic != PhraseCompatibility::compatible) return out; // Do not tension-filter an invalid harmonic candidate.
-    out.tension = !request.requestedTension ? PhraseTensionMatch::any
-        : !phrase.tensionClassified ? PhraseTensionMatch::unclassified
-        : phrase.tensionLevel == *request.requestedTension ? PhraseTensionMatch::matches : PhraseTensionMatch::differentLevel;
-    if (out.tension == PhraseTensionMatch::unclassified)
+    out.tension = matchPhraseTension(phrase, request.requestedTension);
+    if (out.tension == PhraseTensionMatch::invalidProfile)
+        out.diagnostics.push_back({PhraseMatchReason::tensionProfileInvalid, -1, -1, "Descriptive profile has invalid times, bounds or assignments."});
+    else if (out.tension == PhraseTensionMatch::unclassified)
         out.diagnostics.push_back({PhraseMatchReason::tensionUnclassified, -1, -1, "Phrase has no assigned tension; it is only eligible in All."});
     else if (out.tension == PhraseTensionMatch::differentLevel)
         out.diagnostics.push_back({PhraseMatchReason::tensionMismatch, -1, -1, "Phrase tension differs from the requested level."});

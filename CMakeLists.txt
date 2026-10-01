@@ -28,6 +28,10 @@ add_library(SmartImproviserCore STATIC
     src/core/model/KeyModel.cpp
     src/core/model/KeyModel.h
     src/core/model/Phrase.h
+    src/core/model/PhraseTensionProfile.h
+    src/core/model/TensionCurve.h
+    src/core/analysis/TensionTimeline.cpp
+    src/core/analysis/TensionTimeline.h
     src/core/model/PhraseMatch.h
     src/core/analysis/PhraseMatcher.cpp
     src/core/analysis/PhraseMatcher.h
@@ -174,7 +178,7 @@ target_compile_definitions(SmartImproviserARA
         JUCE_WEB_BROWSER=0
         JUCE_USE_CURL=0
         JUCE_VST3_CAN_REPLACE_VST2=0
-        SMART_IMPROVISER_BUILD_VERSION="0.4e"
+        SMART_IMPROVISER_BUILD_VERSION="0.4f"
 )
 
 target_link_libraries(SmartImproviserARA
@@ -397,3 +401,10 @@ if(MSVC)
     target_compile_options(SmartImproviserPhraseMatcherTests PRIVATE /utf-8)
 endif()
 add_test(NAME SmartImproviserPhraseMatcherTests COMMAND SmartImproviserPhraseMatcherTests)
+
+add_executable(SmartImproviserTensionTimelineTests tests/TensionTimelineTests.cpp)
+target_link_libraries(SmartImproviserTensionTimelineTests PRIVATE SmartImproviserCore)
+if(MSVC)
+    target_compile_options(SmartImproviserTensionTimelineTests PRIVATE /utf-8)
+endif()
+add_test(NAME SmartImproviserTensionTimelineTests COMMAND SmartImproviserTensionTimelineTests)
