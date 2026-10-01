@@ -102,7 +102,7 @@ void MaterialViewerComponent::paint(juce::Graphics& g)
     for (const auto& note : view.current)
         if (! note.chordSpelling.empty() && note.spelling != note.chordSpelling)
         {
-            if (aliases.isNotEmpty()) aliases += "  •  ";
+            if (aliases.isNotEmpty()) aliases += juce::String::fromUTF8("  •  ");
             aliases += juce::String::fromUTF8(note.spelling.c_str()) + " = "
                 + juce::String::fromUTF8(note.chordSpelling.c_str());
         }
@@ -229,7 +229,11 @@ void MaterialViewerComponent::paint(juce::Graphics& g)
             }
             g.setColour(juce::Colour::fromRGB(22, 27, 32));
             g.setFont(juce::FontOptions(9.5f, juce::Font::bold));
-            g.drawFittedText(juce::String::fromUTF8(visibleSpelling(note, layer).c_str()),
+            const auto label = fretDegreeLabels
+                ? chordDegreeLabel(currentIt != current.end() ? view.chord : view.nextChord,
+                                   note.pitchClass)
+                : visibleSpelling(note, layer);
+            g.drawFittedText(juce::String::fromUTF8(label.c_str()),
                              static_cast<int>(x - 11.0f), static_cast<int>(y - 8.0f),
                              22, 16, juce::Justification::centred, 1);
         }

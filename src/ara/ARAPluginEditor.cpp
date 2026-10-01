@@ -613,6 +613,21 @@ SmartImproviserARAEditor::SmartImproviserARAEditor(SmartImproviserARAProcessor& 
     fretSelector.addItem(ru("Лады 5–17"), 2);
     fretSelector.addItem(ru("Лады 12–24"), 3);
     fretSelector.setSelectedId(1, juce::dontSendNotification);
+    fretLabelButton.setColour(juce::TextButton::buttonColourId,
+                              juce::Colour::fromRGB(45, 49, 56));
+    fretLabelButton.setColour(juce::TextButton::textColourOffId,
+                              juce::Colour::fromRGB(225, 230, 238));
+    fretLabelButton.setMouseCursor(juce::MouseCursor::PointingHandCursor);
+    fretLabelButton.setButtonText(processor.fretDegreeLabelsEnabled()
+        ? ru("Гриф: ступени") : ru("Гриф: ноты"));
+    fretLabelButton.onClick = [this]
+    {
+        const bool enabled = !processor.fretDegreeLabelsEnabled();
+        processor.setFretDegreeLabelsEnabled(enabled);
+        fretLabelButton.setButtonText(enabled ? ru("Гриф: ступени") : ru("Гриф: ноты"));
+        materialViewer.setFretDegreeLabels(enabled);
+    };
+    addAndMakeVisible(fretLabelButton);
     strategyList.setModel(this);
     strategyList.setRowHeight(29);
     strategyList.setMultipleSelectionEnabled(false);
@@ -666,6 +681,7 @@ void SmartImproviserARAEditor::resized()
     detailsView.setBounds(margin + 12, 143, getWidth() - margin * 2 - 24, 235);
     layerSelector.setBounds(getWidth() - 376, 403, 207, 32);
     fretSelector.setBounds(getWidth() - 161, 403, 137, 32);
+    fretLabelButton.setBounds(getWidth() - 534, 403, 150, 32);
     materialViewer.setBounds(margin, 443, getWidth() - margin * 2, 284);
 }
 
@@ -685,18 +701,22 @@ int SmartImproviserARAEditor::rowForMaterial(int index) const
 void SmartImproviserARAEditor::rebuildStrategyRows()
 {
     std::vector<StrategyRow> rows;
+    for (int index = 0; index < strategyLabels.size(); ++index)
+        if (isBaseMode(index)) rows.push_back({index, 0, true});
     for (int level : {1, 2, 3, 0})
     {
         for (int index = 0; index < strategyLabels.size(); ++index)
         {
-            if (manualTension(index) != level || redundantMaterial(index)) continue;
-            rows.push_back({index, level});
+            if (isBaseMode(index) || redundantMaterial(index)
+                || manualTension(index) != level) continue;
+            rows.push_back({index, level, false});
         }
     }
     bool changed = rows.size() != strategyRows.size();
     for (std::size_t i = 0; ! changed && i < rows.size(); ++i)
         changed = rows[i].materialIndex != strategyRows[i].materialIndex
-            || rows[i].level != strategyRows[i].level;
+            || rows[i].level != strategyRows[i].level
+            || rows[i].baseMode != strategyRows[i].baseMode;
     if (changed)
     {
         strategyRows = std::move(rows);
@@ -710,6 +730,17 @@ void SmartImproviserARAEditor::rebuildStrategyRows()
     strategyList.repaint();
 }
 
+bool SmartImproviserARAEditor::isBaseMode(int index) const
+{
+    if (index < 0 || index >= static_cast<int>(cachedExplanation.items.size())) return false;
+    const auto& item = cachedExplanation.items[static_cast<std::size_t>(index)];
+    if (item.strategyIndices.empty()
+        || item.strategyIndices.front() >= cachedResult.strategies.size()) return false;
+    const auto& strategy = cachedResult.strategies[item.strategyIndices.front()];
+    return strategy.kind == smartimproviser::harmony::ImprovisationStrategyKind::diatonicColor
+        && item.source.mode != smartimproviser::harmony::DiatonicMode::none;
+}
+
 bool SmartImproviserARAEditor::redundantMaterial(int index) const
 {
     if (index < 0 || index >= static_cast<int>(cachedExplanation.items.size())) return false;
@@ -717,6 +748,7 @@ bool SmartImproviserARAEditor::redundantMaterial(int index) const
     if (item.strategyIndices.empty()
         || item.strategyIndices.front() >= cachedResult.strategies.size()) return false;
     const auto& candidate = cachedResult.strategies[item.strategyIndices.front()];
+    if (candidate.ruleId == "core.explicit-chord-tones") return true;
     const bool redundantAnchors = candidate.ruleId == "project.t1.explicit-anchors";
     if (!redundantAnchors && candidate.ruleId != "project.t1.major-V-m6") return false;
     // The four-tone m6 T1 contract remains in Core, while the UI presents its
@@ -750,6 +782,7 @@ std::string SmartImproviserARAEditor::tensionKey(int index) const
 
 int SmartImproviserARAEditor::manualTension(int index) const
 {
+    if (isBaseMode(index)) return 0;
     return processor.manualTensionFor(tensionKey(index));
 }
 
@@ -765,7 +798,8 @@ void SmartImproviserARAEditor::paintListBoxItem(int row, juce::Graphics& g,
     const auto level = entry.level;
     const auto dot = level == 1 ? blue : level == 2 ? orange : level == 3 ? red : gray;
     const bool groupStart = row > 0
-        && strategyRows[static_cast<std::size_t>(row - 1)].level != level;
+        && (strategyRows[static_cast<std::size_t>(row - 1)].level != level
+            || strategyRows[static_cast<std::size_t>(row - 1)].baseMode != entry.baseMode);
     if (groupStart)
     {
         g.setColour(juce::Colour::fromRGB(76, 84, 94));
@@ -779,6 +813,18 @@ void SmartImproviserARAEditor::paintListBoxItem(int row, juce::Graphics& g,
     g.fillRoundedRectangle(frame, 5.0f);
     g.setColour(selected ? blue : juce::Colour::fromRGB(70, 80, 91));
     g.drawRoundedRectangle(frame, 5.0f, 1.0f);
+    if (entry.baseMode)
+    {
+        g.setColour(juce::Colour::fromRGB(225, 230, 238));
+        g.setFont(juce::FontOptions(12.3f, juce::Font::bold));
+        g.drawText(strategyLabels[entry.materialIndex], 12, 0, width - 88, height,
+                   juce::Justification::centredLeft, true);
+        g.setColour(juce::Colour::fromRGB(150, 185, 212));
+        g.setFont(juce::FontOptions(10.5f));
+        g.drawText(ru("ОСНОВА"), width - 78, 0, 66, height,
+                   juce::Justification::centredRight);
+        return;
+    }
     g.setColour(dot);
     g.drawEllipse(10.0f, (height - 18) * 0.5f, 18.0f, 18.0f, 1.5f);
     if (level != 0)
@@ -814,11 +860,13 @@ void SmartImproviserARAEditor::listBoxItemClicked(int row, const juce::MouseEven
     if (row < 0 || row >= static_cast<int>(strategyRows.size())) return;
     const int index = strategyRows[static_cast<std::size_t>(row)].materialIndex;
     selectMaterial(index);
-    if (event.x < 34) openTensionMenu(index, event);
+    if (!strategyRows[static_cast<std::size_t>(row)].baseMode && event.x < 34)
+        openTensionMenu(index, event);
 }
 
 void SmartImproviserARAEditor::openTensionMenu(int index, const juce::MouseEvent& event)
 {
+    if (isBaseMode(index)) return;
     const auto key = tensionKey(index);
     if (key.empty()) return;
     const int current = manualTension(index);
@@ -934,6 +982,9 @@ juce::String SmartImproviserARAEditor::selectedMaterialText() const
 
 void SmartImproviserARAEditor::updateMaterialSelection()
 {
+    const bool degreeLabels = processor.fretDegreeLabelsEnabled();
+    materialViewer.setFretDegreeLabels(degreeLabels);
+    fretLabelButton.setButtonText(degreeLabels ? ru("Гриф: ступени") : ru("Гриф: ноты"));
     const int selected = selectedMaterialIndex;
     const auto layer = static_cast<smartimproviser::harmony::ViewerLayer>(
         juce::jlimit(0, 5, layerSelector.getSelectedId() - 1));
@@ -1101,12 +1152,12 @@ void SmartImproviserARAEditor::timerCallback()
     const auto ordinaryChord = juce::Colour::fromRGB(240, 243, 247);
     const auto currentChordColour = juce::Colour::fromRGB(246, 191, 88);
     if (timeline.previousChordAvailable)
-        summaryContextDisplay.append(chordDisplayName(timeline.previousChord) + "  →  ",
+        summaryContextDisplay.append(chordDisplayName(timeline.previousChord) + ru("  →  "),
                                      chordFont, ordinaryChord);
     summaryContextDisplay.append(chordDisplayName(timeline.currentChord), chordFont,
                                  currentChordColour);
     if (timeline.nextChordAvailable)
-        summaryContextDisplay.append("  →  " + chordDisplayName(timeline.nextChord),
+        summaryContextDisplay.append(ru("  →  ") + chordDisplayName(timeline.nextChord),
                                      chordFont, ordinaryChord);
     summaryContextDisplay.setWordWrap(juce::AttributedString::none);
 

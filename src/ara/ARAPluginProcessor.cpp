@@ -97,7 +97,7 @@ void SmartImproviserARAProcessor::getStateInformation(juce::MemoryBlock& destDat
 {
     const juce::ScopedLock lock(stateLock);
     juce::MemoryOutputStream stream(destData, false);
-    stream.writeString("SmartImproviserARAStateV2");
+    stream.writeString("SmartImproviserARAStateV3");
     stream.writeInt(savedEditorSize.x);
     stream.writeInt(savedEditorSize.y);
     stream.writeInt(static_cast<int>(manualTensions.size()));
@@ -106,13 +106,16 @@ void SmartImproviserARAProcessor::getStateInformation(juce::MemoryBlock& destDat
         stream.writeString(juce::String::fromUTF8(key.c_str()));
         stream.writeInt(level);
     }
+    stream.writeByte(fretDegreeLabels ? 1 : 0);
 }
 
 void SmartImproviserARAProcessor::setStateInformation(const void* data, int size)
 {
     if (data == nullptr || size <= 0) return;
     juce::MemoryInputStream stream(data, static_cast<std::size_t>(size), false);
-    if (stream.readString() != "SmartImproviserARAStateV2") return;
+    const auto stateVersion = stream.readString();
+    if (stateVersion != "SmartImproviserARAStateV2"
+        && stateVersion != "SmartImproviserARAStateV3") return;
     const auto width = stream.readInt(), height = stream.readInt();
     const auto count = stream.readInt();
     if (width < 940 || width > 1900 || height < 1000 || height > 1800
@@ -127,8 +130,11 @@ void SmartImproviserARAProcessor::setStateInformation(const void* data, int size
         if (!key.empty() && level >= 1 && level <= 3)
             restored[std::move(key)] = level;
     }
+    const bool restoredFretDegreeLabels = stateVersion == "SmartImproviserARAStateV3"
+        && !stream.isExhausted() && stream.readByte() != 0;
     const juce::ScopedLock lock(stateLock);
     manualTensions = std::move(restored);
+    fretDegreeLabels = restoredFretDegreeLabels;
     savedEditorSize = {width, height};
 }
 
@@ -145,6 +151,18 @@ void SmartImproviserARAProcessor::setManualTension(const std::string& key, int l
     const juce::ScopedLock lock(stateLock);
     if (level >= 1 && level <= 3) manualTensions[key] = level;
     else manualTensions.erase(key);
+}
+
+bool SmartImproviserARAProcessor::fretDegreeLabelsEnabled() const
+{
+    const juce::ScopedLock lock(stateLock);
+    return fretDegreeLabels;
+}
+
+void SmartImproviserARAProcessor::setFretDegreeLabelsEnabled(bool enabled)
+{
+    const juce::ScopedLock lock(stateLock);
+    fretDegreeLabels = enabled;
 }
 
 juce::Point<int> SmartImproviserARAProcessor::editorSize() const

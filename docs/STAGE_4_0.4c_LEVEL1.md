@@ -30,9 +30,11 @@ repeating the expected/missing tonic status in each row. Detailed evidence
 remains in the explanation. The column orders rows by manually assigned
 T1, T2, T3, then unmarked; colored circles and fine separators distinguish
 groups without taking a row for a heading. The panel height is reduced.
+Core's compatible diatonic mode appears above these groups as the fixed
+foundation, without a tension selector. The literal chord-tone source remains
+available on the fretboard and in Core but is hidden from this compact column.
 The chord-anchor T1 candidate also remains in Core but shares the written
-chord's exact displayed notes; its second list row is suppressed when the
-foundation row already shows those pitches.
+chord's displayed notes; its redundant list row is suppressed.
 Selecting a row updates staff, fretboard and explanation together with
 seek/PLAY/STOP. A separate circle beside each row opens a colored menu for a
 **manual** T1/T2/T3 label or no label. The manual label never reclassifies Core
@@ -40,6 +42,11 @@ evidence, changes the source, or declares a tonic; unmarked is the default.
 These UI labels and window dimensions are saved in the plugin instance's host
 state and restored when the host restores the plugin. This is not a saved Song
 workspace. Core's T2/T3 algorithms remain for later checkpoints.
+The fretboard button switches between note names and Arabic degrees relative
+to the actual written chord, including explicit alterations such as #5 and
+b13. It does not change the staff or harmonic analysis. The display choice is
+stored in V3 host state; V2 projects still restore their tension labels and
+window size, with note names as the default.
 
 Manual labels now use a transposition-independent key: the Core source rule,
 source-root interval over the written chord, chord quality/tones/slash bass and
@@ -102,3 +109,9 @@ has no group headings. Resize the editor; compare fixed text/notehead size. In r
 5–17 and 12–24, check the nut and Roman positions. Seek and PLAY/STOP should
 keep selected text, staff and fretboard synchronized. Acceptance remains
 pending Vlad's live confirmation.
+
+Latest UI check: the arrows around the highlighted current chord render
+correctly; a compatible mode such as G Mixolydian is first and cannot receive
+a T1–T3 label; G7 chord tones are absent from the strategy column. Toggle
+fretboard labels and compare G7#5 (#5) with G7b13 (b13), then save and reopen
+the host project to check the choice is restored.

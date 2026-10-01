@@ -57,6 +57,39 @@ inline bool visibleInLayer(const ViewerNote& note, ViewerLayer layer) noexcept
     return false;
 }
 
+// Fretboard-only labels relative to the actual written chord. Explicit host
+// degrees win: the same pitch can be #5 or b13 without rewriting the chord.
+inline std::string chordDegreeLabel(const NormalizedChord& chord, int pitchClass)
+{
+    if (!chord.valid || pitchClass < 0 || pitchClass >= kPitchClassCount) return {};
+    const int interval = (pitchClass - chord.rootPitchClass + 12) % 12;
+    int degree = chord.hasTone(interval) ? chord.degrees[static_cast<std::size_t>(interval)] : 0;
+    if (degree <= 0 || degree > 13)
+    {
+        static constexpr int defaultDegrees[12] = {1,9,9,3,3,11,5,5,13,13,7,7};
+        degree = defaultDegrees[interval];
+        if (interval == 3 && chord.hasTone(4)) degree = 9; // dominant #9, not minor 3
+        if (interval == 6 && chord.hasTone(7)) degree = 11;
+        if (interval == 8 && !chord.hasTone(7) && chord.hasTone(4)) degree = 5;
+    }
+    int natural = 0;
+    switch (degree)
+    {
+        case 1: natural = 0; break;
+        case 2: case 9: natural = 2; break;
+        case 3: natural = 4; break;
+        case 4: case 11: natural = 5; break;
+        case 5: natural = 7; break;
+        case 6: case 13: natural = 9; break;
+        case 7: natural = 11; break;
+        default: return {};
+    }
+    int alteration = (interval - natural + 12) % 12;
+    if (alteration > 6) alteration -= 12;
+    return std::string(static_cast<std::size_t>(alteration < 0 ? -alteration : alteration),
+                       alteration < 0 ? 'b' : '#') + std::to_string(degree);
+}
+
 inline std::string spelledChordNote(const NormalizedChord& chord, const MaterialNote& note)
 {
     if (! note.spelling.empty())

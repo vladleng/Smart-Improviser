@@ -40,6 +40,8 @@ public:
     bool isAraBound() const noexcept { return araBound.load(std::memory_order_relaxed); }
     int manualTensionFor(const std::string& key) const;
     void setManualTension(const std::string& key, int level);
+    bool fretDegreeLabelsEnabled() const;
+    void setFretDegreeLabelsEnabled(bool enabled);
     juce::Point<int> editorSize() const;
     void setEditorSize(juce::Point<int> size);
 
@@ -52,6 +54,7 @@ private:
     std::atomic<bool> araBound { false };
     mutable juce::CriticalSection stateLock;
     std::map<std::string, int> manualTensions;
+    bool fretDegreeLabels = false;
     juce::Point<int> savedEditorSize {1120, 1000};
     bool hasPublishedTransport = false;
     bool lastPublishedTransportAvailable = false;

@@ -48,6 +48,7 @@ private:
     void rebuildStrategyRows();
     int rowForMaterial(int index) const;
     bool redundantMaterial(int index) const;
+    bool isBaseMode(int index) const;
     std::string tensionKey(int index) const;
     int manualTension(int index) const;
 
@@ -58,7 +59,7 @@ private:
     smartimproviser::harmony::ExplanationResult cachedExplanation;
     juce::String selectedMaterialKey;
     juce::StringArray strategyLabels;
-    struct StrategyRow { int materialIndex; int level; };
+    struct StrategyRow { int materialIndex; int level; bool baseMode; };
     std::vector<StrategyRow> strategyRows;
     int selectedMaterialIndex = -1;
     bool updatingSelector = false;
@@ -93,6 +94,7 @@ private:
     juce::TextButton araButton;
     juce::TextEditor detailsView;
     juce::ListBox strategyList;
+    juce::TextButton fretLabelButton;
     juce::ComboBox layerSelector;
     juce::ComboBox fretSelector;
     MaterialViewerComponent materialViewer;
