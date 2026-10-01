@@ -42,6 +42,13 @@ juce::String utf8String(const std::string& value)
 
 juce::String localizeGeneratedText(juce::String text)
 {
+    text = text.replace("Minor destination confirmed; sources follow its quality independently of the preceding chord.",
+                        ru("Минорная цель подтверждена; набор источников определяется ею независимо от предыдущего аккорда."));
+    text = text.replace("Hypothetical minor destination from tonal context; the actual next chord remains separate and no local tonic is established.",
+                        ru("Минорная цель предполагается по тональному контексту; фактический следующий аккорд учитывается отдельно, локальная тоника не устанавливается."));
+    text = text.replace("Diminished seventh arpeggio from bII of the dominant", ru("Уменьшённое арпеджио от ♭II доминанты"));
+    text = text.replace("Four-note b9-3-5-b7 line. Keep the written dominant root and b13 as accompaniment anchors outside this arpeggio; no natural 13 is added.",
+                        ru("Четыре звука: b9–3–5–b7. Корень доминанты и записанная b13 сохраняются в аккомпанементе вне арпеджио; натуральная 13 не добавляется."));
     text = text.replace("Hypothetical minor I from tonal context, not a played tonic or established local key.",
                         ru("Предполагаемая минорная i следует из тонального контекста; она не прозвучала и не устанавливает локальную тональность."));
     text = text.replace("Presumed minor destination follows the turn and tonal context; the actual next chord remains the target. Use 11 as passing against the dominant third; sustain b13 only when melody supports it.",
@@ -178,12 +185,9 @@ juce::String localizeGeneratedText(juce::String text)
     text = text.replace("Diminished whole-half", ru("Уменьшённая тон–полутон"));
     text = text.replace("Dominant half-whole diminished", ru("Доминантовая уменьшённая полутон–тон"));
     text = text.replace("Dominant whole-tone", ru("Доминантовая целотоновая"));
-    text = text.replace("Harmonic-minor V fragment", ru("Фрагмент гармонического минора на V"));
     text = text.replace("Rare fifth-mode melodic-minor color", ru("Редкий цвет пятого лада мелодического минора"));
     text = text.replace("Rare conditional color on written b13: 11 and b13 can clash when sustained. It does not imply a minor next chord; follow the actual target.",
-                        ru("Редкий условный цвет на записанной ♭13: удержанные 11 и ♭13 могут конфликтовать. Качество цели определяется следующим аккордом."));
-    text = text.replace("Six-note V fragment for confirmed minor resolution and written b9 or b13; omit 11, and treat b13 as a passing color unless supported by the melody.",
-                        ru("Шестизвучный фрагмент V при подтверждённой минорной цели и записанной ♭9 или ♭13; 11 опущена, ♭13 — проходящая краска без подтверждения мелодией."));
+                        ru("Редкий условный цвет на записанной ♭13: удержанные 11 и ♭13 могут конфликтовать. Гамма сама не устанавливает минорную цель; ноты-цели берутся из фактического следующего аккорда."));
     text = text.replace("Chord-local Mixolydian on the written dominant.",
                         ru("Миксолидийский лад от написанной доминанты, без вывода тоники."));
     text = text.replace("Chord-local source; use written guides and actual next-chord targets.",
@@ -209,7 +213,7 @@ juce::String localizeGeneratedText(juce::String text)
     text = text.replace(" half-whole diminished", ru(" уменьшённая (полутон–тон)"));
     text = text.replace(" whole-tone", ru(" целотоновая"));
     text = text.replace(" harmonic minor", ru(" гармонический минор"));
-    text = text.replace(" harmonic-minor V fragment", ru(" фрагмент V гармонического минора"));
+    text = text.replace("dim7 arpeggio", ru("°7 арпеджио"));
 
     text = text.replace("Material on ", ru("Материал на "));
     text = text.replace(" [passing]", ru(" [проходящая]"));
@@ -403,7 +407,7 @@ juce::String summaryPatternName(smartimproviser::harmony::HarmonicPatternType ty
     switch (type)
     {
         case HarmonicPatternType::majorIiVI: return ru("II–V–I");
-        case HarmonicPatternType::minorIiHalfDimVi: return ru("IIø–V–I");
+        case HarmonicPatternType::minorIiHalfDimVi: return ru("IIø–V–i");
         case HarmonicPatternType::halfDiminishedIiViMajor: return ru("IIø–V–Imaj");
         case HarmonicPatternType::minorIvVi: return ru("IV–V–I");
         case HarmonicPatternType::dominantToTonic: return ru("V–I");
@@ -928,9 +932,14 @@ juce::String SmartImproviserARAEditor::selectedMaterialText() const
         && cachedResult.strategies[item.strategyIndices.front()].tensionClassified)
         text += ru("Оценка Core: T1 • базовое мышление для текущего контекста\n");
     if (item.interpretationIndependent)
+    {
+        const auto destination = smartimproviser::harmony::dominantDestination(cachedSituation);
         text += item.source.kind == smartimproviser::harmony::MaterialKind::chordTones
             ? ru("Опоры аккорда • независимо от трактовки\n")
+            : destination.minor()
+            ? ru("Источник для минорной цели доминанты: ") + utf8String(fifthsName(destination.rootFifths)) + "m\n"
             : ru("Источник от написанного аккорда • без выбора тонального центра\n");
+    }
     if (item.missingTonicApplication)
     {
         text += ru("Материал незавершённого ii–V • ожидаемый I: ")
@@ -961,7 +970,8 @@ juce::String SmartImproviserARAEditor::selectedMaterialText() const
         text += localizeGeneratedText(utf8String(item.usageHint)) + "\n";
     const auto view = smartimproviser::harmony::buildMaterialView(
         cachedResult, cachedExplanation, static_cast<std::size_t>(selected));
-    if (item.source.kind == smartimproviser::harmony::MaterialKind::scale)
+    if (item.source.kind == smartimproviser::harmony::MaterialKind::scale
+        || item.source.kind == smartimproviser::harmony::MaterialKind::arpeggio)
     {
         text += ru("Ноты источника: ");
         for (const auto& note : item.source.notes)
@@ -1247,6 +1257,20 @@ void SmartImproviserARAEditor::timerCallback()
         summaryLocal.clear();
     }
 
+    const auto destination = smartimproviser::harmony::dominantDestination(cachedSituation);
+    if (destination.minor() && !destination.confirmed)
+    {
+        summaryMeta = ru("Предполагаемая цель оборота: ") + utf8String(fifthsName(destination.rootFifths))
+            + ru("m (по тональному контексту)");
+        summaryGlobalFunction = ru("Функция в обороте: Доминанта");
+        summaryLocal.clear();
+    }
+    const bool hypotheticalMinorTurn = destination.minor() && !destination.confirmed
+        && cachedSituation.previousChordAvailable
+        && cachedSituation.previousChord.rootPitchClass == (cachedSituation.currentChord.rootPitchClass + 7) % 12
+        && (cachedSituation.previousChord.quality == smartimproviser::harmony::ChordQuality::minor
+            || cachedSituation.previousChord.quality == smartimproviser::harmony::ChordQuality::halfDiminished);
+
     const auto* activePattern = &cachedSituation.pattern;
     if (cachedSituation.localPattern.recognized())
         activePattern = &cachedSituation.localPattern;
@@ -1280,7 +1304,12 @@ void SmartImproviserARAEditor::timerCallback()
             summaryPatternDisplay.append(suffix, labelFont, presentColour);
     };
     const auto& incomplete = cachedSituation.incompleteCadence;
-    if (incomplete.valid)
+    if (hypotheticalMinorTurn)
+    {
+        showPattern(cachedSituation.previousChord.quality == smartimproviser::harmony::ChordQuality::halfDiminished
+                        ? ru("IIø–V–") : ru("II–V–"), "i", missingColour, progress(1, 3));
+    }
+    else if (incomplete.valid)
     {
         showPattern(ru("II–V–"), smartimproviser::harmony::hasContextualMinorIiVTarget(cachedSituation) ? "i" : "I",
                     missingColour, progress(incomplete.positionIndex, 3));
@@ -1330,13 +1359,13 @@ void SmartImproviserARAEditor::timerCallback()
             if (separator < 0) break;
             sequence = sequence.substring(separator + 1);
         }
-        const bool missingLast = incomplete.valid || cachedSituation.expectedTonic.valid
+        const bool missingLast = hypotheticalMinorTurn || incomplete.valid || cachedSituation.expectedTonic.valid
             || (!cachedSituation.patternContext.valid && cachedSituation.localKey.valid
                 && cachedSituation.localKey.status
                     == smartimproviser::harmony::KeyCenterStatus::candidate
                 && cachedSituation.localPattern.type
                     == smartimproviser::harmony::HarmonicPatternType::majorIiVI);
-        const int position = incomplete.valid ? incomplete.positionIndex
+        const int position = hypotheticalMinorTurn ? 1 : incomplete.valid ? incomplete.positionIndex
             : impliedLink.valid ? impliedLink.positionIndex : activePattern->positionIndex;
         patternDisplayPosition = position;
         const int start = patternWindow.currentIndex - position;
@@ -1348,6 +1377,9 @@ void SmartImproviserARAEditor::timerCallback()
             member.expected = missingLast && i == romanTokens.size() - 1;
             if (member.expected)
                 member.chord = ru("—");
+            else if (hypotheticalMinorTurn && i < 2)
+                member.chord = utf8String(smartimproviser::harmony::normalizedChordSymbol(
+                    i == 0 ? cachedSituation.previousChord : cachedSituation.currentChord));
             else if (incomplete.valid && i < 2)
                 member.chord = utf8String(smartimproviser::harmony::normalizedChordSymbol(
                     i == 0 ? incomplete.ii : incomplete.v));
@@ -1391,7 +1423,8 @@ void SmartImproviserARAEditor::timerCallback()
         {
             if (sourceItem.strategyIndices.empty()) continue;
             const auto& scalar = result.strategies[sourceItem.strategyIndices.front()];
-            if (scalar.source.kind != smartimproviser::harmony::MaterialKind::scale)
+            if (scalar.source.kind != smartimproviser::harmony::MaterialKind::scale
+                && scalar.source.kind != smartimproviser::harmony::MaterialKind::arpeggio)
                 continue;
 
             if (hasScale)

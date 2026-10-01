@@ -1,6 +1,7 @@
 #pragma once
 
 #include "core/analysis/Explanation.h"
+#include "core/analysis/DominantDestination.h"
 #include <string>
 
 namespace smartimproviser::harmony
@@ -24,7 +25,8 @@ inline std::string manualTensionKey(const ImprovisationResult& result,
         || situation.pattern.type == HarmonicPatternType::majorIiVI
         || situation.localPattern.type == HarmonicPatternType::majorIiVI
         || situation.pattern.type == HarmonicPatternType::majorIiiViIiV;
-    std::string context = majorIiV ? "major-ii-v"
+    std::string context = dominantDestination(situation).minor() ? "v-to-minor"
+        : majorIiV ? "major-ii-v"
         : result.dominantContext == DominantContext::toMajor ? "v-to-major"
         : result.dominantContext == DominantContext::toMinor ? "v-to-minor"
         : result.dominantContext == DominantContext::toDominant ? "v-to-dominant"

@@ -426,8 +426,8 @@ int main()
            "G7 of Dm7-G7-D7/A gets V material without inventing C resolution");
 
     // The next chord can be minor on the expected major-I root. That is a
-    // real V -> minor resolution, but does not erase the ii m7–V7 source
-    // family or recast the preceding ii as a minor-key half-diminished ii.
+    // real V -> minor resolution. fix4 selects the destination's source family
+    // without recasting the preceding ii as a half-diminished chord.
     // Compare the complete palette in all twelve transpositions, not names
     // of individual chords or a single project key.
     const std::set<std::string> expectedIncompleteRules {
@@ -452,14 +452,20 @@ int main()
                    "ii m7-V7 keeps its provisional major direction with a non-major continuation");
             std::set<std::string> rules;
             for (const auto& strategy : result.strategies) rules.insert(strategy.ruleId);
-            expect(rules == expectedIncompleteRules
-                   && result.strategies.size() == expectedIncompleteRules.size(),
-                   "all equivalent ii-V dominants receive one complete source family");
+            const bool minorTarget = situation.nextChord.quality == ChordQuality::minor;
+            const std::set<std::string> minorRules {
+                "core.explicit-chord-tones", "project.harmonic-minor.contextual-V",
+                "project.minor-V.bII-dim7-arpeggio", "boyko.melodic-minor.bII",
+                "levine.dominant.half-whole"
+            };
+            const auto& expected = minorTarget ? minorRules : expectedIncompleteRules;
+            expect(rules == expected && result.strategies.size() == expected.size(),
+                   "source family follows the destination quality in all transpositions");
             const auto profile = analyzeStableTension(result);
             expect(!profile.bands[0].alternatives.empty()
                    && profile.bands[0].alternatives.front().strategy.ruleId
-                        == "project.t1.major-V-m6",
-                   "provisional major ii-V also keeps its T1 structure");
+                        == (minorTarget ? "project.t1.explicit-anchors" : "project.t1.major-V-m6"),
+                   "minor destination cannot inherit the major ii-V T1 structure");
         }
     }
 

@@ -106,9 +106,10 @@ int main() {
     expect(actualMinor.context.incompleteCadence.valid && actualMinor.context.resolution.confirmed,
            "missing major I coexists with factual minor resolution");
     const auto minorText=explanationDiagnosticText(actualMinor);
-    expect(minorText.find("expected major-I resolution unconfirmed")!=std::string::npos
+    expect(minorText.find("Minor destination confirmed")!=std::string::npos
+           && minorText.find("why.missing-tonic")!=std::string::npos
            && minorText.find("Dm7 [OK]")!=std::string::npos,
-           "explanation distinguishes hypothetical major I from confirmed Dm7");
+           "explanation uses confirmed minor destination while retaining the old missing-major-template evidence");
 
     std::cout << "Material regression tests passed\n";
 }

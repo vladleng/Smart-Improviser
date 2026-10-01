@@ -1,6 +1,6 @@
 # 0.4c — Level 1 / Stable (live test pending)
 
-`0.4c-fix3` includes the accompaniment, source grouping, T1 source-form switch and explanation, contextual-foundation and minor-destination corrections in [STAGE_4_0.4c_FIXES.md](STAGE_4_0.4c_FIXES.md). The source-form button makes the four-note subset accessible without another compact list row; full scales are not automatically T1.
+`0.4c-fix4` includes the accompaniment, source grouping, T1 source-form switch and explanation, contextual-foundation and minor-destination corrections in [STAGE_4_0.4c_FIXES.md](STAGE_4_0.4c_FIXES.md). The source-form button makes the four-note subset accessible without another compact list row; full scales are not automatically T1.
 
 Stage 4 Issue #5 remains open; stable is `0.4`. This checkpoint applies the
 accepted 0.4b profile contract to an already analyzed Core result. The
@@ -75,12 +75,15 @@ modal candidate solely from the ii chord. It provides provisional Dorian on
 ii and Mixolydian on V; the global key and any unconfirmed SubV hypothesis are
 kept for diagnostics, not the compact playing function. The actual next chord
 remains the only factual target.
-This palette also survives a real V-to-minor resolution when the preceding ii
-is the ordinary m7 form: Em7–A7–Dm7 receives the same source family as the
-transposed Dm7–G7–D7/A, while Dm7 remains the actual minor target and the
-expected major I is unplayed. The rule is interval based in every key, and
-explicitly altered chords still filter incompatible sources. A real minor
-resolution with written b9/b13 can retain its compatible minor V fragment.
+From fix4, a minor destination selects one shared minor source family,
+independently of whether the preceding ii is m7 or m7b5 and whether the
+minor destination is confirmed or presumed. Full harmonic minor is named
+from that destination; there is no separate V-fragment entry. A bII diminished
+seventh arpeggio provides b9–3–5–b7 without the natural 13 of the full diminished
+scale. The old major template remains diagnostic evidence only when the
+playing destination is minor. Literal next chords and written alterations
+remain factual accompaniment/target material. See the fix4 rules and live
+checks in [STAGE_4_0.4c_FIXES.md](STAGE_4_0.4c_FIXES.md).
 
 The editor window can be resized within fixed bounds; fonts, controls and
 noteheads retain their pixel size as available space changes. The fretboard

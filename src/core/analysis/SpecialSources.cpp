@@ -30,7 +30,7 @@ struct Rule
     // Chord-relative pitch intervals; zero means a non-member, otherwise a degree.
     std::array<int, 12> degrees;
     int omittedInterval;
-    enum class Form { melodicMinor, wholeHalf, halfWhole, wholeTone, harmonicMinor, harmonicMinorFragment } form = Form::melodicMinor;
+    enum class Form { melodicMinor, wholeHalf, halfWhole, wholeTone, harmonicMinor, diminishedArpeggio } form = Form::melodicMinor;
 };
 const Rule minor {"boyko.melodic-minor.root", ImprovisationStrategyKind::melodicMinorApplication, 0,
     "Minor melodic color", "Levine, chapter 3, pp. 88-90; Boyko, section 2, pp. 88-89", "On m7 this is an optional overlay: keep the written b7 as an anchor and use the major 7 only as a passing color.",
@@ -53,10 +53,10 @@ const Rule harmonicMinorTarget {"project.harmonic-minor.contextual-V", Improvisa
     "Harmonic minor from the turn's minor destination", "Project contextual minor-target rule; harmonic-minor collection from the destination",
     "Presumed minor destination follows the turn and tonal context; the actual next chord remains the target. Use 11 as passing against the dominant third; sustain b13 only when melody supports it.",
     {1,9,0,0,3,11,0,5,13,0,7,0}, -1, Rule::Form::harmonicMinor};
-const Rule harmonicMinorVFragment {"levine.harmonic-minor.minor-V-fragment", ImprovisationStrategyKind::harmonicMinorFragment, 0,
-    "Harmonic-minor V fragment", "Levine, chapter 23, pp. 529-531: harmonic-minor fragments over V7(b9) resolving to minor",
-    "Six-note V fragment for confirmed minor resolution and written b9 or b13; omit 11, and treat b13 as a passing color unless supported by the melody.",
-    {1,9,0,0,3,0,0,5,13,0,7,0}, -1, Rule::Form::harmonicMinorFragment};
+const Rule minorDominantArpeggio {"project.minor-V.bII-dim7-arpeggio", ImprovisationStrategyKind::diminishedArpeggio, -5,
+    "Diminished seventh arpeggio from bII of the dominant", "Project minor-dominant application: bII dim7 supplies b9, 3, 5 and b7",
+    "Four-note b9-3-5-b7 line. Keep the written dominant root and b13 as accompaniment anchors outside this arpeggio; no natural 13 is added.",
+    {1,9,0,0,3,0,0,5,13,0,7,0}, -1, Rule::Form::diminishedArpeggio};
 const Rule altered {"boyko.melodic-minor.bII", ImprovisationStrategyKind::alteredDominant, -5,
     "Altered dominant", "Levine, chapter 3, pp. 104-106; Boyko, section 2, pp. 101-102", "b9/#9/b5/b13; omit natural 5 in this line.",
     {1,9,0,9,3,0,5,0,13,0,7,0}, 7};
@@ -87,7 +87,7 @@ bool compatible(const Rule& rule, const NormalizedChord& chord)
         if (!expected) return false;
         if (!given || simpleGiven == (expected - 1) % 7 + 1) continue;
         // b5/#11 and #5/b13 are intentional dominant enharmonic realizations.
-        if (rule.form != Rule::Form::harmonicMinorFragment
+        if (rule.form != Rule::Form::diminishedArpeggio
             && rule.form != Rule::Form::harmonicMinor
             && chord.quality == ChordQuality::dominant
             && ((interval == 6 && (simpleGiven == 4 || simpleGiven == 5))
@@ -133,9 +133,10 @@ void append(ImprovisationResult& result, const Rule& rule, int index,
     }
     strategy.kind = rule.kind;
     strategy.ruleId = subV ? "project.subv.melodic-minor.V" : rule.id;
-    strategy.ruleVersion = &rule == &harmonicMinorTarget ? 1
+    strategy.ruleVersion = &rule == &harmonicMinorTarget ? 2
+        : &rule == &minorDominantArpeggio ? 1
         : &rule == &minor || &rule == &diminished ? 4 : &rule == &dominantDiminished ? 2 : 3;
-    strategy.priority = &rule == &harmonicMinorTarget ? 60 : &rule == &minorTargetColor ? 15 : 40; // Never harmonic confidence.
+    strategy.priority = &rule == &harmonicMinorTarget ? 60 : &rule == &minorDominantArpeggio ? 50 : &rule == &minorTargetColor ? 15 : 40; // Never harmonic confidence.
     strategy.interpretationIndependent = chordLocal;
     strategy.interpretationIndex = missingTonic || chordLocal || pendingIiV ? -1 : index;
     strategy.missingTonicApplication = missingTonic;
@@ -149,17 +150,13 @@ void append(ImprovisationResult& result, const Rule& rule, int index,
     else if (chordLocal)
     {
         strategy.evidence = {};
-        if (&rule == &harmonicMinorTarget)
-        {
-            strategy.evidence.confidence = ConfidenceLevel::low;
-            strategy.evidence.add(EvidenceFlag::patternMatch);
-            strategy.evidence.add(EvidenceFlag::explicitKey);
-        }
+        if (dominantDestination(result.context).minor())
+            strategy.evidence = dominantDestination(result.context).evidence;
     }
     else if (pendingIiV) strategy.evidence = result.context.localPattern.evidence;
     else strategy.evidence = result.context.interpretations[static_cast<std::size_t>(index)].evidence;
     strategy.source = {};
-    strategy.source.kind = MaterialKind::scale;
+    strategy.source.kind = rule.form == Rule::Form::diminishedArpeggio ? MaterialKind::arpeggio : MaterialKind::scale;
     strategy.source.rootFifths = chordSpellingFifths + rule.sourceFifthsOffset;
     strategy.source.rootPitchClass = circleOfFifthsToPitchClass(strategy.source.rootFifths);
     const auto rootName = spell(strategy.source.rootFifths, 1, strategy.source.rootPitchClass);
@@ -170,7 +167,7 @@ void append(ImprovisationResult& result, const Rule& rule, int index,
         case Rule::Form::halfWhole: strategy.source.name = rootName + " half-whole diminished"; break;
         case Rule::Form::wholeTone: strategy.source.name = rootName + " whole-tone"; break;
         case Rule::Form::harmonicMinor: strategy.source.name = rootName + " harmonic minor"; break;
-        case Rule::Form::harmonicMinorFragment: strategy.source.name = rootName + " harmonic-minor V fragment"; break;
+        case Rule::Form::diminishedArpeggio: strategy.source.name = rootName + "dim7 arpeggio"; break;
     }
     strategy.characteristicNotes.clear();
     strategy.sourceReference = rule.reference;
@@ -186,8 +183,11 @@ void append(ImprovisationResult& result, const Rule& rule, int index,
         ? "Incomplete ii-V: the expected major I did not sound; source root is not an established key. "
         : "Use with harmonic interpretation " + std::to_string(index + 1)
             + "; source root is not a song key. ";
-    if (&rule == &harmonicMinorTarget)
-        strategy.conditions = "Hypothetical minor I from tonal context, not a played tonic or established local key. ";
+    const auto destination = dominantDestination(result.context);
+    if (destination.minor())
+        strategy.conditions = destination.confirmed
+            ? "Minor destination confirmed; sources follow its quality independently of the preceding chord. "
+            : "Hypothetical minor destination from tonal context; the actual next chord remains separate and no local tonic is established. ";
     strategy.conditions += rule.hint;
     if (rule.omittedInterval >= 0 && chord.hasTone(rule.omittedInterval))
         strategy.omittedChordTones.push_back(wrap(chord.rootPitchClass + rule.omittedInterval));
@@ -199,9 +199,10 @@ void append(ImprovisationResult& result, const Rule& rule, int index,
     constexpr int halfWhole[] = {0,1,3,4,6,7,9,10};
     constexpr int wholeToneIntervals[] = {0,2,4,6,8,10};
     constexpr int harmonic[] = {0,2,3,5,7,8,11};
-    constexpr int harmonicFragment[] = {0,1,4,7,8,10};
+    constexpr int dimArpeggio[] = {0,3,6,9};
+    constexpr int dimDegrees[] = {1,3,5,7};
     const int count = rule.form == Rule::Form::wholeHalf || rule.form == Rule::Form::halfWhole ? 8
-        : rule.form == Rule::Form::wholeTone || rule.form == Rule::Form::harmonicMinorFragment ? 6 : 7;
+        : rule.form == Rule::Form::wholeTone ? 6 : rule.form == Rule::Form::diminishedArpeggio ? 4 : 7;
     for (int i = 0; i < count; ++i)
     {
         MaterialNote note;
@@ -219,9 +220,8 @@ void append(ImprovisationResult& result, const Rule& rule, int index,
                 note.degree = rule.degrees[static_cast<std::size_t>(wholeToneIntervals[i])]; break;
             case Rule::Form::harmonicMinor:
                 note.semitonesFromRoot = harmonic[i]; note.degree = i + 1; break;
-            case Rule::Form::harmonicMinorFragment:
-                note.semitonesFromRoot = harmonicFragment[i];
-                note.degree = rule.degrees[static_cast<std::size_t>(harmonicFragment[i])]; break;
+            case Rule::Form::diminishedArpeggio:
+                note.semitonesFromRoot = dimArpeggio[i]; note.degree = dimDegrees[i]; break;
         }
         note.pitchClass = wrap(strategy.source.rootPitchClass + note.semitonesFromRoot);
         note.spelling = spell(strategy.source.rootFifths, note.degree, note.pitchClass);
@@ -241,6 +241,16 @@ void append(ImprovisationResult& result, const Rule& rule, int index,
         chordNote.spelling = spell(chordSpellingFifths, chordNote.degree, note.pitchClass);
         strategy.source.chordRelativeNotes.push_back(chordNote);
         if (note.characteristic) strategy.characteristicNotes.push_back(chordNote);
+    }
+    if (rule.form == Rule::Form::diminishedArpeggio)
+    {
+        ChordContext thinking;
+        thinking.available = thinking.defined = true;
+        thinking.root = thinking.bass = strategy.source.rootFifths;
+        for (int i = 0; i < 4; ++i) thinking.intervals.values[dimArpeggio[i]] = dimDegrees[i];
+        strategy.thinkingStructure = normalizeChord(thinking);
+        for (int i : {0,8})
+            if (chord.hasTone(i)) strategy.omittedChordTones.push_back(wrap(chord.rootPitchClass + i));
     }
     if (rule.form == Rule::Form::melodicMinor)
     {
@@ -281,6 +291,7 @@ void addSpecialSources(ImprovisationResult& result)
     if (!result.valid || result.strategies.empty()) return;
     const auto& situation = result.context;
     const auto& chord = situation.currentChord;
+    const auto destination = dominantDestination(situation);
 
     for (std::uint8_t i = 0; i < situation.interpretationCount; ++i)
     {
@@ -297,6 +308,7 @@ void addSpecialSources(ImprovisationResult& result)
 
         if (chord.quality == ChordQuality::dominant)
         {
+            if (destination.minor()) continue; // One shared minor-destination catalog below.
             const bool expectedMajor = situation.expectedTonic.valid
                 && interpretation.kind == HarmonicInterpretationKind::globalContext
                 && interpretation.center.key.mode == KeyMode::major
@@ -310,19 +322,6 @@ void addSpecialSources(ImprovisationResult& result)
             if (! confirmedTarget && ! expectedMajor)
                 continue;
 
-            if (hasIncompleteMajorIiVPalette(situation)
-                && result.dominantContext == DominantContext::toMinor)
-            {
-                // Keep an explicitly altered V -> minor fragment where
-                // applicable. The common altered/diminished choices are added
-                // once below for the ii–V shape, without losing the factual
-                // minor resolution or producing two identical list rows.
-                if (chord.hasTone(1) && chord.degrees[1] == 9
-                    || chord.hasTone(8) && chord.degrees[8] == 13)
-                    append(result, harmonicMinorVFragment, index);
-                continue;
-            }
-
             const bool subV = interpretation.harmonic.substituteDominantConfirmed;
             if (subV)
             {
@@ -335,10 +334,6 @@ void addSpecialSources(ImprovisationResult& result)
                     append(result, lydian, index);
                     append(result, flatSevenOverlay, index);
                 }
-                if (confirmedTarget && result.dominantContext == DominantContext::toMinor
-                    && (chord.hasTone(1) && chord.degrees[1] == 9
-                        || chord.hasTone(8) && chord.degrees[8] == 13))
-                    append(result, harmonicMinorVFragment, index);
                 append(result, altered, index);
                 append(result, dominantDiminished, index);
                 if (chord.hasAlteration(ChordAlteration::sharpFifth) && ! chord.hasTone(7))
@@ -379,7 +374,7 @@ void addSpecialSources(ImprovisationResult& result)
             [](const auto& source) { return source.ruleId == diminished.id; }))
         append(result, diminished, -1, false, false, true);
 
-    if (hasIncompleteMajorIiVPalette(situation) && !hasContextualMinorIiVTarget(situation))
+    if (hasIncompleteMajorIiVPalette(situation) && !destination.minor())
     {
         // Same established catalog as V -> major, but with explicitly
         // provisional provenance and the real next chord retained as target.
@@ -391,7 +386,7 @@ void addSpecialSources(ImprovisationResult& result)
             append(result, wholeTone, -1, false, true);
     }
 
-    if (!situation.nextChordAvailable && !situation.resolution.confirmed
+    if (!destination.minor() && !situation.nextChordAvailable && !situation.resolution.confirmed
         && situation.localPattern.type == HarmonicPatternType::majorIiVI
         && situation.localPattern.positionIndex == 1
         && chord.quality == ChordQuality::dominant && !result.substituteDominant)
@@ -409,9 +404,12 @@ void addSpecialSources(ImprovisationResult& result)
     // written slash bass and target remain untouched.
     if (chord.quality == ChordQuality::dominant)
     {
-        if (hasContextualMinorIiVTarget(situation)
-            && chord.rootPitchClass == situation.incompleteCadence.v.rootPitchClass)
+        if (destination.minor())
+        {
             append(result, harmonicMinorTarget, -1, false, false, true);
+            append(result, minorDominantArpeggio, -1, false, false, true);
+            append(result, altered, -1, false, false, true);
+        }
         const auto hasRule = [&](const char* id)
         {
             return std::any_of(result.strategies.begin(), result.strategies.end(),

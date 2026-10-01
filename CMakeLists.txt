@@ -36,6 +36,7 @@ add_library(SmartImproviserCore STATIC
     src/core/analysis/ContextRanking.h
     src/core/analysis/DiatonicSources.cpp
     src/core/analysis/DiatonicSources.h
+    src/core/analysis/DominantDestination.h
     src/core/analysis/Explanation.h
     src/core/analysis/ManualTensionKey.h
     src/core/analysis/MaterialViewer.h
@@ -168,7 +169,7 @@ target_compile_definitions(SmartImproviserARA
         JUCE_WEB_BROWSER=0
         JUCE_USE_CURL=0
         JUCE_VST3_CAN_REPLACE_VST2=0
-        SMART_IMPROVISER_BUILD_VERSION="0.4c-fix3"
+        SMART_IMPROVISER_BUILD_VERSION="0.4c-fix4"
 )
 
 target_link_libraries(SmartImproviserARA
@@ -360,3 +361,10 @@ if(MSVC)
     target_compile_options(SmartImproviserFix3RegressionTests PRIVATE /utf-8)
 endif()
 add_test(NAME SmartImproviserFix3RegressionTests COMMAND SmartImproviserFix3RegressionTests)
+
+add_executable(SmartImproviserFix4RegressionTests tests/Fix4RegressionTests.cpp)
+target_link_libraries(SmartImproviserFix4RegressionTests PRIVATE SmartImproviserCore)
+if(MSVC)
+    target_compile_options(SmartImproviserFix4RegressionTests PRIVATE /utf-8)
+endif()
+add_test(NAME SmartImproviserFix4RegressionTests COMMAND SmartImproviserFix4RegressionTests)

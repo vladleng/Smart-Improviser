@@ -185,6 +185,7 @@ bool appendIncompleteCadenceMode(ImprovisationResult& result)
     const auto& situation = result.context;
     const auto& incomplete = situation.incompleteCadence;
     const auto& chord = situation.currentChord;
+    if (dominantDestination(situation).minor()) return false;
     if (! incomplete.valid || incomplete.positionIndex < 0 || incomplete.positionIndex > 1
         || ! situation.nextChordAvailable || ! incomplete.actualContinuation.valid)
         return false;

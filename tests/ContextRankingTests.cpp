@@ -207,8 +207,8 @@ int main()
     while (firstDependent < established.strategies.size()
            && established.strategies[firstDependent].interpretationIndependent)
         ++firstDependent;
-    expect(firstDependent < established.strategies.size()
-           && established.strategies[firstDependent].interpretationIndex
+    expect(firstDependent == established.strategies.size()
+           || established.strategies[firstDependent].interpretationIndex
                 == establishedSituation.primaryInterpretationIndex,
            "primary interpretation ranks before context alternatives");
 

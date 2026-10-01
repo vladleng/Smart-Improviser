@@ -41,3 +41,21 @@ Includes fix2. Studio Pro acceptance is pending.
 Validation: `Fix3RegressionTests` covers the four cases across all twelve transpositions, local F-major foundation and characteristic ninth, factual versus hypothetical targets, custom key context and negative cases. Run all 21 host-neutral suites plus the Windows plugin build.
 
 Live check: Abdim between D7/A and Gm7 must offer Ab whole–half; Fmaj7 + 9 after Gm7–C7 must show G in “Характерные”; Dm7 before G7 must have one Dorian foundation; A7(b13) in Em7–A7(b13)–D7 must show presumed Dm, full D harmonic minor before altered/rare colors, while the next-chord layer continues to show D7. Repeat seek/PLAY/STOP and reopen.
+
+## 0.4c-fix4 — shared minor-dominant destination and diminished arpeggio
+
+Includes fix3. Studio Pro acceptance is pending. This section supersedes fix3's separation of the harmonic-minor fragment and its preceding-ii eligibility gate.
+
+`DominantDestination` separates the destination used for source selection from the factual next chord and Stage 2 resolution/key evidence. A confirmed major/minor resolution takes precedence; otherwise written major/minor continuation supplies its quality without asserting tonicization. A changed-quality continuation on the expected root can support a presumed minor destination from established local or global tonal context and explicit b9/b13. The preceding ii quality is not an eligibility gate. A mismatched continuation root or unsupported tonal context does not create that hypothesis.
+
+- Em7–A7(b13)–D7 and Em7b5–A7(b13)–Dm7 receive the same four sources: D harmonic minor, Bbdim7 arpeggio, Bb melodic minor (altered) and the rare supplementary D melodic minor. Confirmed versus presumed destination changes evidence/conditions, not the source collection.
+- The separate six-note `harmonic-minor V fragment` rule and its label are removed. Harmonic minor is always named from the destination and offered as the full seven-note collection where compatible, including ordinary V7 resolving to minor.
+- The diminished source here is an **arpeggio**, not an octatonic scale. bII dim7 gives b9–3–5–b7: over A, Bb C# E G (native Bb arpeggio spelling: Bb Db Fb Abb). It introduces no F# / natural 13. Literal A and written F / b13 stay in the chord layer, outside the four-note source. Its thinking structure is Bbdim7.
+- Actual D7 remains in the timeline and next-chord layer. The displayed Em7–A7 direction has an absent minor i; D7 is not inserted as its tonic or used to establish D major. The same display also works with a half-diminished ii and presumed minor destination.
+- The minor destination overrides the old major ii–V playing palette even when the preceding ii is ordinary m7. The old major template is retained only as explicitly labelled structural diagnostic evidence; its absent I does not override an actual minor resolution.
+- Manual tension keys use the shared minor destination before the template/actual-continuation category, so matching sources in both cases share a label. Full sources and the new arpeggio are not automatically classified T1.
+- Compatibility remains source-specific: written natural 9, incompatible #5/b5 spelling or slash bass cannot be silently omitted from an incompatible collection. Natural-9 chords can retain other compatible sources. The unchanged full half–whole diminished scale still excludes written b13.
+
+`Fix4RegressionTests` compares complete source signatures, common manual labels, four-note arpeggio/viewer projection, destination evidence and negative cases across all twelve transpositions, with minor ii, half-diminished ii and no preceding ii. Existing suites cover major, SubV, incomplete and unknown-future contexts. All 22 suites and the Windows plugin build are required.
+
+Live check: compare the two supplied A7(b13) positions; D harmonic minor must replace the fragment in both, Bb diminished arpeggio must be selectable, and its source layer must contain four tones while the chord layer keeps A and F. D7 stays out of the first displayed turn; Dm7 remains the confirmed arrival in the second. Labels, source selection and notes must remain consistent during seek/PLAY/STOP/reopen.

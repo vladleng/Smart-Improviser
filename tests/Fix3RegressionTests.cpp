@@ -94,7 +94,7 @@ int main() {
         auto wrongKey=turn(chord(key+4,{0,3,7,10}),chord(key+3,{0,4,7,8,10}),chord(key+2,{0,4,7,10}),key+2);
         check(!hasContextualMinorIiVTarget(wrongKey.context) && !rule(wrongKey,"project.harmonic-minor.contextual-V"),"b13 alone does not invent minor destination in D major");
         auto isolated=turn(chord(key,{0,4,7,11}),chord(key+3,{0,4,7,8,10}),chord(key+2,{0,4,7,10}),key);
-        check(!rule(isolated,"project.harmonic-minor.contextual-V"),"isolated b13 has no contextual ii-V hypothesis");
+        check(rule(isolated,"project.harmonic-minor.contextual-V"),"destination is independent of a preceding ii chord");
         auto naturalNine=turn(chord(key+4,{0,3,7,10}),chord(key+3,{0,2,4,7,8,10}),chord(key+2,{0,4,7,10}),key);
         check(!rule(naturalNine,"project.harmonic-minor.contextual-V"),"written natural nine blocks harmonic minor collection");
     }

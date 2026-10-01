@@ -140,7 +140,7 @@ inline std::string explanationDiagnosticText(const ImprovisationResult& result)
                     if (evidence.kind == ExplanationEvidenceKind::incompleteCadence
                         && result.context.incompleteCadence.valid)
                         out << " • " << explanation_text_detail::rootName(
-                            result.context.incompleteCadence.missingTonicRootFifths);
+                            result.context.incompleteCadence.missingTonicRootFifths) << " major (structural template)";
                     else if (evidence.kind == ExplanationEvidenceKind::expectedTonic
                              && result.context.expectedTonic.valid)
                         out << " • " << explanation_text_detail::rootName(
