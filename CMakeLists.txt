@@ -30,6 +30,8 @@ add_library(SmartImproviserCore STATIC
     src/core/model/LibraryRecord.h
     src/core/analysis/LibraryValidation.h
     src/core/analysis/LibraryValidation.cpp
+    src/core/analysis/PhraseLibrary.h
+    src/core/analysis/PhraseLibrary.cpp
     src/core/model/Phrase.h
     src/core/model/PhraseTensionProfile.h
     src/core/model/TensionCurve.h
@@ -181,7 +183,7 @@ target_compile_definitions(SmartImproviserARA
         JUCE_WEB_BROWSER=0
         JUCE_USE_CURL=0
         JUCE_VST3_CAN_REPLACE_VST2=0
-        SMART_IMPROVISER_BUILD_VERSION="0.5a"
+        SMART_IMPROVISER_BUILD_VERSION="0.5b"
 )
 
 target_link_libraries(SmartImproviserARA
@@ -425,3 +427,10 @@ if(MSVC)
     target_compile_options(SmartImproviserLibraryContractTests PRIVATE /utf-8)
 endif()
 add_test(NAME SmartImproviserLibraryContractTests COMMAND SmartImproviserLibraryContractTests)
+
+add_executable(SmartImproviserPhraseLibraryTests tests/PhraseLibraryTests.cpp)
+target_link_libraries(SmartImproviserPhraseLibraryTests PRIVATE SmartImproviserCore)
+if(MSVC)
+    target_compile_options(SmartImproviserPhraseLibraryTests PRIVATE /utf-8)
+endif()
+add_test(NAME SmartImproviserPhraseLibraryTests COMMAND SmartImproviserPhraseLibraryTests)

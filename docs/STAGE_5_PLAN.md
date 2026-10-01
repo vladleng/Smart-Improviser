@@ -2,8 +2,8 @@
 
 Начало этапа: 2026-10-01, по указанию Влада после принятого Stage 4.
 База — stable 0.5, main `2f3cf3a`, Windows run `36867908179`, 27/27 CTest.
-0.5a реализуется отдельным PR: [контракт](STAGE_5_0.5a_LIBRARY_CONTRACT.md).
-Windows CI и Studio Pro regression acceptance ещё ожидаются; 0.5b не начат.
+0.5a принята Владом 2026-10-01, PR #59 merged в main (`37d0b85`), Windows #425 — 28/28 CTest.
+0.5b — [Library API в памяти / независимые копии](STAGE_5_0.5b_LIBRARY_API.md): реализация подготовлена, CI/Studio Pro приёмка ожидаются.
 
 Рабочая линия: **0.5a → 0.5g**. Итог Stage 5: **stable 0.6**.
 Каждая буква — отдельная сборка, regression и доступный Studio Pro live gate;
@@ -40,19 +40,19 @@ Stage 7; нотный/TAB редактор — Stage 8; преобразован
 
 ## 0.5a — первый checkpoint
 
-- [ ] Сверить готовый Phrase со Stage 4 и расширять библиотечную оболочку, без
+- [x] Сверить готовый Phrase со Stage 4 и расширять библиотечную оболочку, без
   второго набора нот/ритма/tension и отдельного движка гармонического соответствия.
-- [ ] Разделить identity/revision записи, source identity/version и lineage копии.
-- [ ] Определить common/user domain, готовую Phrase и частичную Idea.
-- [ ] Добавить tags, объяснение, source/author/license metadata; неизвестные поля
+- [x] Разделить identity/revision записи, source identity/version и lineage копии.
+- [x] Определить common/user domain, готовую Phrase и частичную Idea.
+- [x] Добавить tags, объяснение, source/author/license metadata; неизвестные поля
   пользовательского наброска допустимы, готовность не выводится из одного названия.
-- [ ] Определить partial content: текст/concept, частичные ноты/ритм и неизвестный
+- [x] Определить partial content: текст/concept, частичные ноты/ритм и неизвестный
   регистр/контекст, без ложного заявления совместимости готовой фразы.
-- [ ] Сохранить semantic source applications, note roles, target logic, concepts
+- [x] Сохранить semantic source applications, note roles, target logic, concepts
   и tension profile в уже принятом Phrase; octave/contour данные — явно.
-- [ ] Определить validation: структурная корректность, полнота для поиска и
+- [x] Определить validation: структурная корректность, полнота для поиска и
   требования к поставляемому общему контенту — разные проверки.
-- [ ] Проверить независимость копий модели, неизменность нот/ритма и старых Phrase
+- [x] Проверить независимость копий модели, неизменность нот/ритма и старых Phrase
   контрактов; подготовить Windows build и regression/live gate доступного поведения.
 
 0.5a не создаёт массовую библиотеку, её поиск или новый редактор. Эти задачи имеют
