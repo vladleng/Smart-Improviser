@@ -98,6 +98,13 @@ int main() {
         auto naturalNine=turn(chord(key+4,{0,3,7,10}),chord(key+3,{0,2,4,7,8,10}),chord(key+2,{0,4,7,10}),key);
         check(!rule(naturalNine,"project.harmonic-minor.contextual-V"),"written natural nine blocks harmonic minor collection");
     }
+    auto slashChord=chord(0,{0,4,7,11}); slashChord.bass=2;
+    auto slash=turn(chord(1,{0,4,7,10}),slashChord,chord(1,{0,4,7,10}),0);
+    const auto* slashNine=rule(slash,"project.t1.diatonic-nine");
+    bool bassPreserved=false;
+    if(slashNine) for(const auto& n:slashNine->source.notes)
+        if(n.pitchClass==2 && n.role==MaterialNoteRole::bassTone) bassPreserved=true;
+    check(bassPreserved,"a written ninth in the slash bass remains a bass anchor");
     TimelineHarmonicSnapshot noKey; noKey.positionAvailable=true;
     noKey.globalKey.available=noKey.globalKey.defined=true;
     for(int n:{0,1,4,7}) noKey.globalKey.intervals.values[n]=0xFF;
