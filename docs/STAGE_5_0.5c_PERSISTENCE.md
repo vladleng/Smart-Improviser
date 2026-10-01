@@ -35,8 +35,9 @@ as empty or rewritten. CRC detects accidental corruption, not authenticity.
 Full Phrase/Idea payload, note timing/register/roles/targets, source applications,
 source-rule versions, approaches, concepts, tension profile, evidence, tags,
 author/source/license and exact lineage are retained. Missing optional draft
-data stays unknown; no T1 or MIDI height is invented. Deleted user identities
-remain durable reservations. Common references in lineage may be unavailable:
+data stays unknown; no T1 or MIDI height is invented. Deleted user identities and unavailable user-ancestry IDs
+remain durable reservations. Restore rejects missing user-ancestry reservations;
+derivation reserves any such IDs encountered in common provenance before saving. Common references in lineage may be unavailable:
 owned copied material is sufficient to reopen independently.
 
 ## File commit and multiple instances/processes

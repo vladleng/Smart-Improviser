@@ -28,7 +28,7 @@ int main()
     IdeaNote partial; partial.pitch=RelativePitch{-1,9,-1}; partial.durationBeats=0.25;
     partial.octaveOffset=0; partial.target=false; partial.harmonicRole=PhraseNoteRole::sourceTone; partial.fingering=PhraseFingering{1,0};
     i.notes={partial,{}}; i.registerReferences={{0,60}};
-    LibraryArchive archive{"store:test",std::numeric_limits<std::uint64_t>::max(),{{musical(),idea},{"user:phrase","user:idea","user:deleted"}}};
+    LibraryArchive archive{"store:test",std::numeric_limits<std::uint64_t>::max(),{{musical(),idea},{"user:phrase","user:idea","user:deleted","user:parent"}}};
     const auto encoded=encodeLibraryArchive(archive);
     check(encoded.succeeded(),"rich archive encodes");
     const auto decoded=decodeLibraryArchive(encoded.bytes);
