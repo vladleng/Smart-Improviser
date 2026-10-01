@@ -21,6 +21,7 @@ std::string spell(int fifths, int degree, int pitch)
 }
 MaterialNote spelled(MaterialNote note, const NormalizedChord& chord)
 {
+    if (note.role == MaterialNoteRole::bassTone && !note.spelling.empty()) return note;
     if (!note.degree)
     {
         constexpr int degrees[] = {1,9,9,3,3,11,5,5,13,13,7,7};

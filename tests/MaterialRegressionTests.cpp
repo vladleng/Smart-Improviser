@@ -70,6 +70,11 @@ int main() {
     auto e = buildExplanation(slash);
     auto v = buildMaterialView(slash,e,literalChordIndex(e));
     expect(has(v.current,6,bassRole) && has(v.current,6,chordRole),"non-chord slash bass appears as a separate accompaniment anchor");
+    bool preservedBass = false;
+    for (const auto& n : slash.concepts.front().material)
+        if (n.role == MaterialNoteRole::bassTone && n.spelling == "F#" && n.degree == 0)
+            preservedBass = true;
+    expect(preservedBass,"harmonic concepts preserve written bass spelling without inventing a chord degree");
     expect(!slash.context.currentChord.hasTone(6),"displaying bass does not rewrite written chord degrees");
     auto targetBass = analyze(chord(1,{0,4,7,10}),chord(0,{0,4,7,11},6));
     bool bassTarget = false;
