@@ -62,12 +62,12 @@ inline int playingBaseIndex(const ImprovisationResult& result, const Explanation
             if (n >= 0 && n < s.interpretationCount)
             {
                 const auto& reading = s.interpretations[static_cast<std::size_t>(n)];
-                if (reading.kind == HarmonicInterpretationKind::globalContext) candidate = std::max(candidate, 1);
+                if (reading.kind == HarmonicInterpretationKind::globalContext) candidate = (std::max)(candidate, 1);
                 if (reading.kind == HarmonicInterpretationKind::localCenter
                     && (reading.center.status == KeyCenterStatus::established
                         || reading.center.status == KeyCenterStatus::tonicized)) candidate = 3;
             }
-        if (s.incompleteCadence.valid && item.missingTonicApplication) candidate = std::max(candidate, 2);
+        if (s.incompleteCadence.valid && item.missingTonicApplication) candidate = (std::max)(candidate, 2);
         if (candidate > score) { best = static_cast<int>(i); score = candidate; }
     }
     return best;
