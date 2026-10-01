@@ -30,6 +30,9 @@ repeating the expected/missing tonic status in each row. Detailed evidence
 remains in the explanation. The column orders rows by manually assigned
 T1, T2, T3, then unmarked; colored circles and fine separators distinguish
 groups without taking a row for a heading. The panel height is reduced.
+The chord-anchor T1 candidate also remains in Core but shares the written
+chord's exact displayed notes; its second list row is suppressed when the
+foundation row already shows those pitches.
 Selecting a row updates staff, fretboard and explanation together with
 seek/PLAY/STOP. A separate circle beside each row opens a colored menu for a
 **manual** T1/T2/T3 label or no label. The manual label never reclassifies Core
@@ -48,6 +51,15 @@ as general preferences. The four-note T1 m6 remains a separate Core subset of
 the full seven-note melodic minor. When both have the same root, the compact
 UI displays the full source once; its details still describe source notes and
 Core keeps the four-tone safety contract.
+
+Five tabs now sit above the upper panel: Current Context, Material, Sources /
+Notes, Harmonic Analysis and ARA / Diagnostics. The context tab shows the
+current chord in yellow and a larger Roman pattern with the corresponding
+written chord names beneath its members; an unplayed expected tonic gets a
+grey dash. The other tabs show their scrollable text in the same upper panel.
+The staff and fretboard stay visible underneath. The viewer is trimmed to its
+actual content height, leaving a larger, empty bottom panel reserved for a
+future notation editor. No note or rhythm editing is added in this checkpoint.
 
 In an incomplete ordinary major ii–V, Core no longer offers a parallel-minor
 modal candidate solely from the ii chord. It provides provisional Dorian on

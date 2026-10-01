@@ -244,9 +244,9 @@ void MaterialViewerComponent::paint(juce::Graphics& g)
     for (const auto& [name, colour] : legend)
     {
         g.setColour(colour);
-        g.fillEllipse(x, 274.0f, 8.0f, 8.0f);
+        g.fillEllipse(x, 265.0f, 8.0f, 8.0f);
         g.setColour(sourceColour);
-        g.drawText(juce::String::fromUTF8(name), static_cast<int>(x + 12), 269, 100, 18,
+        g.drawText(juce::String::fromUTF8(name), static_cast<int>(x + 12), 260, 100, 18,
                    juce::Justification::centredLeft);
         x += 130.0f;
     }

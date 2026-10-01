@@ -25,6 +25,7 @@ public:
 private:
     enum class Panel
     {
+        context,
         material,
         sources,
         harmonic,
@@ -46,7 +47,7 @@ private:
     void openTensionMenu(int index, const juce::MouseEvent& event);
     void rebuildStrategyRows();
     int rowForMaterial(int index) const;
-    bool redundantSixStructure(int index) const;
+    bool redundantMaterial(int index) const;
     std::string tensionKey(int index) const;
     int manualTension(int index) const;
 
@@ -62,19 +63,30 @@ private:
     int selectedMaterialIndex = -1;
     bool updatingSelector = false;
 
-    Panel activePanel = Panel::material;
+    Panel activePanel = Panel::context;
 
     juce::String summaryContext;
+    juce::AttributedString summaryContextDisplay;
     juce::String summaryMeta;
     juce::String summaryGlobalFunction;
     juce::String summaryLocal;
     juce::String summaryPattern;
     juce::AttributedString summaryPatternDisplay;
+    struct PatternDisplayMember
+    {
+        juce::String roman;
+        juce::String chord;
+        bool current = false;
+        bool expected = false;
+    };
+    std::vector<PatternDisplayMember> patternMembers;
+    int patternDisplayPosition = -1;
     juce::String materialText;
     juce::String sourcesText;
     juce::String harmonicText;
     juce::String araText;
 
+    juce::TextButton contextButton;
     juce::TextButton materialButton;
     juce::TextButton sourcesButton;
     juce::TextButton harmonicButton;

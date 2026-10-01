@@ -624,13 +624,15 @@ SmartImproviserARAEditor::SmartImproviserARAEditor(SmartImproviserARAProcessor& 
     fretSelector.onChange = [this] { updateMaterialSelection(); };
     addAndMakeVisible(materialViewer);
 
-    for (auto* button : { &materialButton, &sourcesButton, &harmonicButton, &araButton })
+    for (auto* button : { &contextButton, &materialButton, &sourcesButton,
+                          &harmonicButton, &araButton })
     {
         button->setMouseCursor(juce::MouseCursor::PointingHandCursor);
         button->setColour(juce::TextButton::textColourOffId, juce::Colour::fromRGB(225, 230, 238));
         addAndMakeVisible(*button);
     }
 
+    contextButton.onClick = [this] { setActivePanel(Panel::context); };
     materialButton.onClick = [this] { setActivePanel(Panel::material); };
     sourcesButton.onClick = [this] { setActivePanel(Panel::sources); };
     harmonicButton.onClick = [this] { setActivePanel(Panel::harmonic); };
@@ -647,23 +649,24 @@ void SmartImproviserARAEditor::resized()
     processor.setEditorSize({getWidth(), getHeight()});
     const int margin = 24;
     const int gap = 8;
-    const int buttonY = 340;
+    const int buttonY = 82;
     const int buttonH = 36;
-    const int available = getWidth() - margin * 2 - gap * 3;
-    const int buttonW = available / 4;
+    const int available = getWidth() - margin * 2 - gap * 4;
+    const int buttonW = available / 5;
 
-    materialButton.setBounds(margin, buttonY, buttonW, buttonH);
-    sourcesButton.setBounds(margin + (buttonW + gap), buttonY, buttonW, buttonH);
-    harmonicButton.setBounds(margin + 2 * (buttonW + gap), buttonY, buttonW, buttonH);
-    araButton.setBounds(margin + 3 * (buttonW + gap), buttonY,
-                        getWidth() - margin - (margin + 3 * (buttonW + gap)), buttonH);
+    contextButton.setBounds(margin, buttonY, buttonW, buttonH);
+    materialButton.setBounds(margin + buttonW + gap, buttonY, buttonW, buttonH);
+    sourcesButton.setBounds(margin + 2 * (buttonW + gap), buttonY, buttonW, buttonH);
+    harmonicButton.setBounds(margin + 3 * (buttonW + gap), buttonY, buttonW, buttonH);
+    araButton.setBounds(margin + 4 * (buttonW + gap), buttonY,
+                        getWidth() - margin - (margin + 4 * (buttonW + gap)), buttonH);
 
     const int columnX = getWidth() / 2;
-    strategyList.setBounds(columnX + 16, 122, getWidth() - columnX - 56, 204);
-    layerSelector.setBounds(getWidth() - 376, 388, 207, 32);
-    fretSelector.setBounds(getWidth() - 161, 388, 137, 32);
-    materialViewer.setBounds(margin, 428, getWidth() - margin * 2, 350);
-    detailsView.setBounds(margin, 790, getWidth() - margin * 2, getHeight() - 832);
+    strategyList.setBounds(columnX + 16, 163, getWidth() - columnX - 56, 214);
+    detailsView.setBounds(margin + 12, 143, getWidth() - margin * 2 - 24, 235);
+    layerSelector.setBounds(getWidth() - 376, 403, 207, 32);
+    fretSelector.setBounds(getWidth() - 161, 403, 137, 32);
+    materialViewer.setBounds(margin, 443, getWidth() - margin * 2, 284);
 }
 
 int SmartImproviserARAEditor::getNumRows()
@@ -686,7 +689,7 @@ void SmartImproviserARAEditor::rebuildStrategyRows()
     {
         for (int index = 0; index < strategyLabels.size(); ++index)
         {
-            if (manualTension(index) != level || redundantSixStructure(index)) continue;
+            if (manualTension(index) != level || redundantMaterial(index)) continue;
             rows.push_back({index, level});
         }
     }
@@ -707,14 +710,15 @@ void SmartImproviserARAEditor::rebuildStrategyRows()
     strategyList.repaint();
 }
 
-bool SmartImproviserARAEditor::redundantSixStructure(int index) const
+bool SmartImproviserARAEditor::redundantMaterial(int index) const
 {
     if (index < 0 || index >= static_cast<int>(cachedExplanation.items.size())) return false;
     const auto& item = cachedExplanation.items[static_cast<std::size_t>(index)];
     if (item.strategyIndices.empty()
-        || item.strategyIndices.front() >= cachedResult.strategies.size()
-        || cachedResult.strategies[item.strategyIndices.front()].ruleId != "project.t1.major-V-m6")
-        return false;
+        || item.strategyIndices.front() >= cachedResult.strategies.size()) return false;
+    const auto& candidate = cachedResult.strategies[item.strategyIndices.front()];
+    const bool redundantAnchors = candidate.ruleId == "project.t1.explicit-anchors";
+    if (!redundantAnchors && candidate.ruleId != "project.t1.major-V-m6") return false;
     // The four-tone m6 T1 contract remains in Core, while the UI presents its
     // parent melodic-minor source only once when both have the same root.
     for (const auto& other : cachedExplanation.items)
@@ -722,7 +726,15 @@ bool SmartImproviserARAEditor::redundantSixStructure(int index) const
         if (other.strategyIndices.empty()
             || other.strategyIndices.front() >= cachedResult.strategies.size()) continue;
         const auto& strategy = cachedResult.strategies[other.strategyIndices.front()];
-        if (strategy.ruleId == "boyko.melodic-minor.V"
+        if (redundantAnchors
+            && strategy.ruleId == "core.explicit-chord-tones"
+            && other.actualChord.rootPitchClass == item.actualChord.rootPitchClass
+            && other.source.notes.size() == item.source.notes.size()
+            && std::equal(other.source.notes.begin(), other.source.notes.end(),
+                          item.source.notes.begin(), [](const auto& a, const auto& b)
+                          { return a.pitchClass == b.pitchClass; }))
+            return true;
+        if (!redundantAnchors && strategy.ruleId == "boyko.melodic-minor.V"
             && other.source.rootFifths == item.source.rootFifths)
             return true;
     }
@@ -959,21 +971,22 @@ void SmartImproviserARAEditor::updatePanelButtons()
         button.setColour(juce::TextButton::buttonColourId, selected ? selectedColour : normalColour);
     };
 
-    configure(materialButton, Panel::material,
-              "▼ Материал", "▶ Материал");
-    configure(sourcesButton, Panel::sources,
-              "▼ Источники / ноты", "▶ Источники / ноты");
-    configure(harmonicButton, Panel::harmonic,
-              "▼ Гармонический анализ", "▶ Гармонический анализ");
-    configure(araButton, Panel::ara,
-              "▼ ARA / диагностика", "▶ ARA / диагностика");
+    configure(contextButton, Panel::context, "Текущий контекст", "Текущий контекст");
+    configure(materialButton, Panel::material, "Материал", "Материал");
+    configure(sourcesButton, Panel::sources, "Источники / ноты", "Источники / ноты");
+    configure(harmonicButton, Panel::harmonic, "Гармонический анализ", "Гармонический анализ");
+    configure(araButton, Panel::ara, "ARA / диагностика", "ARA / диагностика");
+    strategyList.setVisible(activePanel == Panel::context);
+    detailsView.setVisible(activePanel != Panel::context);
 }
 
 void SmartImproviserARAEditor::refreshPanelView(bool resetScroll)
 {
+    if (activePanel == Panel::context) return;
     const juce::String* text = &materialText;
     switch (activePanel)
     {
+        case Panel::context: break;
         case Panel::material: text = &materialText; break;
         case Panel::sources: text = &sourcesText; break;
         case Panel::harmonic: text = &harmonicText; break;
@@ -1083,6 +1096,19 @@ void SmartImproviserARAEditor::timerCallback()
         : chordDisplayName(timeline.currentChord);
     if (timeline.nextChordAvailable)
         summaryContext += " -> " + chordDisplayName(timeline.nextChord);
+    summaryContextDisplay.clear();
+    const juce::Font chordFont { juce::FontOptions(17.0f, juce::Font::bold) };
+    const auto ordinaryChord = juce::Colour::fromRGB(240, 243, 247);
+    const auto currentChordColour = juce::Colour::fromRGB(246, 191, 88);
+    if (timeline.previousChordAvailable)
+        summaryContextDisplay.append(chordDisplayName(timeline.previousChord) + "  →  ",
+                                     chordFont, ordinaryChord);
+    summaryContextDisplay.append(chordDisplayName(timeline.currentChord), chordFont,
+                                 currentChordColour);
+    if (timeline.nextChordAvailable)
+        summaryContextDisplay.append("  →  " + chordDisplayName(timeline.nextChord),
+                                     chordFont, ordinaryChord);
+    summaryContextDisplay.setWordWrap(juce::AttributedString::none);
 
     summaryMeta = ru("Глобальная тональность: ") + keyDisplayName(timeline.globalKey);
     summaryGlobalFunction.clear();
@@ -1150,6 +1176,7 @@ void SmartImproviserARAEditor::timerCallback()
     const auto missingColour = juce::Colour::fromRGB(140, 146, 157);
     const auto impliedColour = juce::Colour::fromRGB(224, 172, 85);
     const auto label = ru("Оборот: ");
+    juce::String patternRomanText;
     const auto progress = [](int position, int length)
     {
         return position >= 0 && length > 0
@@ -1161,6 +1188,7 @@ void SmartImproviserARAEditor::timerCallback()
                                  juce::Colour lastColour,
                                  const juce::String& suffix)
     {
+        patternRomanText = roman + last;
         summaryPattern = label + roman + last + suffix;
         summaryPatternDisplay.append(label, labelFont, presentColour);
         summaryPatternDisplay.append(roman, romanFont, presentColour);
@@ -1206,6 +1234,50 @@ void SmartImproviserARAEditor::timerCallback()
                     progress(activePattern->positionIndex, activePattern->length));
     }
     summaryPatternDisplay.setWordWrap(juce::AttributedString::none);
+    patternMembers.clear();
+    patternDisplayPosition = -1;
+    auto sequence = patternRomanText.replace(ru(" → "), ru("–"));
+    if (sequence.contains(ru("–")) && sequence.length() < 40)
+    {
+        juce::StringArray romanTokens;
+        while (sequence.isNotEmpty())
+        {
+            const int separator = sequence.indexOfChar(0x2013);
+            romanTokens.add(separator < 0 ? sequence : sequence.substring(0, separator));
+            if (separator < 0) break;
+            sequence = sequence.substring(separator + 1);
+        }
+        const bool missingLast = incomplete.valid || cachedSituation.expectedTonic.valid
+            || (!cachedSituation.patternContext.valid && cachedSituation.localKey.valid
+                && cachedSituation.localKey.status
+                    == smartimproviser::harmony::KeyCenterStatus::candidate
+                && cachedSituation.localPattern.type
+                    == smartimproviser::harmony::HarmonicPatternType::majorIiVI);
+        const int position = incomplete.valid ? incomplete.positionIndex
+            : impliedLink.valid ? impliedLink.positionIndex : activePattern->positionIndex;
+        patternDisplayPosition = position;
+        const int start = patternWindow.currentIndex - position;
+        for (int i = 0; i < romanTokens.size(); ++i)
+        {
+            PatternDisplayMember member;
+            member.roman = romanTokens[i];
+            member.current = i == position;
+            member.expected = missingLast && i == romanTokens.size() - 1;
+            if (member.expected)
+                member.chord = ru("—");
+            else if (incomplete.valid && i < 2)
+                member.chord = utf8String(smartimproviser::harmony::normalizedChordSymbol(
+                    i == 0 ? incomplete.ii : incomplete.v));
+            else if (impliedLink.valid && i < 2)
+                member.chord = utf8String(smartimproviser::harmony::normalizedChordSymbol(
+                    i == 0 ? impliedLink.firstChord : impliedLink.secondChord));
+            else if (start + i >= 0 && start + i < patternWindow.chordCount)
+                member.chord = chordDisplayName(patternWindow.chords[static_cast<std::size_t>(start + i)]);
+            else if (member.current)
+                member.chord = chordDisplayName(timeline.currentChord);
+            patternMembers.push_back(std::move(member));
+        }
+    }
 
     materialText.clear();
     materialText += ru("МАТЕРИАЛ ДЛЯ ИМПРОВИЗАЦИИ\n\n");
@@ -1500,43 +1572,68 @@ void SmartImproviserARAEditor::paint(juce::Graphics& g)
                24, 47, getWidth() - 48, 22, juce::Justification::centredLeft);
 
     g.setColour(juce::Colour::fromRGB(42, 46, 53));
-    g.fillRoundedRectangle(24.0f, 82.0f, static_cast<float>(getWidth() - 48), 246.0f, 8.0f);
+    g.fillRoundedRectangle(24.0f, 128.0f, static_cast<float>(getWidth() - 48), 264.0f, 8.0f);
+    g.fillRoundedRectangle(24.0f, 739.0f, static_cast<float>(getWidth() - 48),
+                           static_cast<float>(getHeight() - 767), 8.0f);
+    if (activePanel == Panel::context)
+    {
     const int columnX = getWidth() / 2;
     const int leftWidth = columnX - 64;
 
-    g.setColour(juce::Colour::fromRGB(150, 156, 168));
-    g.setFont(12.5f);
-    g.drawText(ru("ТЕКУЩИЙ КОНТЕКСТ"), 40, 92, leftWidth, 18,
-               juce::Justification::centredLeft);
-
-    g.setColour(juce::Colour::fromRGB(240, 243, 247));
-    g.setFont(juce::FontOptions(17.0f, juce::Font::bold));
-    g.drawText(summaryContext, 40, 111, leftWidth, 23,
-               juce::Justification::centredLeft, true);
+    summaryContextDisplay.draw(g, juce::Rectangle<float>(40.0f, 148.0f,
+                               static_cast<float>(leftWidth), 28.0f));
 
     g.setColour(juce::Colour::fromRGB(190, 196, 207));
     g.setFont(13.2f);
-    g.drawText(summaryMeta, 40, 143, leftWidth, 20,
+    g.drawText(summaryMeta, 40, 185, leftWidth, 20,
                juce::Justification::centredLeft, true);
-    g.drawText(summaryGlobalFunction, 40, 166, leftWidth, 20,
+    g.drawText(summaryGlobalFunction, 40, 208, leftWidth, 20,
                juce::Justification::centredLeft, true);
-    g.drawText(summaryLocal, 40, 189, leftWidth, 20,
+    g.drawText(summaryLocal, 40, 231, leftWidth, 20,
                juce::Justification::centredLeft, true);
-    summaryPatternDisplay.draw(g, juce::Rectangle<float>(40.0f, 220.0f,
-                                static_cast<float>(leftWidth), 24.0f));
+    g.setColour(juce::Colour::fromRGB(150, 156, 168));
+    g.setFont(juce::FontOptions(11.5f, juce::Font::bold));
+    g.drawText(ru("ОБОРОТ"), 40, 270, leftWidth, 16, juce::Justification::centredLeft);
+    if (!patternMembers.empty())
+    {
+        const int cellWidth = leftWidth / static_cast<int>(patternMembers.size());
+        for (int i = 0; i < static_cast<int>(patternMembers.size()); ++i)
+        {
+            const auto& member = patternMembers[static_cast<std::size_t>(i)];
+            const int x = 40 + i * cellWidth;
+            g.setColour(member.expected ? juce::Colour::fromRGB(140, 146, 157)
+                        : member.current ? juce::Colour::fromRGB(246, 191, 88)
+                        : juce::Colour::fromRGB(229, 234, 242));
+            g.setFont(juce::FontOptions(21.0f, juce::Font::bold));
+            g.drawFittedText(member.roman, x, 288, cellWidth - 4, 28,
+                             juce::Justification::centred, 1);
+            g.setFont(juce::FontOptions(13.0f));
+            g.drawFittedText(member.chord, x, 321, cellWidth - 4, 20,
+                             juce::Justification::centred, 1);
+        }
+        g.setColour(juce::Colour::fromRGB(150, 156, 168));
+        g.setFont(11.5f);
+        if (patternDisplayPosition >= 0)
+            g.drawText(juce::String(patternDisplayPosition + 1) + " / "
+                + juce::String(static_cast<int>(patternMembers.size())),
+                40, 350, leftWidth, 18, juce::Justification::centred);
+    }
+    else
+        summaryPatternDisplay.draw(g, juce::Rectangle<float>(40.0f, 290.0f,
+                                    static_cast<float>(leftWidth), 30.0f));
 
     g.setColour(juce::Colour::fromRGB(76, 84, 94));
-    g.drawLine(static_cast<float>(columnX), 99.0f,
-               static_cast<float>(columnX), 318.0f);
+    g.drawLine(static_cast<float>(columnX), 143.0f,
+               static_cast<float>(columnX), 378.0f);
     g.setColour(juce::Colour::fromRGB(207, 215, 227));
     g.setFont(juce::FontOptions(12.0f, juce::Font::bold));
-    g.drawText(ru("СПОСОБЫ ОБЫГРЫВАНИЯ"), columnX + 16, 94,
+    g.drawText(ru("СПОСОБЫ ОБЫГРЫВАНИЯ"), columnX + 16, 140,
                getWidth() - columnX - 56, 19,
                juce::Justification::centredLeft);
+    }
 
     g.setColour(juce::Colour::fromRGB(105, 110, 120));
     g.setFont(12.0f);
-    g.drawText(ru("Диагностический UI: основной материал открыт первым; подробности вынесены в отдельные сворачиваемые разделы."),
-               24, getHeight() - 28, getWidth() - 48, 20,
+    g.drawText("Smart Improviser", 24, getHeight() - 28, getWidth() - 48, 20,
                juce::Justification::centredLeft);
 }
