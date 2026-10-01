@@ -148,6 +148,7 @@ int main()
     expect(static_cast<int>(TensionLevel::outsideMaximum) == 3, "Tension 3 contract");
 
     Phrase phrase;
+    expect(!phrase.tensionClassified, "Phrase default enum is not a tension classification");
     phrase.id = "major-ii-v-i-example";
     phrase.harmonicPattern = HarmonicPatternType::majorIiVI;
     phrase.tensionLevel = TensionLevel::color;

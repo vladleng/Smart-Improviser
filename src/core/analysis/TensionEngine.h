@@ -10,6 +10,6 @@ TensionProfile buildTensionProfile(const ImprovisationResult& result);
 
 // 0.4c opt-in Level 1 policy. The ordinary Mixolydian baseline remains a
 // separate Core source; V->major T1 is its compatible m6 thinking structure.
-// Higher levels remain notEvaluated until their own checkpoints.
+// Higher Core levels remain notEvaluated; user labels are a separate policy.
 TensionProfile analyzeStableTension(const ImprovisationResult& result);
 }
