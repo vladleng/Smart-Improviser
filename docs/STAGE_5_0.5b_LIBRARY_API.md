@@ -1,7 +1,8 @@
 # 0.5b — In-memory Library API / independent copies
 
 0.5a accepted by Vlad on 2026-10-01; PR #59 merged in main (37d0b85).
-0.5b implementation pending Windows CI and Studio Pro regression acceptance.
+0.5b accepted by Vlad on 2026-10-01 after Studio Pro regression.
+PR #60 merged in main (2c3591c); Windows Build #427 passed 29/29 CTest and VST3 packaging.
 Stable remains 0.5. Persistence belongs to 0.5c and library UI to 0.5d.
 
 ## Ownership and bootstrap

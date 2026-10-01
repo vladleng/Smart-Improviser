@@ -32,6 +32,8 @@ add_library(SmartImproviserCore STATIC
     src/core/analysis/LibraryValidation.cpp
     src/core/analysis/PhraseLibrary.h
     src/core/analysis/PhraseLibrary.cpp
+    src/core/analysis/LibraryArchive.h
+    src/core/analysis/LibraryArchive.cpp
     src/core/model/Phrase.h
     src/core/model/PhraseTensionProfile.h
     src/core/model/TensionCurve.h
@@ -170,6 +172,8 @@ target_sources(SmartImproviserARA
         src/ara/ARAPluginProcessor.cpp
         src/ara/ARAPluginProcessor.h
         src/ara/SharedManualTensions.h
+        src/library/SharedUserLibrary.h
+        src/library/SharedUserLibrary.cpp
         src/ara/PluginViewState.h
 )
 
@@ -183,7 +187,7 @@ target_compile_definitions(SmartImproviserARA
         JUCE_WEB_BROWSER=0
         JUCE_USE_CURL=0
         JUCE_VST3_CAN_REPLACE_VST2=0
-        SMART_IMPROVISER_BUILD_VERSION="0.5b"
+        SMART_IMPROVISER_BUILD_VERSION="0.5c"
 )
 
 target_link_libraries(SmartImproviserARA
@@ -211,6 +215,17 @@ endif()
 add_test(NAME SmartImproviserSharedTensionsTests COMMAND SmartImproviserSharedTensionsTests)
 
 # -----------------------------------------------------------------------------
+add_executable(SmartImproviserLibraryStorageTests
+    tests/LibraryStorageTests.cpp src/library/SharedUserLibrary.cpp)
+target_include_directories(SmartImproviserLibraryStorageTests PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src")
+target_compile_definitions(SmartImproviserLibraryStorageTests PRIVATE JUCE_USE_CURL=0)
+target_link_libraries(SmartImproviserLibraryStorageTests PRIVATE SmartImproviserCore juce::juce_core)
+if(MSVC)
+    target_compile_options(SmartImproviserLibraryStorageTests PRIVATE /utf-8)
+endif()
+add_test(NAME SmartImproviserLibraryStorageTests COMMAND SmartImproviserLibraryStorageTests)
+set_tests_properties(SmartImproviserLibraryStorageTests PROPERTIES TIMEOUT 45)
+
 endif() # SMART_IMPROVISER_BUILD_PLUGIN
 
 # Regression tests.
@@ -434,3 +449,10 @@ if(MSVC)
     target_compile_options(SmartImproviserPhraseLibraryTests PRIVATE /utf-8)
 endif()
 add_test(NAME SmartImproviserPhraseLibraryTests COMMAND SmartImproviserPhraseLibraryTests)
+
+add_executable(SmartImproviserLibraryArchiveTests tests/LibraryArchiveTests.cpp)
+target_link_libraries(SmartImproviserLibraryArchiveTests PRIVATE SmartImproviserCore)
+if(MSVC)
+    target_compile_options(SmartImproviserLibraryArchiveTests PRIVATE /utf-8)
+endif()
+add_test(NAME SmartImproviserLibraryArchiveTests COMMAND SmartImproviserLibraryArchiveTests)

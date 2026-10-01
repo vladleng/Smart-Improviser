@@ -119,9 +119,42 @@ LibraryOperation PhraseLibrary::insertNew(LibraryRecord record)
     const auto itemId=record.id;
     auto [position,inserted]=user_.emplace(itemId,std::move(record));
     if (!inserted) return failure(LibraryStatus::invalidIdentity,"Identity already exists.");
-    try { reservedIds_.insert(position->first); }
-    catch (...) { user_.erase(position); throw; }
+    try
+    {
+        reservedIds_.insert(position->first);
+        userReservedIds_.insert(position->first);
+    }
+    catch (...) { reservedIds_.erase(position->first); user_.erase(position); throw; }
     return check;
+}
+LibraryUserSnapshot PhraseLibrary::userSnapshot() const
+{
+    LibraryUserSnapshot snapshot;
+    for (const auto& [id,record]:user_) snapshot.records.push_back(record);
+    snapshot.reservedIds.assign(userReservedIds_.begin(),userReservedIds_.end());
+    return snapshot;
+}
+LibraryOperation PhraseLibrary::restoreUserSnapshot(const LibraryUserSnapshot& snapshot)
+{
+    if (snapshot.records.size()>10000 || snapshot.reservedIds.size()>65536)
+        return failure(LibraryStatus::invalidRecord,"Library snapshot exceeds supported bounds.");
+    std::map<std::string,LibraryRecord> users;
+    std::set<std::string> userReserved, allReserved;
+    for (const auto& [id,record]:common_) allReserved.insert(id);
+    for (const auto& id:snapshot.reservedIds)
+        if (!hasText(id) || !userReserved.insert(id).second || !allReserved.insert(id).second)
+            return failure(LibraryStatus::invalidIdentity,"Invalid, duplicate or common-colliding user reservation.");
+    for (const auto& record:snapshot.records)
+    {
+        if (record.domain!=LibraryDomain::user || !userReserved.contains(record.id))
+            return failure(LibraryStatus::invalidIdentity,"Loaded users need their own reserved identities.");
+        auto check=validated(record);
+        if (!check.succeeded()) return check;
+        if (!users.emplace(record.id,record).second)
+            return failure(LibraryStatus::invalidIdentity,"Duplicate loaded user identity.");
+    }
+    user_.swap(users); userReservedIds_.swap(userReserved); reservedIds_.swap(allReserved);
+    return {};
 }
 LibraryOperation PhraseLibrary::addUser(const LibraryRecord& draft)
 {
