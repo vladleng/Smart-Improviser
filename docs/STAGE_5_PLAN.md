@@ -2,7 +2,8 @@
 
 Начало этапа: 2026-10-01, по указанию Влада после принятого Stage 4.
 База — stable 0.5, main `2f3cf3a`, Windows run `36867908179`, 27/27 CTest.
-Реализация новых checkpoints ещё не начата; текущая задача — 0.5a.
+0.5a реализуется отдельным PR: [контракт](STAGE_5_0.5a_LIBRARY_CONTRACT.md).
+Windows CI и Studio Pro regression acceptance ещё ожидаются; 0.5b не начат.
 
 Рабочая линия: **0.5a → 0.5g**. Итог Stage 5: **stable 0.6**.
 Каждая буква — отдельная сборка, regression и доступный Studio Pro live gate;
