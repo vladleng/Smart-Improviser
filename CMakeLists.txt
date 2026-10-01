@@ -28,6 +28,9 @@ add_library(SmartImproviserCore STATIC
     src/core/model/KeyModel.cpp
     src/core/model/KeyModel.h
     src/core/model/Phrase.h
+    src/core/model/PhraseMatch.h
+    src/core/analysis/PhraseMatcher.cpp
+    src/core/analysis/PhraseMatcher.h
     src/core/model/ResolutionTarget.h
     src/core/model/TensionProfile.h
     src/core/analysis/AmbiguityAnalyzer.cpp
@@ -171,7 +174,7 @@ target_compile_definitions(SmartImproviserARA
         JUCE_WEB_BROWSER=0
         JUCE_USE_CURL=0
         JUCE_VST3_CAN_REPLACE_VST2=0
-        SMART_IMPROVISER_BUILD_VERSION="0.4d"
+        SMART_IMPROVISER_BUILD_VERSION="0.4e"
 )
 
 target_link_libraries(SmartImproviserARA
@@ -387,3 +390,10 @@ if(MSVC)
     target_compile_options(SmartImproviserTensionFilterTests PRIVATE /utf-8)
 endif()
 add_test(NAME SmartImproviserTensionFilterTests COMMAND SmartImproviserTensionFilterTests)
+
+add_executable(SmartImproviserPhraseMatcherTests tests/PhraseMatcherTests.cpp)
+target_link_libraries(SmartImproviserPhraseMatcherTests PRIVATE SmartImproviserCore)
+if(MSVC)
+    target_compile_options(SmartImproviserPhraseMatcherTests PRIVATE /utf-8)
+endif()
+add_test(NAME SmartImproviserPhraseMatcherTests COMMAND SmartImproviserPhraseMatcherTests)
