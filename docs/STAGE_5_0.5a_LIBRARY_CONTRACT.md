@@ -1,6 +1,7 @@
 # 0.5a — Library record / partial Idea contract
 
-Implemented on 2026-10-01; pending Windows CI and Studio Pro regression acceptance.
+Accepted by Vlad on 2026-10-01 after Studio Pro regression. PR #59 merged in main (37d0b85).
+Windows Build #425 passed: 28/28 CTest and Smart-Improviser-0.5a-Windows artifact.
 Base: stable 0.5, main c03d7f6. Stable remains 0.5; this checkpoint is not Stage 5 completion.
 
 ## Data ownership and identity
