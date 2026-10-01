@@ -17,14 +17,14 @@ struct PhraseMatchRequest
     std::optional<TensionLevel> requestedTension; // null = all, not T1.
 };
 enum class PhraseCompatibility : std::uint8_t { insufficientContext, incompatible, compatible };
-enum class PhraseTensionMatch : std::uint8_t { notEvaluated, any, matches, unclassified, differentLevel };
+enum class PhraseTensionMatch : std::uint8_t { notEvaluated, any, matches, unclassified, differentLevel, invalidProfile };
 enum class PhraseMatchReason : std::uint8_t
 {
     invalidPhrase, missingContext, invalidTiming, invalidPitch, chordMismatch,
     patternMismatch, sourceUnavailable, ambiguousSource, sourceVersion,
     destinationMissing, destinationMismatch, destinationUnconfirmed,
     unsupportedNote, invalidApproach, missingApproach, unsupportedOutside,
-    tensionUnclassified, tensionMismatch, matched
+    tensionUnclassified, tensionMismatch, matched, tensionProfileInvalid
 };
 struct PhraseMatchDiagnostic
 {

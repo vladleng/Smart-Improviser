@@ -2,6 +2,7 @@
 
 #include "core/model/HarmonicPattern.h"
 #include "core/model/ImprovisationContracts.h"
+#include "core/model/PhraseTensionProfile.h"
 
 #include <cstddef>
 #include <cstdint>
@@ -67,5 +68,6 @@ struct Phrase
     bool tensionClassified = false; // Default enum is not an assigned level.
     std::vector<PhraseSlotRequirement> harmonicRequirements;
     std::vector<PhraseApproach> approaches;
+    PhraseTensionProfile tensionProfile; // Description; never the desired curve.
 };
 }
