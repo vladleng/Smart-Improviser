@@ -1258,18 +1258,23 @@ void SmartImproviserARAEditor::timerCallback()
     }
 
     const auto destination = smartimproviser::harmony::dominantDestination(cachedSituation);
-    if (destination.minor() && !destination.confirmed)
+    if (destination.minor())
     {
-        summaryMeta = ru("Предполагаемая цель оборота: ") + utf8String(fifthsName(destination.rootFifths))
-            + ru("m (по тональному контексту)");
+        summaryMeta = (destination.confirmed ? ru("Цель оборота: ") : ru("Предполагаемая цель оборота: "))
+            + utf8String(fifthsName(destination.rootFifths))
+            + (destination.confirmed ? ru("m (подтверждена)") : ru("m (по тональному контексту)"));
         summaryGlobalFunction = ru("Функция в обороте: Доминанта");
         summaryLocal.clear();
     }
-    const bool hypotheticalMinorTurn = destination.minor() && !destination.confirmed
+    const bool minorTurnWithIi = destination.minor()
         && cachedSituation.previousChordAvailable
         && cachedSituation.previousChord.rootPitchClass == (cachedSituation.currentChord.rootPitchClass + 7) % 12
         && (cachedSituation.previousChord.quality == smartimproviser::harmony::ChordQuality::minor
             || cachedSituation.previousChord.quality == smartimproviser::harmony::ChordQuality::halfDiminished);
+
+    const bool missingMinorArrival = minorTurnWithIi
+        && (!cachedSituation.nextChordAvailable
+            || cachedSituation.nextChord.quality != smartimproviser::harmony::ChordQuality::minor);
 
     const auto* activePattern = &cachedSituation.pattern;
     if (cachedSituation.localPattern.recognized())
@@ -1304,10 +1309,11 @@ void SmartImproviserARAEditor::timerCallback()
             summaryPatternDisplay.append(suffix, labelFont, presentColour);
     };
     const auto& incomplete = cachedSituation.incompleteCadence;
-    if (hypotheticalMinorTurn)
+    if (minorTurnWithIi)
     {
         showPattern(cachedSituation.previousChord.quality == smartimproviser::harmony::ChordQuality::halfDiminished
-                        ? ru("IIø–V–") : ru("II–V–"), "i", missingColour, progress(1, 3));
+                        ? ru("IIø–V–") : ru("II–V–"), "i",
+                    missingMinorArrival ? missingColour : presentColour, progress(1, 3));
     }
     else if (incomplete.valid)
     {
@@ -1359,13 +1365,13 @@ void SmartImproviserARAEditor::timerCallback()
             if (separator < 0) break;
             sequence = sequence.substring(separator + 1);
         }
-        const bool missingLast = hypotheticalMinorTurn || incomplete.valid || cachedSituation.expectedTonic.valid
+        const bool missingLast = minorTurnWithIi ? missingMinorArrival : incomplete.valid || cachedSituation.expectedTonic.valid
             || (!cachedSituation.patternContext.valid && cachedSituation.localKey.valid
                 && cachedSituation.localKey.status
                     == smartimproviser::harmony::KeyCenterStatus::candidate
                 && cachedSituation.localPattern.type
                     == smartimproviser::harmony::HarmonicPatternType::majorIiVI);
-        const int position = hypotheticalMinorTurn ? 1 : incomplete.valid ? incomplete.positionIndex
+        const int position = minorTurnWithIi ? 1 : incomplete.valid ? incomplete.positionIndex
             : impliedLink.valid ? impliedLink.positionIndex : activePattern->positionIndex;
         patternDisplayPosition = position;
         const int start = patternWindow.currentIndex - position;
@@ -1377,9 +1383,11 @@ void SmartImproviserARAEditor::timerCallback()
             member.expected = missingLast && i == romanTokens.size() - 1;
             if (member.expected)
                 member.chord = ru("—");
-            else if (hypotheticalMinorTurn && i < 2)
+            else if (minorTurnWithIi && i < 2)
                 member.chord = utf8String(smartimproviser::harmony::normalizedChordSymbol(
                     i == 0 ? cachedSituation.previousChord : cachedSituation.currentChord));
+            else if (minorTurnWithIi && i == 2)
+                member.chord = utf8String(smartimproviser::harmony::normalizedChordSymbol(cachedSituation.nextChord));
             else if (incomplete.valid && i < 2)
                 member.chord = utf8String(smartimproviser::harmony::normalizedChordSymbol(
                     i == 0 ? incomplete.ii : incomplete.v));
