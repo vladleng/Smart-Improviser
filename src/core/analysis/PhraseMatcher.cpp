@@ -301,7 +301,7 @@ PhraseMatchResult assessPhrase(const Phrase& phrase, const PhraseMatchRequest& r
     if (out.tension == PhraseTensionMatch::invalidProfile)
         out.diagnostics.push_back({PhraseMatchReason::tensionProfileInvalid, -1, -1, "Descriptive profile has invalid times, bounds or assignments."});
     else if (out.tension == PhraseTensionMatch::unclassified)
-        out.diagnostics.push_back({PhraseMatchReason::tensionUnclassified, -1, -1, "Phrase has no assigned tension; it is only eligible in All."});
+        out.diagnostics.push_back({PhraseMatchReason::tensionUnclassified, -1, -1, "Phrase has unevaluated intervals; the requested level cannot be confirmed for the whole phrase."});
     else if (out.tension == PhraseTensionMatch::differentLevel)
         out.diagnostics.push_back({PhraseMatchReason::tensionMismatch, -1, -1, "Phrase tension differs from the requested level."});
     else out.diagnostics.push_back({PhraseMatchReason::matched, -1, -1, "Harmonic requirements matched; tension selection permits this candidate."});

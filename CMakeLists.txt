@@ -178,7 +178,7 @@ target_compile_definitions(SmartImproviserARA
         JUCE_WEB_BROWSER=0
         JUCE_USE_CURL=0
         JUCE_VST3_CAN_REPLACE_VST2=0
-        SMART_IMPROVISER_BUILD_VERSION="0.4f"
+        SMART_IMPROVISER_BUILD_VERSION="0.4g"
 )
 
 target_link_libraries(SmartImproviserARA
@@ -408,3 +408,10 @@ if(MSVC)
     target_compile_options(SmartImproviserTensionTimelineTests PRIVATE /utf-8)
 endif()
 add_test(NAME SmartImproviserTensionTimelineTests COMMAND SmartImproviserTensionTimelineTests)
+
+add_executable(SmartImproviserStage4IntegrationTests tests/Stage4IntegrationTests.cpp)
+target_link_libraries(SmartImproviserStage4IntegrationTests PRIVATE SmartImproviserCore SmartImproviserContext)
+if(MSVC)
+    target_compile_options(SmartImproviserStage4IntegrationTests PRIVATE /utf-8)
+endif()
+add_test(NAME SmartImproviserStage4IntegrationTests COMMAND SmartImproviserStage4IntegrationTests)
