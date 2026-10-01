@@ -153,6 +153,10 @@ int main()
 
     // Existing harmonic-first matcher keeps authority, even for complete metadata.
     TimelineHarmonicSnapshot snapshot;
+    snapshot.positionAvailable=true; snapshot.ppq=4;
+    snapshot.globalKey.available=snapshot.globalKey.defined=true;
+    snapshot.globalKey.root=0;
+    for (int n:{0,2,4,5,7,9,11}) snapshot.globalKey.intervals.values[n]=0xFF;
     snapshot.currentChord=chord(1,{0,4,7,10}); // G7
     snapshot.nextChordAvailable=true; snapshot.nextChord=chord(0,{0,4,7,11});
     auto material=analyzeImprovisation(analyzeHarmonicSituation(snapshot));
