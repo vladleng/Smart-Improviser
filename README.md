@@ -10,11 +10,11 @@
 **Stage 1 — ARA Context Monitor завершён.**  
 **Stage 2 — Harmonic Engine завершён.**
 
-**Текущая стабильная версия:** `0.4`
+**Текущая стабильная версия:** `0.5`
 
 **Stage 3:** завершён, stable `0.4`
 
-**Текущий Stage:** Stage 4 — viewer (`0.4a`) и контракт (`0.4b`) приняты; `0.4c` с fix1–fix5 принята; `0.4d` с выбором tension и белым основным тоном аккорда на грифе принята. [`0.4e`](docs/STAGE_4_0.4e_PHRASE_CONTRACT.md), контракт проверки будущих фраз, принят Владом 2026-10-01 (PR #55); Windows 25/25 CTest. [`0.4f`](docs/STAGE_4_0.4f_TENSION_CURVE.md), профиль фразы и основа кривой tension, принят Владом 2026-10-01 (PR #56); Windows 26/26 CTest. Рабочий checkpoint — [`0.4g`](docs/STAGE_4_0.4g_INTEGRATION.md), итоговая интеграция Stage 4; Windows и итоговая приёмка ожидаются.
+**Stage 4:** завершён и принят, stable `0.5`. Viewer, гармоническая база, общие ручные T1/T2/T3, фильтр, белый основной тон аккорда, контракты фраз и профиля/кривой tension; Windows 27/27 CTest. [Итог Stage 4 и Windows-пакет](docs/STAGE_4_COMPLETE_0.5.md). Следующий Stage 5 — Phrase / Idea Library, пока не начат.
 
 Stable `0.4` фиксирует принятый Stage 3: стратегии и объяснения на основе HarmonicSituation. Viewer `0.4a` и уточнение `upd4` по карте/Левину приняты. Контракт `0.4b` принят после живого теста; [0.4c](docs/STAGE_4_0.4c_LEVEL1.md) принята с fix1–fix5. [0.4d](docs/STAGE_4_0.4d_SELECTION.md) фильтрует подсказки по ручным T1/T2/T3; назначение уровней остаётся пользовательским.
 

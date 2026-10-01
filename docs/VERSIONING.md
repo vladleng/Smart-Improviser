@@ -260,9 +260,10 @@ Stage 0 → 0.1
 Stage 1 → 0.2
 Stage 2 → 0.3
 Stage 3 → 0.4
+Stage 4 → 0.5
 ```
 
-Stage 3 — Improvisation Engine принят в `0.3h fix3` (Windows Build #360 и Studio Pro); текущая stable — **0.4**. Текущий этап — Stage 4, рабочая линия `0.4a → 0.4g`: 0.4a viewer, 0.4b tension contract, 0.4c гармоническая база и общие ручные назначения, 0.4d фильтр, 0.4e контракт фраз, 0.4f профиль/кривая, 0.4g итоговая интеграция. 0.4a–0.4f приняты; 0.4g ожидает приёмки. Итог Stage 4 — stable `0.5` после всех gates. Нумерация Stage 5–10 и stable targets сохраняется.
+Stage 3 — Improvisation Engine принят в `0.3h fix3` (Windows Build #360 и Studio Pro); текущая stable — **0.5** после принятого Stage 4. Завершённый этап — Stage 4, рабочая линия `0.4a → 0.4g`: 0.4a viewer, 0.4b tension contract, 0.4c гармоническая база и общие ручные назначения, 0.4d фильтр, 0.4e контракт фраз, 0.4f профиль/кривая, 0.4g итоговая интеграция. 0.4a–0.4g приняты; stable `0.5` выпущена с отдельным Windows build/artifact, 27/27 CTest и неизменной принятой логикой. Следующий Stage 5 — библиотека фраз, ещё не начат. Нумерация Stage 5–10 и stable targets сохраняется.
 
 Рабочая линия:
 
