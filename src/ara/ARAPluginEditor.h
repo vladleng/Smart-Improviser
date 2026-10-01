@@ -37,6 +37,7 @@ private:
     void refreshPanelView(bool resetScroll);
     void updatePanelButtons();
     void updateMaterialSelection();
+    int displayedMaterialIndex() const;
     juce::String selectedMaterialText() const;
     int getNumRows() override;
     void paintListBoxItem(int row, juce::Graphics& g, int width, int height,
@@ -63,6 +64,7 @@ private:
     std::vector<StrategyRow> strategyRows;
     int selectedMaterialIndex = -1;
     bool updatingSelector = false;
+    bool showStableSubset = false;
 
     Panel activePanel = Panel::context;
 
@@ -95,6 +97,7 @@ private:
     juce::TextEditor detailsView;
     juce::ListBox strategyList;
     juce::TextButton fretLabelButton;
+    juce::TextButton sourceFormButton;
     juce::ComboBox layerSelector;
     juce::ComboBox fretSelector;
     MaterialViewerComponent materialViewer;

@@ -33,6 +33,7 @@ int main()
     result.context.interpretationCount = 2;
 
     ImprovisationStrategy anchor;
+    anchor.ruleId = "core.explicit-chord-tones";
     anchor.interpretationIndependent = true;
     anchor.source.kind = MaterialKind::chordTones;
     anchor.source.name = "Db anchors";

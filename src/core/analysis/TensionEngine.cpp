@@ -90,7 +90,8 @@ TensionCandidate makeNaturalNine(const ImprovisationStrategy& source,
     {
         const auto& note = full.notes[i];
         const auto relative = wrap12(note.pitchClass - anchors.actualChord.rootPitchClass);
-        if (!anchors.actualChord.hasTone(relative) && relative != 2) continue;
+        if (!anchors.actualChord.hasTone(relative) && relative != 2
+            && note.role != MaterialNoteRole::bassTone) continue;
         strategy.source.notes.push_back(note);
         if (i < full.chordRelativeNotes.size())
             strategy.source.chordRelativeNotes.push_back(full.chordRelativeNotes[i]);

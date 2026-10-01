@@ -1,3 +1,5 @@
+> Debugging: `0.4c-fix1` restores full accompaniment and separates the T1 subset from its full source; live acceptance pending. See [STAGE_4_0.4c_FIXES.md](STAGE_4_0.4c_FIXES.md).
+
 # Smart Improviser — Current State
 
 > Обновлено 2026-09-30: Stage 3 принят, текущая stable — `0.4`. Влад принял `0.4a upd4` и `0.4b` после живых проверок; PR #44–#47 объединены в main. Рабочий checkpoint `0.4c` реализует Level 1 / Stable поверх принятого контракта Tension Engine; живое подтверждение ещё требуется. Stage 4/Issue #5 открыт. Song workspace и редактор остаются Stage 7–8.

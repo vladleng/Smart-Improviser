@@ -7,6 +7,7 @@
 #include "core/analysis/HarmonicEngine.h"
 #include "core/analysis/ImprovisationEngine.h"
 #include "core/analysis/ManualTensionKey.h"
+#include "core/analysis/MaterialSelection.h"
 #include "core/analysis/TensionEngine.h"
 #include "core/model/ChordModel.h"
 #include "core/model/KeyModel.h"
@@ -628,6 +629,15 @@ SmartImproviserARAEditor::SmartImproviserARAEditor(SmartImproviserARAProcessor& 
         materialViewer.setFretDegreeLabels(enabled);
     };
     addAndMakeVisible(fretLabelButton);
+    sourceFormButton.setColour(juce::TextButton::buttonColourId, juce::Colour::fromRGB(45, 49, 56));
+    sourceFormButton.setColour(juce::TextButton::textColourOffId, juce::Colour::fromRGB(225, 230, 238));
+    sourceFormButton.onClick = [this]
+    {
+        showStableSubset = !showStableSubset;
+        updateMaterialSelection();
+        refreshPanelView(true);
+    };
+    addAndMakeVisible(sourceFormButton);
     strategyList.setModel(this);
     strategyList.setRowHeight(29);
     strategyList.setMultipleSelectionEnabled(false);
@@ -679,6 +689,7 @@ void SmartImproviserARAEditor::resized()
     const int columnX = getWidth() / 2;
     strategyList.setBounds(columnX + 16, 163, getWidth() - columnX - 56, 214);
     detailsView.setBounds(margin + 12, 143, getWidth() - margin * 2 - 24, 235);
+    sourceFormButton.setBounds(margin, 403, 250, 32);
     layerSelector.setBounds(getWidth() - 376, 403, 207, 32);
     fretSelector.setBounds(getWidth() - 161, 403, 137, 32);
     fretLabelButton.setBounds(getWidth() - 534, 403, 150, 32);
@@ -743,34 +754,7 @@ bool SmartImproviserARAEditor::isBaseMode(int index) const
 
 bool SmartImproviserARAEditor::redundantMaterial(int index) const
 {
-    if (index < 0 || index >= static_cast<int>(cachedExplanation.items.size())) return false;
-    const auto& item = cachedExplanation.items[static_cast<std::size_t>(index)];
-    if (item.strategyIndices.empty()
-        || item.strategyIndices.front() >= cachedResult.strategies.size()) return false;
-    const auto& candidate = cachedResult.strategies[item.strategyIndices.front()];
-    if (candidate.ruleId == "core.explicit-chord-tones") return true;
-    const bool redundantAnchors = candidate.ruleId == "project.t1.explicit-anchors";
-    if (!redundantAnchors && candidate.ruleId != "project.t1.major-V-m6") return false;
-    // The four-tone m6 T1 contract remains in Core, while the UI presents its
-    // parent melodic-minor source only once when both have the same root.
-    for (const auto& other : cachedExplanation.items)
-    {
-        if (other.strategyIndices.empty()
-            || other.strategyIndices.front() >= cachedResult.strategies.size()) continue;
-        const auto& strategy = cachedResult.strategies[other.strategyIndices.front()];
-        if (redundantAnchors
-            && strategy.ruleId == "core.explicit-chord-tones"
-            && other.actualChord.rootPitchClass == item.actualChord.rootPitchClass
-            && other.source.notes.size() == item.source.notes.size()
-            && std::equal(other.source.notes.begin(), other.source.notes.end(),
-                          item.source.notes.begin(), [](const auto& a, const auto& b)
-                          { return a.pitchClass == b.pitchClass; }))
-            return true;
-        if (!redundantAnchors && strategy.ruleId == "boyko.melodic-minor.V"
-            && other.source.rootFifths == item.source.rootFifths)
-            return true;
-    }
-    return false;
+    return smartimproviser::harmony::compactMaterialHidden(cachedExplanation, index);
 }
 
 std::string SmartImproviserARAEditor::tensionKey(int index) const
@@ -903,12 +887,12 @@ void SmartImproviserARAEditor::openTensionMenu(int index, const juce::MouseEvent
 
 juce::String SmartImproviserARAEditor::selectedMaterialText() const
 {
-    const int selected = selectedMaterialIndex;
+    const int selected = displayedMaterialIndex();
     if (selected < 0 || selected >= static_cast<int>(cachedExplanation.items.size()))
         return {};
     const auto& item = cachedExplanation.items[static_cast<std::size_t>(selected)];
     juce::String text = ru("ВЫБРАННЫЙ МАТЕРИАЛ: ") + localizeGeneratedText(utf8String(item.source.name)) + "\n";
-    if (const int manual = manualTension(selected); manual != 0)
+    if (const int manual = manualTension(selectedMaterialIndex); manual != 0)
         text += ru("Моя метка напряжения: T") + juce::String(manual) + "\n";
     if (!item.strategyIndices.empty()
         && item.strategyIndices.front() < cachedResult.strategies.size()
@@ -980,12 +964,27 @@ juce::String SmartImproviserARAEditor::selectedMaterialText() const
     return text + "\n";
 }
 
+int SmartImproviserARAEditor::displayedMaterialIndex() const
+{
+    if (showStableSubset)
+    {
+        const int subset = smartimproviser::harmony::stableSubsetIndex(cachedExplanation, selectedMaterialIndex);
+        if (subset >= 0) return subset;
+    }
+    return selectedMaterialIndex;
+}
+
 void SmartImproviserARAEditor::updateMaterialSelection()
 {
     const bool degreeLabels = processor.fretDegreeLabelsEnabled();
     materialViewer.setFretDegreeLabels(degreeLabels);
     fretLabelButton.setButtonText(degreeLabels ? ru("Гриф: ступени") : ru("Гриф: ноты"));
-    const int selected = selectedMaterialIndex;
+    const bool hasSubset = smartimproviser::harmony::stableSubsetIndex(cachedExplanation, selectedMaterialIndex) >= 0;
+    sourceFormButton.setEnabled(hasSubset);
+    sourceFormButton.setButtonText(hasSubset
+        ? (showStableSubset ? ru("Материал: T1 • m6") : ru("Материал: полная гамма"))
+        : ru("Материал: источник"));
+    const int selected = displayedMaterialIndex();
     const auto layer = static_cast<smartimproviser::harmony::ViewerLayer>(
         juce::jlimit(0, 5, layerSelector.getSelectedId() - 1));
     const int range = juce::jlimit(1, 3, fretSelector.getSelectedId());
@@ -1127,8 +1126,9 @@ void SmartImproviserARAEditor::timerCallback()
     rebuildStrategyRows();
     if (! explanation.items.empty())
     {
-        const auto index = keep >= 0 && rowForMaterial(keep) >= 0
-            ? keep : (strategyRows.empty() ? -1 : strategyRows.front().materialIndex);
+        const auto index = keep >= 0 && (rowForMaterial(keep) >= 0 || strategyRows.empty())
+            ? keep : (strategyRows.empty() ? smartimproviser::harmony::literalChordIndex(explanation)
+                                    : strategyRows.front().materialIndex);
         selectedMaterialIndex = index;
         if (index >= 0 && strategyList.getSelectedRow() != rowForMaterial(index))
             strategyList.selectRow(rowForMaterial(index));

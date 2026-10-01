@@ -70,6 +70,10 @@ struct ExplanationItem
     bool missingTonicApplication = false;
     int missingTonicRootFifths = 0;
 
+    std::string sourceRuleId;
+    bool tensionClassified = false;
+    TensionLevel tension = TensionLevel::stable;
+    std::vector<std::string> applicationConditions;
     std::string idea;
     std::string conditions;
     std::string usageHint;
@@ -192,9 +196,9 @@ inline std::vector<MaterialNote> importantNotes(const ImprovisationStrategy& str
 inline bool visuallySameMaterial(const ExplanationItem& item,
                                  const ImprovisationStrategy& strategy) noexcept
 {
-    return item.idea == strategy.idea
-        && item.conditions == strategy.conditions
-        && item.usageHint == strategy.usageHint
+    return item.sourceRuleId == strategy.ruleId
+        && item.tensionClassified == strategy.tensionClassified
+        && (!item.tensionClassified || item.tension == strategy.tension)
         && sameSource(item.source, strategy.source)
         && sameChordIdentity(item.actualChord, strategy.actualChord)
         && sameChordIdentity(item.thinkingStructure, strategy.thinkingStructure)
@@ -488,6 +492,10 @@ inline ExplanationResult buildExplanation(const ImprovisationResult& result)
             item.missingTonicRootFifths = strategy.missingTonicRootFifths;
             explanation_detail::addUniqueInterpretation(item.interpretationIndices,
                                                         strategy.interpretationIndex);
+            item.sourceRuleId = strategy.ruleId;
+            item.tensionClassified = strategy.tensionClassified;
+            item.tension = strategy.tension;
+            if (!strategy.conditions.empty()) item.applicationConditions.push_back(strategy.conditions);
             item.idea = strategy.idea;
             item.conditions = strategy.conditions;
             item.usageHint = strategy.usageHint;
@@ -503,6 +511,10 @@ inline ExplanationResult buildExplanation(const ImprovisationResult& result)
         else
         {
             found->strategyIndices.push_back(index);
+            if (!strategy.conditions.empty()
+                && std::find(found->applicationConditions.begin(), found->applicationConditions.end(),
+                             strategy.conditions) == found->applicationConditions.end())
+                found->applicationConditions.push_back(strategy.conditions);
             found->interpretationIndependent = found->interpretationIndependent
                 && strategy.interpretationIndependent;
             explanation_detail::addUniqueInterpretation(found->interpretationIndices,
