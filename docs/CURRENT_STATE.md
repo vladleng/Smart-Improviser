@@ -1,3 +1,10 @@
+> `0.4c-fix5`: manual tension assignments now persist in a shared user profile
+> across DAW projects. Open the configured Corcovado project once to migrate old
+> host labels; shared assignments take priority over older project snapshots.
+> Corcovado harmonic test for fix4 is accepted; fix5 persistence live test pending.
+> Vlad supplies initial T1/T2/T3 labels; users can adjust them. Phrase compatibility
+> must follow the harmonic model before tension filtering.
+
 > Debugging: `0.4c-fix4` unifies dominant source selection by minor destination, removes the separate harmonic-minor V fragment, and adds the bII diminished-seventh arpeggio. Includes fix1–fix3; live acceptance pending. See [STAGE_4_0.4c_FIXES.md](STAGE_4_0.4c_FIXES.md).
 
 # Smart Improviser — Current State

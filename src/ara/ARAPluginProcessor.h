@@ -1,6 +1,7 @@
 #pragma once
 
 #include <JuceHeader.h>
+#include "ara/SharedManualTensions.h"
 #include <atomic>
 #include <map>
 #include <string>
@@ -38,8 +39,9 @@ public:
     void setStateInformation(const void* data, int sizeInBytes) override;
 
     bool isAraBound() const noexcept { return araBound.load(std::memory_order_relaxed); }
+    void refreshSharedManualTensions();
     int manualTensionFor(const std::string& key) const;
-    void setManualTension(const std::string& key, int level);
+    bool setManualTension(const std::string& key, int level);
     bool fretDegreeLabelsEnabled() const;
     void setFretDegreeLabelsEnabled(bool enabled);
     juce::Point<int> editorSize() const;
@@ -53,7 +55,8 @@ protected:
 private:
     std::atomic<bool> araBound { false };
     mutable juce::CriticalSection stateLock;
-    std::map<std::string, int> manualTensions;
+    std::map<std::string, int> manualTensions; // Host backup for migration/recovery.
+    SharedManualTensions sharedManualTensions;
     bool fretDegreeLabels = false;
     juce::Point<int> savedEditorSize {1120, 1000};
     bool hasPublishedTransport = false;

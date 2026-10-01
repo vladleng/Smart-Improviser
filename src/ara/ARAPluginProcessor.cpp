@@ -23,6 +23,7 @@ SmartImproviserARAProcessor::SmartImproviserARAProcessor()
               .withOutput("Output", juce::AudioChannelSet::stereo(), true))
 {
     SharedHarmonicContextBridge::instance().prepareWriter();
+    refreshSharedManualTensions();
 }
 
 void SmartImproviserARAProcessor::prepareToPlay(double, int) {}
@@ -97,11 +98,14 @@ void SmartImproviserARAProcessor::getStateInformation(juce::MemoryBlock& destDat
 {
     const juce::ScopedLock lock(stateLock);
     juce::MemoryOutputStream stream(destData, false);
-    stream.writeString("SmartImproviserARAStateV3");
+    stream.writeString("SmartImproviserARAStateV4");
+    auto labels = manualTensions;
+    if (const auto shared = sharedManualTensions.snapshot())
+        for (const auto& [key, level] : *shared) labels[key] = level;
     stream.writeInt(savedEditorSize.x);
     stream.writeInt(savedEditorSize.y);
-    stream.writeInt(static_cast<int>(manualTensions.size()));
-    for (const auto& [key, level] : manualTensions)
+    stream.writeInt(static_cast<int>(labels.size()));
+    for (const auto& [key, level] : labels)
     {
         stream.writeString(juce::String::fromUTF8(key.c_str()));
         stream.writeInt(level);
@@ -115,7 +119,8 @@ void SmartImproviserARAProcessor::setStateInformation(const void* data, int size
     juce::MemoryInputStream stream(data, static_cast<std::size_t>(size), false);
     const auto stateVersion = stream.readString();
     if (stateVersion != "SmartImproviserARAStateV2"
-        && stateVersion != "SmartImproviserARAStateV3") return;
+        && stateVersion != "SmartImproviserARAStateV3"
+        && stateVersion != "SmartImproviserARAStateV4") return;
     const auto width = stream.readInt(), height = stream.readInt();
     const auto count = stream.readInt();
     if (width < 940 || width > 1900 || height < 1000 || height > 1800
@@ -127,15 +132,24 @@ void SmartImproviserARAProcessor::setStateInformation(const void* data, int size
         auto key = stream.readString().toStdString();
         if (stream.isExhausted()) return;
         const auto level = stream.readInt();
-        if (!key.empty() && level >= 1 && level <= 3)
+        if (!key.empty() && level >= (stateVersion == "SmartImproviserARAStateV4" ? 0 : 1) && level <= 3)
             restored[std::move(key)] = level;
     }
-    const bool restoredFretDegreeLabels = stateVersion == "SmartImproviserARAStateV3"
+    const bool restoredFretDegreeLabels = stateVersion != "SmartImproviserARAStateV2"
         && !stream.isExhausted() && stream.readByte() != 0;
     const juce::ScopedLock lock(stateLock);
+    sharedManualTensions.importMissing(restored);
     manualTensions = std::move(restored);
+    refreshSharedManualTensions();
     fretDegreeLabels = restoredFretDegreeLabels;
     savedEditorSize = {width, height};
+}
+
+void SmartImproviserARAProcessor::refreshSharedManualTensions()
+{
+    const juce::ScopedLock lock(stateLock);
+    if (const auto shared = sharedManualTensions.snapshot())
+        for (const auto& [key, level] : *shared) manualTensions[key] = level;
 }
 
 int SmartImproviserARAProcessor::manualTensionFor(const std::string& key) const
@@ -145,12 +159,12 @@ int SmartImproviserARAProcessor::manualTensionFor(const std::string& key) const
     return found == manualTensions.end() ? 0 : found->second;
 }
 
-void SmartImproviserARAProcessor::setManualTension(const std::string& key, int level)
+bool SmartImproviserARAProcessor::setManualTension(const std::string& key, int level)
 {
-    if (key.empty()) return;
     const juce::ScopedLock lock(stateLock);
-    if (level >= 1 && level <= 3) manualTensions[key] = level;
-    else manualTensions.erase(key);
+    if (!sharedManualTensions.assign(key, level)) return false;
+    manualTensions[key] = level;
+    return true;
 }
 
 bool SmartImproviserARAProcessor::fretDegreeLabelsEnabled() const

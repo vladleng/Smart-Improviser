@@ -912,7 +912,12 @@ void SmartImproviserARAEditor::openTensionMenu(int index, const juce::MouseEvent
     menu.showMenuAsync(options, [safe, key](int choice)
     {
         if (safe == nullptr || choice < 1 || choice > 4) return;
-        safe->processor.setManualTension(key, choice - 1);
+        if (!safe->processor.setManualTension(key, choice - 1))
+        {
+            juce::AlertWindow::showMessageBoxAsync(juce::MessageBoxIconType::WarningIcon,
+                ru("Настройки tensions"), ru("Не удалось сохранить общий профиль tensions. Проверьте доступ к папке настроек пользователя."));
+            return;
+        }
         safe->rebuildStrategyRows();
         safe->refreshPanelView(false);
     });
@@ -1123,6 +1128,7 @@ void SmartImproviserARAEditor::refreshPanelView(bool resetScroll)
 
 void SmartImproviserARAEditor::timerCallback()
 {
+    processor.refreshSharedManualTensions();
     cachedShared = SharedHarmonicContextBridge::instance().read();
     const auto ppq = cachedShared.transportAvailable ? cachedShared.transportPpq : -1.0;
     const auto timeline = smartimproviser::harmony::mapTimelineHarmonicSnapshot(cachedShared, ppq);

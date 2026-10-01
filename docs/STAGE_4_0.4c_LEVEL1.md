@@ -41,13 +41,25 @@ Selecting a row updates staff, fretboard and explanation together with
 seek/PLAY/STOP. A separate circle beside each row opens a colored menu for a
 **manual** T1/T2/T3 label or no label. The manual label never reclassifies Core
 evidence, changes the source, or declares a tonic; unmarked is the default.
-These UI labels and window dimensions are saved in the plugin instance's host
-state and restored when the host restores the plugin. This is not a saved Song
-workspace. Core's T2/T3 algorithms remain for later checkpoints.
+As of `0.4c-fix5`, manual tension labels are shared user preferences across
+projects and plugin instances, saved immediately in the user's application-data
+folder (`Moon River Studio/Smart Improviser/manual-tensions.xml`). Windows uses
+`%APPDATA%`. A host-state backup remains for migration/recovery. Loading older
+V2/V3 projects imports only missing keys; existing shared preferences take priority.
+An explicit 'no label' is retained as zero, so an old project cannot restore a
+removed label. Shared edits appear on the editor's next refresh. Window dimensions
+and the fretboard display choice remain per-instance host state. This is not a
+saved Song workspace.
+
+Vlad supplies the initial tension assignments; users may change them. Automatic
+T2/T3 classification is no longer required by this checkpoint. Future phrase
+matching must first respect the harmonic model (written chord, local turn,
+source and destination); user tension is an additional selection preference,
+not permission to use incompatible material.
 The fretboard button switches between note names and Arabic degrees relative
 to the actual written chord, including explicit alterations such as #5 and
 b13. It does not change the staff or harmonic analysis. The display choice is
-stored in V3 host state; V2 projects still restore their tension labels and
+stored in V4 host state (V3 remains readable); V2 projects still restore their tension labels and
 window size, with note names as the default.
 
 Manual labels now use a transposition-independent key: the Core source rule,
@@ -126,3 +138,18 @@ correctly; a compatible mode such as G Mixolydian is first and cannot receive
 a T1–T3 label; G7 chord tones are absent from the strategy column. Toggle
 fretboard labels and compare G7#5 (#5) with G7b13 (b13), then save and reopen
 the host project to check the choice is restored.
+
+## fix5 live check: shared preferences
+
+1. Open the previously configured Corcovado project once to import its saved labels.
+2. Open another project with an equivalent harmonic situation: the same source has
+   the same label, including transposed cases. An empty/new instance must not erase it.
+3. Change a label there, then return to Corcovado: the latest shared assignment wins.
+4. Remove a label, reopen an older project that saved it: it remains unmarked.
+5. Restart Studio Pro: assignments remain. Window size and fretboard note/degree
+   choice still restore per project. A write failure is shown, not reported as success.
+
+Regression covers disk/restart persistence, legacy missing-key migration, zero
+tombstones, concurrent instances and host processes, Unicode keys, damaged/future
+files and unavailable storage. Windows CI runs this JUCE-backed test in addition
+to the 22 host-neutral suites.

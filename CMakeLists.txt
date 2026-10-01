@@ -157,6 +157,7 @@ target_sources(SmartImproviserARA
         src/ara/MaterialViewerComponent.h
         src/ara/ARAPluginProcessor.cpp
         src/ara/ARAPluginProcessor.h
+        src/ara/SharedManualTensions.h
 )
 
 target_include_directories(SmartImproviserARA
@@ -169,7 +170,7 @@ target_compile_definitions(SmartImproviserARA
         JUCE_WEB_BROWSER=0
         JUCE_USE_CURL=0
         JUCE_VST3_CAN_REPLACE_VST2=0
-        SMART_IMPROVISER_BUILD_VERSION="0.4c-fix4"
+        SMART_IMPROVISER_BUILD_VERSION="0.4c-fix5"
 )
 
 target_link_libraries(SmartImproviserARA
@@ -185,6 +186,16 @@ target_link_libraries(SmartImproviserARA
 if(MSVC)
     target_compile_options(SmartImproviserARA PRIVATE /utf-8)
 endif()
+
+# Shared preferences use JUCE file I/O, so this regression runs with the plugin build.
+add_executable(SmartImproviserSharedTensionsTests tests/SharedTensionsTests.cpp)
+target_include_directories(SmartImproviserSharedTensionsTests PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src")
+target_compile_definitions(SmartImproviserSharedTensionsTests PRIVATE JUCE_USE_CURL=0)
+target_link_libraries(SmartImproviserSharedTensionsTests PRIVATE juce::juce_core)
+if(MSVC)
+    target_compile_options(SmartImproviserSharedTensionsTests PRIVATE /utf-8)
+endif()
+add_test(NAME SmartImproviserSharedTensionsTests COMMAND SmartImproviserSharedTensionsTests)
 
 # -----------------------------------------------------------------------------
 endif() # SMART_IMPROVISER_BUILD_PLUGIN

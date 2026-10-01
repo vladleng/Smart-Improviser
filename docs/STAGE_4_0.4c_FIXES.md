@@ -59,3 +59,18 @@ Includes fix3. Studio Pro acceptance is pending. This section supersedes fix3's 
 `Fix4RegressionTests` compares complete source signatures, common manual labels, four-note arpeggio/viewer projection, destination evidence and negative cases across all twelve transpositions, with minor ii, half-diminished ii and no preceding ii. Existing suites cover major, SubV, incomplete and unknown-future contexts. All 22 suites and the Windows plugin build are required.
 
 Live check: compare the two supplied A7(b13) positions; D harmonic minor must replace the fragment in both, Bb diminished arpeggio must be selectable, and its source layer must contain four tones while the chord layer keeps A and F. D7 stays out of the first displayed turn; Dm7 remains the confirmed arrival in the second. Labels, source selection and notes must remain consistent during seek/PLAY/STOP/reopen.
+
+## 0.4c-fix5 — tensions shared across DAW projects
+
+The former map lived only in each plugin instance's host state, so assignments
+from Corcovado were absent in other projects. Added a shared user profile written
+immediately on assignment, with atomic replacement and process/thread locking.
+Existing projects import only missing keys; shared values override stale project
+backups. Clearing a label persists an explicit zero to prevent resurrection.
+Host V4 stores a recovery snapshot and retains V2/V3 reading. Window size and
+fretboard display choice remain instance-specific. The editor refreshes shared
+preferences and reports failed writes. No harmonic/source/key rule changed.
+
+A JUCE-backed regression covers migration, cross-instance/cross-process merging,
+restart persistence, removal, UTF-8/XML escaping and storage failures. Windows
+artifact: `Smart-Improviser-0.4c-fix5-Windows`. Acceptance pending live test.
