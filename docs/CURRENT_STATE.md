@@ -1,6 +1,6 @@
 # Smart Improviser — Current State
 
-> Обновлено 2026-10-01: Влад принял `0.4c` со всеми исправлениями `fix1–fix5` для main. Гармонический тест Corcovado и сохранение назначений tensions между проектами Studio Pro пройдены. Windows run `36827347937`: success, 23/23 tests. Stage 4/Issue #5 остаётся открытым; stable завершённого Stage — `0.4`. Song workspace и редактор остаются Stage 7–8.
+> Обновлено 2026-10-01: Влад принял `0.4c` со всеми исправлениями `fix1–fix5` и `0.4d` для main. Гармонический тест Corcovado и сохранение назначений tensions между проектами Studio Pro пройдены. Последняя принятая сборка `0.4d`: Windows run `36843461298`, success, 24/24 tests; tension-фильтр, сохранение и белый основной тон текущего аккорда проверены. Stage 4/Issue #5 остаётся открытым; stable завершённого Stage — `0.4`. Song workspace и редактор остаются Stage 7–8.
 
 > Короткая точка входа для нового чата или рабочей сессии. Подробная архитектура — в `PROJECT_CONTEXT.md`, этапы — в `ROADMAP.md`, правила версий — в `VERSIONING.md`, фактический прогресс — в GitHub Issues.
 
@@ -9,8 +9,8 @@
 - **Завершённые Stage:** Stage 0, Stage 1, Stage 2, Stage 3
 - **Текущая стабильная версия:** `0.4`
 - **Последний принятый Stage:** Stage 3 — Improvisation Engine
-- **Принятые checkpoints Stage 4:** `0.4a` с `upd4`, `0.4b`, `0.4c` с `fix1–fix5`; принятие `0.4c` оформлено PR #53
-- **Текущий checkpoint:** `0.4d` — выбор tension и фильтрация подсказок, [контракт и live gate](STAGE_4_0.4d_SELECTION.md); до принятия. Последний принятый — `0.4c-fix5`
+- **Принятые checkpoints Stage 4:** `0.4a` с `upd4`, `0.4b`, `0.4c` с `fix1–fix5` (PR #53), `0.4d` (PR #54)
+- **Последний принятый checkpoint:** `0.4d` — выбор tension и фильтрация подсказок, [контракт и приёмка](STAGE_4_0.4d_SELECTION.md). Следующий — `0.4e`, контракт будущих фраз; разработка не начата.
 - **Рабочая линия:** `0.3a → 0.3h fix3` [ACCEPTED]
 - **Итог Stage 3:** `0.4`
 - **Stage 2 Issue:** #3 — закрыт стабильной `0.3`
@@ -24,7 +24,7 @@
 - **PR #36:** accepted 0.3g fix1, merged в рабочую ветку PR #35
 - **PR #35:** accepted 0.3g, merged в main (`85337ff`)
 - **Windows Build #331:** success; 14/14 test targets green
-- **Текущий Stage:** Stage 4 — `0.4a`, `0.4b` и `0.4c` приняты; оставшийся план обновлён в Issue #5: 0.4d selection, 0.4e phrase contract, 0.4f profile/curve, 0.4g integration, затем stable 0.5
+- **Текущий Stage:** Stage 4 — `0.4a–0.4d` приняты; оставшийся план обновлён в Issue #5: 0.4d selection, 0.4e phrase contract, 0.4f profile/curve, 0.4g integration, затем stable 0.5
 
 Согласована лестница V7 → мажорной цели: исходный Mixolydian, затем T1 Dm6, T2 Fm6 и T3 Abm6. Принятая `0.4c` предлагает T1 m6 также при распознанном `iim7–V7` без сыгранной I, сохраняя реальный next и provisional evidence. Полная melodic minor остаётся отдельным материалом. Ручные цветные метки в списке материалов и масштабируемое окно не превращают T2/T3 в автоматические правила; Влад задаёт начальные назначения, пользователи могут менять их; автоматическое назначение T2/T3 больше не является обязательным продолжением. Назначения сохраняются сразу в общем профиле пользователя для всех проектов. Будущие фразы сначала должны соответствовать гармонической модели, затем отбираться по tension. Подробности — в [STAGE_4_0.4c_LEVEL1.md](STAGE_4_0.4c_LEVEL1.md) и [IMPROVISATION_METHOD.md](IMPROVISATION_METHOD.md).
 
