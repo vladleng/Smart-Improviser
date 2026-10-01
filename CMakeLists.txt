@@ -36,8 +36,11 @@ add_library(SmartImproviserCore STATIC
     src/core/analysis/ContextRanking.h
     src/core/analysis/DiatonicSources.cpp
     src/core/analysis/DiatonicSources.h
+    src/core/analysis/DominantDestination.h
     src/core/analysis/Explanation.h
+    src/core/analysis/ManualTensionKey.h
     src/core/analysis/MaterialViewer.h
+    src/core/analysis/FretboardLayout.h
     src/core/analysis/SpecialSources.cpp
     src/core/analysis/SpecialSources.h
     src/core/analysis/TensionEngine.cpp
@@ -154,6 +157,7 @@ target_sources(SmartImproviserARA
         src/ara/MaterialViewerComponent.h
         src/ara/ARAPluginProcessor.cpp
         src/ara/ARAPluginProcessor.h
+        src/ara/SharedManualTensions.h
 )
 
 target_include_directories(SmartImproviserARA
@@ -166,7 +170,7 @@ target_compile_definitions(SmartImproviserARA
         JUCE_WEB_BROWSER=0
         JUCE_USE_CURL=0
         JUCE_VST3_CAN_REPLACE_VST2=0
-        SMART_IMPROVISER_BUILD_VERSION="0.4b"
+        SMART_IMPROVISER_BUILD_VERSION="0.4c-fix5"
 )
 
 target_link_libraries(SmartImproviserARA
@@ -182,6 +186,16 @@ target_link_libraries(SmartImproviserARA
 if(MSVC)
     target_compile_options(SmartImproviserARA PRIVATE /utf-8)
 endif()
+
+# Shared preferences use JUCE file I/O, so this regression runs with the plugin build.
+add_executable(SmartImproviserSharedTensionsTests tests/SharedTensionsTests.cpp)
+target_include_directories(SmartImproviserSharedTensionsTests PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src")
+target_compile_definitions(SmartImproviserSharedTensionsTests PRIVATE JUCE_USE_CURL=0)
+target_link_libraries(SmartImproviserSharedTensionsTests PRIVATE juce::juce_core)
+if(MSVC)
+    target_compile_options(SmartImproviserSharedTensionsTests PRIVATE /utf-8)
+endif()
+add_test(NAME SmartImproviserSharedTensionsTests COMMAND SmartImproviserSharedTensionsTests)
 
 # -----------------------------------------------------------------------------
 endif() # SMART_IMPROVISER_BUILD_PLUGIN
@@ -329,3 +343,39 @@ if(MSVC)
     target_compile_options(SmartImproviserTensionContractTests PRIVATE /utf-8)
 endif()
 add_test(NAME SmartImproviserTensionContractTests COMMAND SmartImproviserTensionContractTests)
+
+add_executable(SmartImproviserTensionLevel1Tests tests/TensionLevel1Tests.cpp)
+target_link_libraries(SmartImproviserTensionLevel1Tests PRIVATE SmartImproviserCore)
+target_compile_features(SmartImproviserTensionLevel1Tests PRIVATE cxx_std_20)
+if(MSVC)
+    target_compile_options(SmartImproviserTensionLevel1Tests PRIVATE /utf-8)
+endif()
+add_test(NAME SmartImproviserTensionLevel1Tests COMMAND SmartImproviserTensionLevel1Tests)
+
+add_executable(SmartImproviserFretboardLayoutTests tests/FretboardLayoutTests.cpp)
+target_link_libraries(SmartImproviserFretboardLayoutTests PRIVATE SmartImproviserCore)
+if(MSVC)
+    target_compile_options(SmartImproviserFretboardLayoutTests PRIVATE /utf-8)
+endif()
+add_test(NAME SmartImproviserFretboardLayoutTests COMMAND SmartImproviserFretboardLayoutTests)
+
+add_executable(SmartImproviserMaterialRegressionTests tests/MaterialRegressionTests.cpp)
+target_link_libraries(SmartImproviserMaterialRegressionTests PRIVATE SmartImproviserCore)
+if(MSVC)
+    target_compile_options(SmartImproviserMaterialRegressionTests PRIVATE /utf-8)
+endif()
+add_test(NAME SmartImproviserMaterialRegressionTests COMMAND SmartImproviserMaterialRegressionTests)
+
+add_executable(SmartImproviserFix3RegressionTests tests/Fix3RegressionTests.cpp)
+target_link_libraries(SmartImproviserFix3RegressionTests PRIVATE SmartImproviserCore)
+if(MSVC)
+    target_compile_options(SmartImproviserFix3RegressionTests PRIVATE /utf-8)
+endif()
+add_test(NAME SmartImproviserFix3RegressionTests COMMAND SmartImproviserFix3RegressionTests)
+
+add_executable(SmartImproviserFix4RegressionTests tests/Fix4RegressionTests.cpp)
+target_link_libraries(SmartImproviserFix4RegressionTests PRIVATE SmartImproviserCore)
+if(MSVC)
+    target_compile_options(SmartImproviserFix4RegressionTests PRIVATE /utf-8)
+endif()
+add_test(NAME SmartImproviserFix4RegressionTests COMMAND SmartImproviserFix4RegressionTests)

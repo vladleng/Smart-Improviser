@@ -17,7 +17,7 @@ enum class ViewerLayer { all, source, chord, guides, characteristic, targets };
 enum ViewerRole : unsigned
 {
     sourceRole = 1u, chordRole = 2u, guideRole = 4u,
-    characteristicRole = 8u, targetRole = 16u
+    characteristicRole = 8u, targetRole = 16u, bassRole = 32u
 };
 
 struct ViewerNote
@@ -55,6 +55,39 @@ inline bool visibleInLayer(const ViewerNote& note, ViewerLayer layer) noexcept
         case ViewerLayer::targets: return (note.roles & targetRole) != 0;
     }
     return false;
+}
+
+// Fretboard-only labels relative to the actual written chord. Explicit host
+// degrees win: the same pitch can be #5 or b13 without rewriting the chord.
+inline std::string chordDegreeLabel(const NormalizedChord& chord, int pitchClass)
+{
+    if (!chord.valid || pitchClass < 0 || pitchClass >= kPitchClassCount) return {};
+    const int interval = (pitchClass - chord.rootPitchClass + 12) % 12;
+    int degree = chord.hasTone(interval) ? chord.degrees[static_cast<std::size_t>(interval)] : 0;
+    if (degree <= 0 || degree > 13)
+    {
+        static constexpr int defaultDegrees[12] = {1,9,9,3,3,11,5,5,13,13,7,7};
+        degree = defaultDegrees[interval];
+        if (interval == 3 && chord.hasTone(4)) degree = 9; // dominant #9, not minor 3
+        if (interval == 6 && chord.hasTone(7)) degree = 11;
+        if (interval == 8 && !chord.hasTone(7) && chord.hasTone(4)) degree = 5;
+    }
+    int natural = 0;
+    switch (degree)
+    {
+        case 1: natural = 0; break;
+        case 2: case 9: natural = 2; break;
+        case 3: natural = 4; break;
+        case 4: case 11: natural = 5; break;
+        case 5: natural = 7; break;
+        case 6: case 13: natural = 9; break;
+        case 7: natural = 11; break;
+        default: return {};
+    }
+    int alteration = (interval - natural + 12) % 12;
+    if (alteration > 6) alteration -= 12;
+    return std::string(static_cast<std::size_t>(alteration < 0 ? -alteration : alteration),
+                       alteration < 0 ? 'b' : '#') + std::to_string(degree);
 }
 
 inline std::string spelledChordNote(const NormalizedChord& chord, const MaterialNote& note)
@@ -128,7 +161,9 @@ inline MaterialView buildMaterialView(const ImprovisationResult& result,
         const auto chordSpelling = chordNote == item.source.chordRelativeNotes.end()
             ? spelledChordNote(view.chord, note)
             : spelledChordNote(view.chord, *chordNote);
-        view.current.push_back({note.pitchClass, note.semitonesFromRoot,
+        view.current.push_back({note.pitchClass,
+                                (note.pitchClass - (view.sourceRootPitchClass >= 0
+                                    ? view.sourceRootPitchClass : view.chord.rootPitchClass) + 12) % 12,
                                 spelledChordNote(view.chord, note), roles, chordSpelling});
     };
 
@@ -147,6 +182,23 @@ inline MaterialView buildMaterialView(const ImprovisationResult& result,
         append(note, characteristicRole
             | (view.chord.valid && view.chord.hasTone((note.pitchClass - view.chord.rootPitchClass + 12) % 12)
                 ? chordRole : 0u));
+
+    // Source omissions belong to the line, never to the accompaniment. Keep every written
+    // chord anchor available in the chord/all layers without adding it to the
+    // selected four-note source. The spelling comes from Core's anchor source.
+    for (const auto& original : result.strategies)
+            if (original.ruleId == "core.explicit-chord-tones")
+            {
+                for (auto note : original.source.notes)
+                {
+                    note.semitonesFromRoot = (note.pitchClass - view.sourceRootPitchClass + 12) % 12;
+                    append(note, chordRole | (note.role == MaterialNoteRole::guideTone ? guideRole : 0u)
+                        | (note.role == MaterialNoteRole::bassTone ? bassRole : 0u));
+                }
+                break;
+            }
+    std::stable_sort(view.current.begin(), view.current.end(), [](const auto& a, const auto& b)
+        { return a.sourceInterval < b.sourceInterval; });
 
     // Targets belong to the actual next chord, never the inferred tonic.
     for (const auto& note : item.targetNotes)

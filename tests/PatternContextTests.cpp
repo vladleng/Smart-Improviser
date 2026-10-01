@@ -1,12 +1,15 @@
 #include "core/analysis/HarmonicEngine.h"
 #include "core/analysis/Explanation.h"
 #include "core/analysis/ImprovisationEngine.h"
+#include "core/analysis/ManualTensionKey.h"
+#include "core/analysis/TensionEngine.h"
 
 #include <array>
 #include <algorithm>
 #include <cstdlib>
 #include <initializer_list>
 #include <iostream>
+#include <set>
 
 using namespace smartimproviser::harmony;
 
@@ -249,11 +252,31 @@ int main()
     expect(falseEb.pattern.type != HarmonicPatternType::majorIiVI
            && falseEb.localPattern.type != HarmonicPatternType::majorIiVI,
            "contradicted ii-V does not present major ii-V-I 1/3");
+    const auto falseEbIiMaterial = analyzeImprovisation(falseEb);
+    expect(std::any_of(falseEbIiMaterial.strategies.begin(), falseEbIiMaterial.strategies.end(),
+               [](const auto& strategy)
+               { return strategy.source.name == "F Dorian" && strategy.missingTonicApplication; }),
+           "provisional major ii-V retains its Dorian ii source without C-minor interpretation");
+    expect(std::any_of(falseEbIiMaterial.strategies.begin(), falseEbIiMaterial.strategies.end(),
+               [](const auto& strategy)
+               { return strategy.source.name == "F melodic minor"
+                   && strategy.interpretationIndependent; }),
+           "optional F melodic minor color is chord-local, not a C-minor reading");
     const auto falseEbDominant = analyzeWindow(cMajor, falseEbCadence, 1);
     expect(! falseEbDominant.localKey.valid
            && falseEbDominant.localPattern.type != HarmonicPatternType::majorIiVI,
            "Bb7 with known Em7 future does not keep false Eb-major 2/3 candidate");
     const auto falseEbMaterial = analyzeImprovisation(falseEbDominant);
+    const auto sourceKey = [&](const ImprovisationResult& result, const std::string& rule)
+    {
+        const auto items = buildExplanation(result);
+        for (const auto& item : items.items)
+            if (!item.strategyIndices.empty()
+                && result.strategies[item.strategyIndices.front()].ruleId == rule)
+                return manualTensionKey(result, item);
+        return std::string{};
+    };
+    const auto bbMixolydianKey = sourceKey(falseEbMaterial, "diatonic.mixolydian");
     const auto missingEbSource = std::find_if(falseEbMaterial.strategies.begin(), falseEbMaterial.strategies.end(),
         [](const auto& strategy)
         {
@@ -295,6 +318,9 @@ int main()
                && ! situation.harmonic.dominantResolutionConfirmed
                && ! situation.pattern.evidence.has(EvidenceFlag::confirmedResolution),
                "missing tonic is descriptive only, never an established Eb key or resolution");
+        expect(situation.interpretationCount == 1
+               && situation.primaryInterpretationIndex == 0,
+               "incomplete major ii-V does not expose unrelated C-minor modal reading");
     }
     expect(! analyzeWindow(cMajor, falseEbCadence, 2).incompleteCadence.valid,
            "actual Em7 is not the absent I or a fictitious 3/3 member");
@@ -310,6 +336,9 @@ int main()
     const auto ebMaj7 = makeChord(-3, { 0, 4, 7, 11 }, 8.0);
     const std::array completedEb { fMin7, bFlat7, ebMaj7 };
     const auto completedEbMaterial = analyzeImprovisation(analyzeWindow(cMajor, completedEb, 1));
+    expect(!bbMixolydianKey.empty(), "manual preference has a relative key for incomplete V");
+    expect(bbMixolydianKey == sourceKey(completedEbMaterial, "diatonic.mixolydian"),
+           "same manual source preference covers completed and unfinished major ii-V");
     expect(std::none_of(completedEbMaterial.strategies.begin(), completedEbMaterial.strategies.end(),
                [](const auto& strategy) { return strategy.missingTonicApplication; }),
            "actual Ebmaj7 uses confirmed resolution sources, not the incomplete-cadence label");
@@ -336,6 +365,10 @@ int main()
             expect(transposedSituation.incompleteCadence.valid
                    && transposedSituation.incompleteCadence.missingTonicRootFifths == tonicFifths,
                    "incomplete ii-V template and expected tonic spelling work in all 12 keys");
+            if (position == 1)
+                expect(sourceKey(analyzeImprovisation(transposedSituation), "diatonic.mixolydian")
+                       == bbMixolydianKey,
+                       "manual preference transfers to equivalent local ii-V in every key");
         }
     }
 
@@ -391,6 +424,50 @@ int main()
                        && ! strategy.resolution.confirmed;
                }),
            "G7 of Dm7-G7-D7/A gets V material without inventing C resolution");
+
+    // The next chord can be minor on the expected major-I root. That is a
+    // real V -> minor resolution. fix4 selects the destination's source family
+    // without recasting the preceding ii as a half-diminished chord.
+    // Compare the complete palette in all twelve transpositions, not names
+    // of individual chords or a single project key.
+    const std::set<std::string> expectedIncompleteRules {
+        "core.explicit-chord-tones", "diatonic.mixolydian",
+        "boyko.melodic-minor.V", "levine.dominant.half-whole",
+        "project.melodic-minor.bVII-overlay", "boyko.melodic-minor.bII"
+    };
+    for (int tonicFifths = -5; tonicFifths < 7; ++tonicFifths)
+    {
+        const auto ii = makeChord(tonicFifths + 2, {0, 3, 7, 10}, 0.0);
+        const auto v = makeChord(tonicFifths + 1, {0, 4, 7, 10}, 4.0);
+        auto minorArrival = makeChord(tonicFifths, {0, 3, 7, 10}, 8.0);
+        auto dominantArrival = makeChord(tonicFifths, {0, 4, 7, 10}, 8.0);
+        dominantArrival.bass = tonicFifths + 1; // A7/D-style slash spelling is retained.
+        const std::array minorTurn {ii, v, minorArrival};
+        const std::array dominantTurn {ii, v, dominantArrival};
+        for (const auto& turn : {minorTurn, dominantTurn})
+        {
+            const auto situation = analyzeWindow(cMajor, turn, 1);
+            const auto result = analyzeImprovisation(situation);
+            expect(situation.incompleteCadence.valid && result.valid,
+                   "ii m7-V7 keeps its provisional major direction with a non-major continuation");
+            std::set<std::string> rules;
+            for (const auto& strategy : result.strategies) rules.insert(strategy.ruleId);
+            const bool minorTarget = situation.nextChord.quality == ChordQuality::minor;
+            const std::set<std::string> minorRules {
+                "core.explicit-chord-tones", "project.harmonic-minor.contextual-V",
+                "project.minor-V.bII-dim7-arpeggio", "boyko.melodic-minor.bII",
+                "levine.dominant.half-whole"
+            };
+            const auto& expected = minorTarget ? minorRules : expectedIncompleteRules;
+            expect(rules == expected && result.strategies.size() == expected.size(),
+                   "source family follows the destination quality in all transpositions");
+            const auto profile = analyzeStableTension(result);
+            expect(!profile.bands[0].alternatives.empty()
+                   && profile.bands[0].alternatives.front().strategy.ruleId
+                        == (minorTarget ? "project.t1.explicit-anchors" : "project.t1.major-V-m6"),
+                   "minor destination cannot inherit the major ii-V T1 structure");
+        }
+    }
 
     const auto aMin7At4 = makeChord(3, { 0, 3, 7, 10 }, 4.0);
     const auto dMin7At8 = makeChord(2, { 0, 3, 7, 10 }, 8.0);

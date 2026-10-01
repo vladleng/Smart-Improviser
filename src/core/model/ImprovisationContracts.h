@@ -31,7 +31,9 @@ enum class ImprovisationStrategyKind : std::uint8_t
     sideSlipOutside,
     diminishedApplication,
     wholeToneDominant,
-    harmonicMinorFragment
+    harmonicMinorFragment,
+    harmonicMinorApplication,
+    diminishedArpeggio
 };
 
 enum class PhraseRole : std::uint8_t
@@ -45,8 +47,8 @@ enum class PhraseRole : std::uint8_t
     release
 };
 
-enum class MaterialKind : std::uint8_t { undefined, chordTones, scale };
-enum class MaterialNoteRole : std::uint8_t { chordTone, guideTone, colorTone, passingTone, scaleTone };
+enum class MaterialKind : std::uint8_t { undefined, chordTones, scale, arpeggio };
+enum class MaterialNoteRole : std::uint8_t { chordTone, guideTone, colorTone, passingTone, scaleTone, bassTone };
 enum class DiatonicMode : std::uint8_t { none, ionian, dorian, phrygian, lydian, mixolydian, aeolian, locrian };
 
 enum class DominantContext : std::uint8_t

@@ -28,6 +28,20 @@ std::vector<MaterialNote> chordMaterial(const NormalizedChord& chord)
             interval, degree, guide ? MaterialNoteRole::guideTone :
                 (characteristic ? MaterialNoteRole::colorTone : MaterialNoteRole::chordTone), characteristic, {} });
     }
+    if (chord.slashBass && std::none_of(notes.begin(), notes.end(), [&](const auto& note)
+        { return note.pitchClass == chord.bassPitchClass; }))
+    {
+        constexpr char letters[] = "CDEFGAB";
+        constexpr int natural[] = {0,2,4,5,7,9,11};
+        const int letter = (4 * ((chord.bassFifths % 7 + 7) % 7)) % 7;
+        int accidental = (chord.bassPitchClass - natural[letter] + 12) % 12;
+        if (accidental > 6) accidental -= 12;
+        const auto name = std::string(1, letters[letter])
+            + std::string(static_cast<std::size_t>(std::abs(accidental)), accidental < 0 ? 'b' : '#');
+        notes.push_back({chord.bassPitchClass,
+            (chord.bassPitchClass - chord.rootPitchClass + 12) % 12,
+            0, MaterialNoteRole::bassTone, false, name});
+    }
     return notes;
 }
 

@@ -33,6 +33,7 @@ int main()
     result.context.interpretationCount = 2;
 
     ImprovisationStrategy anchor;
+    anchor.ruleId = "core.explicit-chord-tones";
     anchor.interpretationIndependent = true;
     anchor.source.kind = MaterialKind::chordTones;
     anchor.source.name = "Db anchors";
@@ -92,6 +93,22 @@ int main()
            "characteristic role comes from the selected strategy");
     expect(! buildMaterialView(result, explanation, 100).valid,
            "out-of-range selection cannot display stale material");
+
+    auto alteredFifth = anchor.actualChord;
+    alteredFifth.rootFifths = 1; // G
+    alteredFifth.rootPitchClass = 7;
+    alteredFifth.tones[8] = true;
+    alteredFifth.degrees[8] = 5;
+    expect(chordDegreeLabel(alteredFifth, 3) == "#5",
+           "written G7#5 labels D# as #5");
+    alteredFifth.degrees[8] = 13;
+    expect(chordDegreeLabel(alteredFifth, 3) == "b13",
+           "written G7b13 labels Eb as b13 at the same pitch class");
+    alteredFifth.tones[8] = false;
+    alteredFifth.degrees[8] = 0;
+    alteredFifth.tones[4] = true;
+    expect(chordDegreeLabel(alteredFifth, 10) == "#9",
+           "optional Bb over G7 uses dominant #9 label");
 
     // Identical source notes with different important-tone roles may not be
     // collapsed into one viewer item that silently inherits the first role set.

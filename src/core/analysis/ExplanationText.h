@@ -95,7 +95,10 @@ inline std::string explanationDiagnosticText(const ImprovisationResult& result)
                 << explanation_text_detail::rootName(item.missingTonicRootFifths)
                 << " [MISSING]; actual next chord remains "
                 << (item.targetChord.valid ? normalizedChordSymbol(item.targetChord) : "-")
-                << "; resolution unconfirmed\n";
+                << "; expected major-I resolution unconfirmed\n";
+
+        for (const auto& condition : item.applicationConditions)
+            out << "УСЛОВИЯ: " << condition << "\n";
 
         if (! item.importantNotes.empty())
         {
@@ -137,7 +140,7 @@ inline std::string explanationDiagnosticText(const ImprovisationResult& result)
                     if (evidence.kind == ExplanationEvidenceKind::incompleteCadence
                         && result.context.incompleteCadence.valid)
                         out << " • " << explanation_text_detail::rootName(
-                            result.context.incompleteCadence.missingTonicRootFifths);
+                            result.context.incompleteCadence.missingTonicRootFifths) << " major (structural template)";
                     else if (evidence.kind == ExplanationEvidenceKind::expectedTonic
                              && result.context.expectedTonic.valid)
                         out << " • " << explanation_text_detail::rootName(
