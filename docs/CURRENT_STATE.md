@@ -1,6 +1,6 @@
 # Smart Improviser — Current State
 
-> Обновлено 2026-10-01: Stage 4 завершён и принят Владом, stable 0.5 выпущена. Итоговая Studio Pro проверка 0.4g пройдена; PR #57 merged (`c92f181`). Stable код `87f84b9`; Windows run `36867908179` — success, 27/27 CTest и VST3 artifact. Принятая музыкальная логика сохранена. Итог и границы: [STAGE_4_COMPLETE_0.5.md](STAGE_4_COMPLETE_0.5.md). Stage 5 начат как план/организация работ; [декомпозиция 0.5a–0.5g](STAGE_5_PLAN.md) готова, первый checkpoint 0.5a, код пока не изменён.
+> Обновлено 2026-10-01: Stage 4 завершён и принят Владом, stable 0.5 выпущена. Итоговая Studio Pro проверка 0.4g пройдена; PR #57 merged (`c92f181`). Stable код `87f84b9`; Windows run `36867908179` — success, 27/27 CTest и VST3 artifact. Принятая музыкальная логика сохранена. Итог и границы: [STAGE_4_COMPLETE_0.5.md](STAGE_4_COMPLETE_0.5.md). Stage 5 начат как план/организация работ; [декомпозиция 0.5a–0.5g](STAGE_5_PLAN.md) готова, 0.5a реализуется отдельным PR: [контракт и live checklist](STAGE_5_0.5a_LIBRARY_CONTRACT.md); CI/приёмка ещё ожидаются.
 
 > Короткая точка входа для нового чата или рабочей сессии. Подробная архитектура — в `PROJECT_CONTEXT.md`, этапы — в `ROADMAP.md`, правила версий — в `VERSIONING.md`, фактический прогресс — в GitHub Issues.
 
@@ -25,7 +25,7 @@
 - **PR #36:** accepted 0.3g fix1, merged в рабочую ветку PR #35
 - **PR #35:** accepted 0.3g, merged в main (`85337ff`)
 - **Windows Build #331:** success; 14/14 test targets green
-- **Текущий Stage:** Stage 5 — Phrase / Idea Library (Issue #6), [план 0.5a–0.5g](STAGE_5_PLAN.md); первая задача 0.5a. Stage 4 завершён, Issue #5 closed as completed; stable остаётся `0.5`.
+- **Текущий Stage:** Stage 5 — Phrase / Idea Library (Issue #6), [план 0.5a–0.5g](STAGE_5_PLAN.md); 0.5a — модель библиотечной записи/Idea и явного регистра, CI/приёмка ожидаются. Stage 4 завершён, Issue #5 closed as completed; stable остаётся `0.5`.
 
 Согласована лестница V7 → мажорной цели: исходный Mixolydian, затем T1 Dm6, T2 Fm6 и T3 Abm6. Принятая `0.4c` предлагает T1 m6 также при распознанном `iim7–V7` без сыгранной I, сохраняя реальный next и provisional evidence. Полная melodic minor остаётся отдельным материалом. Ручные цветные метки в списке материалов и масштабируемое окно не превращают T2/T3 в автоматические правила; Влад задаёт начальные назначения, пользователи могут менять их; автоматическое назначение T2/T3 больше не является обязательным продолжением. Назначения сохраняются сразу в общем профиле пользователя для всех проектов. Будущие фразы сначала должны соответствовать гармонической модели, затем отбираться по tension. Подробности — в [STAGE_4_0.4c_LEVEL1.md](STAGE_4_0.4c_LEVEL1.md) и [IMPROVISATION_METHOD.md](IMPROVISATION_METHOD.md).
 

@@ -7,6 +7,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <string>
+#include <optional>
 #include <vector>
 
 namespace smartimproviser::harmony
@@ -24,6 +25,21 @@ enum class PhraseNoteRole : std::uint8_t
     resolutionTarget, outsideTone
 };
 
+// Optional performance reference; not part of the musical identity.
+struct PhraseFingering
+{
+    int stringNumber = 0; // 1-based; no tuning/position is invented.
+    int fret = -1;
+};
+
+// Written example root in MIDI numbering (C4 = 60), separate from pitch class.
+// Each used slot needs its own reference to preserve cross-chord contour.
+struct PhraseRegisterReference
+{
+    int chordIndex = -1;
+    int rootMidiNote = -1;
+};
+
 struct PhraseNote
 {
     RelativePitch pitch;
@@ -31,6 +47,10 @@ struct PhraseNote
     double durationBeats = 0.0;
     bool target = false;
     PhraseNoteRole harmonicRole = PhraseNoteRole::sourceTone;
+    // Semitone pitch = slot root + compound degree + accidental + 12 * offset.
+    // null means unknown register; zero is an explicit assignment.
+    std::optional<int> octaveOffset;
+    std::optional<PhraseFingering> fingering;
 };
 
 // A source application in a harmonic slot, independent of absolute transposition.
@@ -69,5 +89,7 @@ struct Phrase
     std::vector<PhraseSlotRequirement> harmonicRequirements;
     std::vector<PhraseApproach> approaches;
     PhraseTensionProfile tensionProfile; // Description; never the desired curve.
+    std::vector<PhraseRegisterReference> registerReferences;
+    std::vector<std::string> conceptRuleIds; // Concepts used by this phrase, not UI tags.
 };
 }

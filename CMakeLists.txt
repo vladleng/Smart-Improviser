@@ -27,6 +27,9 @@ add_library(SmartImproviserCore STATIC
     src/core/model/KeyCenter.h
     src/core/model/KeyModel.cpp
     src/core/model/KeyModel.h
+    src/core/model/LibraryRecord.h
+    src/core/analysis/LibraryValidation.h
+    src/core/analysis/LibraryValidation.cpp
     src/core/model/Phrase.h
     src/core/model/PhraseTensionProfile.h
     src/core/model/TensionCurve.h
@@ -178,7 +181,7 @@ target_compile_definitions(SmartImproviserARA
         JUCE_WEB_BROWSER=0
         JUCE_USE_CURL=0
         JUCE_VST3_CAN_REPLACE_VST2=0
-        SMART_IMPROVISER_BUILD_VERSION="0.5"
+        SMART_IMPROVISER_BUILD_VERSION="0.5a"
 )
 
 target_link_libraries(SmartImproviserARA
@@ -415,3 +418,10 @@ if(MSVC)
     target_compile_options(SmartImproviserStage4IntegrationTests PRIVATE /utf-8)
 endif()
 add_test(NAME SmartImproviserStage4IntegrationTests COMMAND SmartImproviserStage4IntegrationTests)
+
+add_executable(SmartImproviserLibraryContractTests tests/LibraryContractTests.cpp)
+target_link_libraries(SmartImproviserLibraryContractTests PRIVATE SmartImproviserCore)
+if(MSVC)
+    target_compile_options(SmartImproviserLibraryContractTests PRIVATE /utf-8)
+endif()
+add_test(NAME SmartImproviserLibraryContractTests COMMAND SmartImproviserLibraryContractTests)
