@@ -73,4 +73,11 @@ preferences and reports failed writes. No harmonic/source/key rule changed.
 
 A JUCE-backed regression covers migration, cross-instance/cross-process merging,
 restart persistence, removal, UTF-8/XML escaping and storage failures. Windows
-artifact: `Smart-Improviser-0.4c-fix5-Windows`. Acceptance pending live test.
+artifact: `Smart-Improviser-0.4c-fix5-Windows`. Accepted by Vlad on 2026-10-01 after cross-project persistence live test.
+
+## Checkpoint acceptance — 2026-10-01
+
+Vlad accepted `0.4c` including fix1–fix5 for main: Corcovado harmonic test passed,
+and assigned tensions persist across Studio Pro projects. Windows fix5 build
+`36827347937` passed all 23 suites. Earlier pending/debugging notes above are
+historical; this acceptance supersedes them. Stage 4 remains open.

@@ -1,6 +1,6 @@
-# 0.4c — Level 1 / Stable (live test pending)
+# 0.4c — Level 1 / Stable (accepted 2026-10-01)
 
-`0.4c-fix4` includes the accompaniment, source grouping, T1 source-form switch and explanation, contextual-foundation and minor-destination corrections in [STAGE_4_0.4c_FIXES.md](STAGE_4_0.4c_FIXES.md). The source-form button makes the four-note subset accessible without another compact list row; full scales are not automatically T1.
+`0.4c-fix5` is the accepted build, including shared cross-project preferences and all previous corrections. `0.4c-fix4` includes the accompaniment, source grouping, T1 source-form switch and explanation, contextual-foundation and minor-destination corrections in [STAGE_4_0.4c_FIXES.md](STAGE_4_0.4c_FIXES.md). The source-form button makes the four-note subset accessible without another compact list row; full scales are not automatically T1.
 
 Stage 4 Issue #5 remains open; stable is `0.4`. This checkpoint applies the
 accepted 0.4b profile contract to an already analyzed Core result. The
@@ -116,9 +116,9 @@ keys are compared across all twelve transpositions and completed/incomplete
 turns.
 `FretboardLayoutTests` checks nut/0/1 geometry and Roman markers. All previous test
 suites and Windows CTest must pass. The Windows workflow packages
-`Smart-Improviser-0.4c-Windows` VST3.
+`Smart-Improviser-0.4c-fix5-Windows` VST3.
 
-Studio Pro live check: install the VST3; confirm version `0.4c`. At
+Studio Pro live check: install the VST3; confirm version `0.4c-fix5`. At
 G7→Cmaj7, select D melodic minor and compare its full seven-note source with
 the written G chord layer; Core's four-note Dm6 subset remains covered by
 `TensionLevel1Tests`, without a duplicate list row. For Fm7–B♭7–Em7, confirm
@@ -130,8 +130,8 @@ project. Confirm that equivalent ii–V turns in another key inherit the labels,
 that Fm6 is not repeated next to F melodic minor, and that the compact panel
 has no group headings. Resize the editor; compare fixed text/notehead size. In ranges 0–12,
 5–17 and 12–24, check the nut and Roman positions. Seek and PLAY/STOP should
-keep selected text, staff and fretboard synchronized. Acceptance remains
-pending Vlad's live confirmation.
+keep selected text, staff and fretboard synchronized. Vlad accepted the Corcovado harmonic model and confirmed cross-project tension
+persistence on 2026-10-01. Checkpoint `0.4c` is accepted; Stage 4 remains open.
 
 Latest UI check: the arrows around the highlighted current chord render
 correctly; a compatible mode such as G Mixolydian is first and cannot receive
@@ -153,3 +153,5 @@ Regression covers disk/restart persistence, legacy missing-key migration, zero
 tombstones, concurrent instances and host processes, Unicode keys, damaged/future
 files and unavailable storage. Windows CI runs this JUCE-backed test in addition
 to the 22 host-neutral suites.
+
+Accepted Windows build: [run 36827347937](https://github.com/vladleng/Smart-Improviser/actions/runs/36827347937), 23/23 tests passed; [artifact](https://github.com/vladleng/Smart-Improviser/actions/runs/36827347937/artifacts/11146315158).

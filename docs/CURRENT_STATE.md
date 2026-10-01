@@ -1,15 +1,6 @@
-> `0.4c-fix5`: manual tension assignments now persist in a shared user profile
-> across DAW projects. Open the configured Corcovado project once to migrate old
-> host labels; shared assignments take priority over older project snapshots.
-> Corcovado harmonic test for fix4 is accepted; fix5 persistence live test pending.
-> Vlad supplies initial T1/T2/T3 labels; users can adjust them. Phrase compatibility
-> must follow the harmonic model before tension filtering.
-
-> Debugging: `0.4c-fix4` unifies dominant source selection by minor destination, removes the separate harmonic-minor V fragment, and adds the bII diminished-seventh arpeggio. Includes fix1–fix3; live acceptance pending. See [STAGE_4_0.4c_FIXES.md](STAGE_4_0.4c_FIXES.md).
-
 # Smart Improviser — Current State
 
-> Обновлено 2026-09-30: Stage 3 принят, текущая stable — `0.4`. Влад принял `0.4a upd4` и `0.4b` после живых проверок; PR #44–#47 объединены в main. Рабочий checkpoint `0.4c` реализует Level 1 / Stable поверх принятого контракта Tension Engine; живое подтверждение ещё требуется. Stage 4/Issue #5 открыт. Song workspace и редактор остаются Stage 7–8.
+> Обновлено 2026-10-01: Влад принял `0.4c` со всеми исправлениями `fix1–fix5` для main. Гармонический тест Corcovado и сохранение назначений tensions между проектами Studio Pro пройдены. Windows run `36827347937`: success, 23/23 tests. Stage 4/Issue #5 остаётся открытым; stable завершённого Stage — `0.4`. Song workspace и редактор остаются Stage 7–8.
 
 > Короткая точка входа для нового чата или рабочей сессии. Подробная архитектура — в `PROJECT_CONTEXT.md`, этапы — в `ROADMAP.md`, правила версий — в `VERSIONING.md`, фактический прогресс — в GitHub Issues.
 
@@ -18,8 +9,8 @@
 - **Завершённые Stage:** Stage 0, Stage 1, Stage 2, Stage 3
 - **Текущая стабильная версия:** `0.4`
 - **Последний принятый Stage:** Stage 3 — Improvisation Engine
-- **Принятые checkpoints Stage 4:** `0.4a` с `upd4`, затем `0.4b`; PR #44–#46 merged, Windows Build #379/#381/#383 success
-- **Текущий checkpoint:** `0.4c` — Level 1 / Stable; [правила и живой gate](STAGE_4_0.4c_LEVEL1.md), до принятия
+- **Принятые checkpoints Stage 4:** `0.4a` с `upd4`, `0.4b`, `0.4c` с `fix1–fix5`; принятие `0.4c` оформлено PR #53
+- **Текущий checkpoint:** `0.4c` — принят 2026-10-01, последняя проверенная сборка `0.4c-fix5`; [правила и приёмка](STAGE_4_0.4c_LEVEL1.md)
 - **Рабочая линия:** `0.3a → 0.3h fix3` [ACCEPTED]
 - **Итог Stage 3:** `0.4`
 - **Stage 2 Issue:** #3 — закрыт стабильной `0.3`
@@ -33,9 +24,9 @@
 - **PR #36:** accepted 0.3g fix1, merged в рабочую ветку PR #35
 - **PR #35:** accepted 0.3g, merged в main (`85337ff`)
 - **Windows Build #331:** success; 14/14 test targets green
-- **Текущий Stage:** Stage 4 — viewer `0.4a` и контракт `0.4b` приняты; Level 1 в `0.4c` ожидает живой проверки
+- **Текущий Stage:** Stage 4 — `0.4a`, `0.4b` и `0.4c` приняты; дальнейший план требует уточнения после перехода к пользовательским tensions
 
-Согласована лестница V7 → мажорной цели: исходный Mixolydian, затем T1 Dm6, T2 Fm6 и T3 Abm6. Рабочая `0.4c` предлагает T1 m6 также при распознанном `iim7–V7` без сыгранной I, сохраняя реальный next и provisional evidence. Полная melodic minor остаётся отдельным материалом. Ручные цветные метки в списке материалов и масштабируемое окно не превращают T2/T3 в автоматические правила; они остаются следующими checkpoints. Подробности — в [STAGE_4_0.4c_LEVEL1.md](STAGE_4_0.4c_LEVEL1.md) и [IMPROVISATION_METHOD.md](IMPROVISATION_METHOD.md).
+Согласована лестница V7 → мажорной цели: исходный Mixolydian, затем T1 Dm6, T2 Fm6 и T3 Abm6. Принятая `0.4c` предлагает T1 m6 также при распознанном `iim7–V7` без сыгранной I, сохраняя реальный next и provisional evidence. Полная melodic minor остаётся отдельным материалом. Ручные цветные метки в списке материалов и масштабируемое окно не превращают T2/T3 в автоматические правила; Влад задаёт начальные назначения, пользователи могут менять их; автоматическое назначение T2/T3 больше не является обязательным продолжением. Назначения сохраняются сразу в общем профиле пользователя для всех проектов. Будущие фразы сначала должны соответствовать гармонической модели, затем отбираться по tension. Подробности — в [STAGE_4_0.4c_LEVEL1.md](STAGE_4_0.4c_LEVEL1.md) и [IMPROVISATION_METHOD.md](IMPROVISATION_METHOD.md).
 
 0.3h принят 2026-09-29. Fix1: ожидаемая отсутствующая тоника отдельна от распознанного `III–VI–II–V`, G7 получает Mixolydian и допустимые альтернативы, Am7 в C major не навязывается Am6. Fix2: компактные крупные римские ступени с серой I на позициях 1/4–4/4 при известном обходе тоники. Fix3: UTF-8 для `–`, `ø`, `→` в Windows UI. Windows Build #360 — success, 15/15 tests и VST3 artifact; пользователь принял результат в Studio Pro. PR #39 → #38 → #37 merged в main (`b587408`). Stable `0.4` упакована с отдельным Windows build/artifact; музыкальная логика относительно принятого fix3 не менялась.
 
