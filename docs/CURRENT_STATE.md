@@ -1,18 +1,19 @@
 # Smart Improviser — Current State
 
-> Обновлено 2026-10-01: Влад принял 0.4g и завершение Stage 4. PR #57 merged в main (`c92f181`); Windows run `36865335020` — success, 27/27 CTest; итоговая проверка Studio Pro пройдена. Готовится stable 0.5 без изменения принятой музыкальной логики. Issue #5 закрывается после проверки stable build/artifact.
+> Обновлено 2026-10-01: Stage 4 завершён и принят Владом, stable 0.5 выпущена. Итоговая Studio Pro проверка 0.4g пройдена; PR #57 merged (`c92f181`). Stable код `87f84b9`; Windows run `36867908179` — success, 27/27 CTest и VST3 artifact. Принятая музыкальная логика сохранена. Итог и границы: [STAGE_4_COMPLETE_0.5.md](STAGE_4_COMPLETE_0.5.md). Следующий Stage 5 — Phrase / Idea Library, разработка не начата.
 
 > Короткая точка входа для нового чата или рабочей сессии. Подробная архитектура — в `PROJECT_CONTEXT.md`, этапы — в `ROADMAP.md`, правила версий — в `VERSIONING.md`, фактический прогресс — в GitHub Issues.
 
 ## Текущее состояние
 
-- **Завершённые Stage:** Stage 0, Stage 1, Stage 2, Stage 3
-- **Текущая стабильная версия:** `0.4`
-- **Последний принятый Stage:** Stage 3 — Improvisation Engine
+- **Завершённые Stage:** Stage 0, Stage 1, Stage 2, Stage 3, Stage 4
+- **Текущая стабильная версия:** `0.5`
+- **Последний принятый Stage:** Stage 4 — Visual Material Viewer / пользовательские Tensions
 - **Принятые checkpoints Stage 4:** `0.4a` с `upd4`, `0.4b`, `0.4c` с `fix1–fix5` (PR #53), `0.4d` (PR #54), `0.4e` (PR #55), `0.4f` (PR #56), `0.4g` (PR #57)
-- **Последний принятый checkpoint:** `0.4g` — [итоговая интеграция](STAGE_4_0.4g_INTEGRATION.md), 27/27 CTest и Studio Pro приёмка пройдены. Готовится stable `0.5`.
+- **Последний принятый checkpoint:** `0.4g` — [итоговая интеграция](STAGE_4_0.4g_INTEGRATION.md), 27/27 CTest и Studio Pro приёмка пройдены. Stable `0.5` выпущена, Windows 27/27 CTest.
 - **Рабочая линия:** `0.3a → 0.3h fix3` [ACCEPTED]
 - **Итог Stage 3:** `0.4`
+- **Итог Stage 4:** `0.5` (PR #58), 0.4a–0.4g приняты
 - **Stage 2 Issue:** #3 — закрыт стабильной `0.3`
 - **Stage 3 Issue:** #4 — закрыт stable `0.4`
 - **Принято Stage 3:** `0.3a–0.3h` + `0.3f fix1–fix4` + `0.3g fix1` + `0.3h fix1–fix3`
@@ -24,7 +25,7 @@
 - **PR #36:** accepted 0.3g fix1, merged в рабочую ветку PR #35
 - **PR #35:** accepted 0.3g, merged в main (`85337ff`)
 - **Windows Build #331:** success; 14/14 test targets green
-- **Текущий Stage:** Stage 4 — `0.4a–0.4g` приняты; готовится stable 0.5, затем закрытие Issue #5
+- **Текущий Stage:** Stage 4 завершён, stable `0.5`; Issue #5 закрывается как completed. Следующий Stage 5 — библиотека фраз, пока не начат.
 
 Согласована лестница V7 → мажорной цели: исходный Mixolydian, затем T1 Dm6, T2 Fm6 и T3 Abm6. Принятая `0.4c` предлагает T1 m6 также при распознанном `iim7–V7` без сыгранной I, сохраняя реальный next и provisional evidence. Полная melodic minor остаётся отдельным материалом. Ручные цветные метки в списке материалов и масштабируемое окно не превращают T2/T3 в автоматические правила; Влад задаёт начальные назначения, пользователи могут менять их; автоматическое назначение T2/T3 больше не является обязательным продолжением. Назначения сохраняются сразу в общем профиле пользователя для всех проектов. Будущие фразы сначала должны соответствовать гармонической модели, затем отбираться по tension. Подробности — в [STAGE_4_0.4c_LEVEL1.md](STAGE_4_0.4c_LEVEL1.md) и [IMPROVISATION_METHOD.md](IMPROVISATION_METHOD.md).
 
