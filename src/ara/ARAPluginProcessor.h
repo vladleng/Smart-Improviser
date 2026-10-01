@@ -39,6 +39,8 @@ public:
     void setStateInformation(const void* data, int sizeInBytes) override;
 
     bool isAraBound() const noexcept { return araBound.load(std::memory_order_relaxed); }
+    int tensionFilter() const;
+    void setTensionFilter(int level);
     void refreshSharedManualTensions();
     int manualTensionFor(const std::string& key) const;
     bool setManualTension(const std::string& key, int level);
@@ -58,6 +60,7 @@ private:
     std::map<std::string, int> manualTensions; // Host backup for migration/recovery.
     SharedManualTensions sharedManualTensions;
     bool fretDegreeLabels = false;
+    int requestedTensionFilter = 0;
     juce::Point<int> savedEditorSize {1120, 1000};
     bool hasPublishedTransport = false;
     bool lastPublishedTransportAvailable = false;

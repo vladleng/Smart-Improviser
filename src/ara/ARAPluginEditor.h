@@ -4,6 +4,7 @@
 #include "context/SharedHarmonicContextData.h"
 #include "core/model/HarmonicSituation.h"
 #include "core/analysis/Explanation.h"
+#include "core/analysis/TensionFilter.h"
 #include "ara/MaterialViewerComponent.h"
 
 #include <string>
@@ -60,7 +61,7 @@ private:
     smartimproviser::harmony::ExplanationResult cachedExplanation;
     juce::String selectedMaterialKey;
     juce::StringArray strategyLabels;
-    struct StrategyRow { int materialIndex; int level; bool baseMode; };
+    using StrategyRow = smartimproviser::harmony::TensionFilterRow;
     std::vector<StrategyRow> strategyRows;
     int selectedMaterialIndex = -1;
     bool updatingSelector = false;
@@ -96,6 +97,8 @@ private:
     juce::TextButton araButton;
     juce::TextEditor detailsView;
     juce::ListBox strategyList;
+    juce::ComboBox tensionSelector;
+    juce::Label tensionHint;
     juce::TextButton fretLabelButton;
     juce::TextButton sourceFormButton;
     juce::ComboBox layerSelector;
