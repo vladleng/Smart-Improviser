@@ -1,3 +1,5 @@
+#include "library/LibrarySearchView.h"
+#include "context/LibrarySearchContext.h"
 #include "library/LibraryEditor.h"
 #include "core/analysis/MajorIiVPalette.h"
 #include "core/analysis/HarmonicConcepts.h"
@@ -617,6 +619,14 @@ juce::String materialSelectionKey(const smartimproviser::harmony::ExplanationIte
 SmartImproviserARAEditor::SmartImproviserARAEditor(SmartImproviserARAProcessor& p)
     : juce::AudioProcessorEditor(p), processor(p)
 {
+    searchLibraryButton.setButtonText(ru("Подбор фраз"));
+    searchLibraryButton.onClick=[this] {
+        if(!searchLibraryWindow) searchLibraryWindow=std::make_unique<LibrarySearchWindow>(processor,[this] {
+            return smartimproviser::harmony::makeLibrarySearchQuery(SharedHarmonicContextBridge::instance().read(),processor.tensionFilter());
+        });
+        else {searchLibraryWindow->setVisible(true);searchLibraryWindow->toFront(true);}
+    };
+    addAndMakeVisible(searchLibraryButton);
     libraryButton.setButtonText(ru("Библиотека"));
     libraryButton.onClick = [this] {
         if (!libraryWindow) libraryWindow=std::make_unique<LibraryWindow>(processor);
@@ -733,6 +743,7 @@ void SmartImproviserARAEditor::resized()
 {
     processor.setEditorSize({getWidth(), getHeight()});
     libraryButton.setBounds(24, 748, 180, 34);
+    searchLibraryButton.setBounds(212, 748, 180, 34);
     const int margin = 24;
     const int gap = 8;
     const int buttonY = 82;

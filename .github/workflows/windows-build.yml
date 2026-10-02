@@ -49,10 +49,12 @@ jobs:
 
           New-Item -ItemType Directory -Path $packageRoot | Out-Null
           Copy-Item $source $destination -Recurse
+          & "build/Release/SmartImproviserLibrarySearchTests.exe" "package/Search-check.silibrary"
+          if ($LASTEXITCODE -ne 0) { throw "Search fixture export failed" }
 
-      - name: Upload Smart Improviser 0.5d VST3
+      - name: Upload Smart Improviser 0.5e VST3
         uses: actions/upload-artifact@v4
         with:
-          name: Smart-Improviser-0.5d-Windows
+          name: Smart-Improviser-0.5e-Windows
           path: package
           if-no-files-found: error

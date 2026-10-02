@@ -32,6 +32,8 @@ add_library(SmartImproviserCore STATIC
     src/core/analysis/LibraryValidation.cpp
     src/core/analysis/PhraseLibrary.h
     src/core/analysis/PhraseLibrary.cpp
+    src/core/analysis/LibrarySearch.h
+    src/core/analysis/LibrarySearch.cpp
     src/core/analysis/LibraryArchive.h
     src/core/analysis/LibraryArchive.cpp
     src/core/model/Phrase.h
@@ -88,6 +90,8 @@ endif()
 # JUCE/ARA dependency, so edge cases can be regression-tested directly.
 add_library(SmartImproviserContext STATIC
     src/context/SharedHarmonicContextData.h
+    src/context/LibrarySearchContext.h
+    src/context/LibrarySearchContext.cpp
     src/context/TimelineContextMapper.cpp
     src/context/TimelineContextMapper.h
 )
@@ -187,7 +191,7 @@ target_compile_definitions(SmartImproviserARA
         JUCE_WEB_BROWSER=0
         JUCE_USE_CURL=0
         JUCE_VST3_CAN_REPLACE_VST2=0
-        SMART_IMPROVISER_BUILD_VERSION="0.5d"
+        SMART_IMPROVISER_BUILD_VERSION="0.5e"
 )
 
 target_link_libraries(SmartImproviserARA
@@ -463,3 +467,10 @@ if(MSVC)
     target_compile_options(SmartImproviserIdeaNoteInputTests PRIVATE /utf-8)
 endif()
 add_test(NAME SmartImproviserIdeaNoteInputTests COMMAND SmartImproviserIdeaNoteInputTests)
+
+add_executable(SmartImproviserLibrarySearchTests tests/LibrarySearchTests.cpp)
+target_link_libraries(SmartImproviserLibrarySearchTests PRIVATE SmartImproviserContext)
+if(MSVC)
+    target_compile_options(SmartImproviserLibrarySearchTests PRIVATE /utf-8)
+endif()
+add_test(NAME SmartImproviserLibrarySearchTests COMMAND SmartImproviserLibrarySearchTests)

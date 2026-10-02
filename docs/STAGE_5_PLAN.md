@@ -5,7 +5,8 @@
 0.5a принята Владом 2026-10-01, PR #59 merged в main (`37d0b85`), Windows #425 — 28/28 CTest.
 0.5b принята Владом 2026-10-01, PR #60 merged в main (`2c3591c`), Windows #427 — 29/29 CTest.
 0.5c принята Владом 2026-10-02, PR #61 merged (`cf86772`), Windows #430 — 31/31 CTest.
-0.5d — интерфейс библиотеки: согласован ввод текста и необязательных музыкальных полей; реализация в PR #62, Windows #434 — success, 32/32 CTest и VST3 artifact; Studio Pro приёмка ожидается.
+0.5d принята Владом 2026-10-02: ввод, копии и сохранение проверены; PR #62 merged (`9a7f3f3`), Windows #435 — success, 32/32 CTest.
+0.5e — [поиск по контексту](STAGE_5_0.5e_SEARCH.md): реализация/Windows/live gate в работе.
 
 Рабочая линия: **0.5a → 0.5g**. Итог Stage 5: **stable 0.6**.
 Каждая буква — отдельная сборка, regression и доступный Studio Pro live gate;
