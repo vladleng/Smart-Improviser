@@ -14,7 +14,7 @@
 
 **Stage 3:** завершён, stable `0.4`
 
-**Stage 4:** завершён и принят, stable `0.5`. Viewer, гармоническая база, общие ручные T1/T2/T3, фильтр, белый основной тон аккорда, контракты фраз и профиля/кривой tension; Windows 27/27 CTest. [Итог Stage 4 и Windows-пакет](docs/STAGE_4_COMPLETE_0.5.md). Текущий этап — [Stage 5: Phrase / Idea Library](docs/STAGE_5_PLAN.md), рабочая линия 0.5a–0.5g; 0.5a принята и merged в main (28/28 CTest и Studio Pro); текущий checkpoint 0.5b — [Library API / независимые копии](docs/STAGE_5_0.5b_LIBRARY_API.md), CI/приёмка ожидаются.
+**Stage 4:** завершён и принят, stable `0.5`. Viewer, гармоническая база, общие ручные T1/T2/T3, фильтр, белый основной тон аккорда, контракты фраз и профиля/кривой tension; Windows 27/27 CTest. [Итог Stage 4 и Windows-пакет](docs/STAGE_4_COMPLETE_0.5.md). Текущий этап — [Stage 5: Phrase / Idea Library](docs/STAGE_5_PLAN.md), рабочая линия 0.5a–0.5g; 0.5a принята и merged в main (28/28 CTest и Studio Pro); 0.5b также принята и merged (29/29 CTest и Studio Pro); текущий checkpoint 0.5c — [сохранение личной библиотеки](docs/STAGE_5_0.5c_PERSISTENCE.md), CI/приёмка ожидаются.
 
 Stable `0.4` фиксирует принятый Stage 3: стратегии и объяснения на основе HarmonicSituation. Viewer `0.4a` и уточнение `upd4` по карте/Левину приняты. Контракт `0.4b` принят после живого теста; [0.4c](docs/STAGE_4_0.4c_LEVEL1.md) принята с fix1–fix5. [0.4d](docs/STAGE_4_0.4d_SELECTION.md) фильтрует подсказки по ручным T1/T2/T3; назначение уровней остаётся пользовательским.
 

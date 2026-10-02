@@ -2,6 +2,7 @@
 
 #include <JuceHeader.h>
 #include "ara/SharedManualTensions.h"
+#include "library/SharedUserLibrary.h"
 #include <atomic>
 #include <map>
 #include <string>
@@ -44,6 +45,9 @@ public:
     void refreshSharedManualTensions();
     int manualTensionFor(const std::string& key) const;
     bool setManualTension(const std::string& key, int level);
+    smartimproviser::harmony::LibraryStorageResult reloadUserLibrary();
+    smartimproviser::harmony::LibraryUserSnapshot userLibrarySnapshot() const;
+    smartimproviser::harmony::LibraryStorageStatus userLibraryStorageStatus() const;
     bool fretDegreeLabelsEnabled() const;
     void setFretDegreeLabelsEnabled(bool enabled);
     juce::Point<int> editorSize() const;
@@ -59,6 +63,9 @@ private:
     mutable juce::CriticalSection stateLock;
     std::map<std::string, int> manualTensions; // Host backup for migration/recovery.
     SharedManualTensions sharedManualTensions;
+    smartimproviser::harmony::SharedUserLibrary sharedUserLibrary;
+    smartimproviser::harmony::PhraseLibrary userLibrary;
+    smartimproviser::harmony::LibraryStorageResult lastLibraryLoad;
     bool fretDegreeLabels = false;
     int requestedTensionFilter = 0;
     juce::Point<int> savedEditorSize {1120, 1000};

@@ -3,7 +3,8 @@
 Начало этапа: 2026-10-01, по указанию Влада после принятого Stage 4.
 База — stable 0.5, main `2f3cf3a`, Windows run `36867908179`, 27/27 CTest.
 0.5a принята Владом 2026-10-01, PR #59 merged в main (`37d0b85`), Windows #425 — 28/28 CTest.
-0.5b — [Library API в памяти / независимые копии](STAGE_5_0.5b_LIBRARY_API.md): реализация подготовлена, CI/Studio Pro приёмка ожидаются.
+0.5b принята Владом 2026-10-01, PR #60 merged в main (`2c3591c`), Windows #427 — 29/29 CTest.
+0.5c — [user library persistence / export-import](STAGE_5_0.5c_PERSISTENCE.md): реализация подготовлена, CI/Studio Pro regression ожидаются.
 
 Рабочая линия: **0.5a → 0.5g**. Итог Stage 5: **stable 0.6**.
 Каждая буква — отдельная сборка, regression и доступный Studio Pro live gate;

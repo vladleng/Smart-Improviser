@@ -116,12 +116,67 @@ LibraryOperation PhraseLibrary::insertNew(LibraryRecord record)
     if (!check.succeeded()) return check;
     // Fully prepare values before exposing them in the store.
     check.record=record;
+    auto allReserved=reservedIds_, userReserved=userReservedIds_;
+    allReserved.insert(record.id); userReserved.insert(record.id);
+    if (record.lineage)
+    {
+        auto reserveAncestor=[&](const LibraryItemReference& reference)
+        {
+            if (reference.domain!=LibraryDomain::user) return true;
+            if (common_.contains(reference.id)) return false;
+            allReserved.insert(reference.id); userReserved.insert(reference.id); return true;
+        };
+        if (!reserveAncestor(record.lineage->parent))
+            return failure(LibraryStatus::invalidIdentity,"User ancestry collides with a common identity.");
+        for (const auto& ancestor:record.lineage->ancestors)
+            if (!reserveAncestor(ancestor))
+                return failure(LibraryStatus::invalidIdentity,"User ancestry collides with a common identity.");
+    }
+    if (userReserved.size()>65536) return failure(LibraryStatus::invalidRecord,"Too many reserved user identities.");
     const auto itemId=record.id;
     auto [position,inserted]=user_.emplace(itemId,std::move(record));
     if (!inserted) return failure(LibraryStatus::invalidIdentity,"Identity already exists.");
-    try { reservedIds_.insert(position->first); }
-    catch (...) { user_.erase(position); throw; }
+    reservedIds_.swap(allReserved); userReservedIds_.swap(userReserved);
     return check;
+}
+LibraryUserSnapshot PhraseLibrary::userSnapshot() const
+{
+    LibraryUserSnapshot snapshot;
+    for (const auto& [id,record]:user_) snapshot.records.push_back(record);
+    snapshot.reservedIds.assign(userReservedIds_.begin(),userReservedIds_.end());
+    return snapshot;
+}
+LibraryOperation PhraseLibrary::restoreUserSnapshot(const LibraryUserSnapshot& snapshot)
+{
+    if (snapshot.records.size()>10000 || snapshot.reservedIds.size()>65536)
+        return failure(LibraryStatus::invalidRecord,"Library snapshot exceeds supported bounds.");
+    std::map<std::string,LibraryRecord> users;
+    std::set<std::string> userReserved, allReserved;
+    for (const auto& [id,record]:common_) allReserved.insert(id);
+    for (const auto& id:snapshot.reservedIds)
+        if (!hasText(id) || !userReserved.insert(id).second || !allReserved.insert(id).second)
+            return failure(LibraryStatus::invalidIdentity,"Invalid, duplicate or common-colliding user reservation.");
+    for (const auto& record:snapshot.records)
+    {
+        if (record.domain!=LibraryDomain::user || !userReserved.contains(record.id))
+            return failure(LibraryStatus::invalidIdentity,"Loaded users need their own reserved identities.");
+        auto check=validated(record);
+        if (!check.succeeded()) return check;
+        if (record.lineage)
+        {
+            const auto reservedAncestor=[&](const LibraryItemReference& r)
+            { return r.domain!=LibraryDomain::user || userReserved.contains(r.id); };
+            if (!reservedAncestor(record.lineage->parent))
+                return failure(LibraryStatus::invalidIdentity,"User ancestry identity must remain reserved.");
+            for (const auto& ancestor:record.lineage->ancestors)
+                if (!reservedAncestor(ancestor))
+                    return failure(LibraryStatus::invalidIdentity,"User ancestry identity must remain reserved.");
+        }
+        if (!users.emplace(record.id,record).second)
+            return failure(LibraryStatus::invalidIdentity,"Duplicate loaded user identity.");
+    }
+    user_.swap(users); userReservedIds_.swap(userReserved); reservedIds_.swap(allReserved);
+    return {};
 }
 LibraryOperation PhraseLibrary::addUser(const LibraryRecord& draft)
 {

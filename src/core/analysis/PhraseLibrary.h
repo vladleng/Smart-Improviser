@@ -19,6 +19,11 @@ struct LibraryOperation
     std::string explanation;
     bool succeeded() const noexcept { return status == LibraryStatus::success; }
 };
+struct LibraryUserSnapshot
+{
+    std::vector<LibraryRecord> records;
+    std::vector<std::string> reservedIds; // Includes deleted user identities.
+};
 std::string makeLibraryItemId(); // Host-neutral random UUID; library still checks collisions.
 
 // In-memory, single-owner API. No disk I/O or cross-instance/process locking.
@@ -38,6 +43,8 @@ public:
     LibraryOperation addUser(const LibraryRecord& draft); // Empty id, revision 0.
     LibraryOperation updateUser(const LibraryRecord&, std::uint64_t expectedRevision);
     LibraryOperation eraseUser(const std::string& id, std::uint64_t expectedRevision);
+    LibraryUserSnapshot userSnapshot() const;
+    LibraryOperation restoreUserSnapshot(const LibraryUserSnapshot&); // Atomic backend load.
     LibraryOperation copyToUser(const LibraryItemReference&);
     LibraryOperation createVariant(const LibraryItemReference&);
 private:
@@ -46,6 +53,7 @@ private:
     IdGenerator generateId_;
     std::map<std::string,LibraryRecord> common_, user_;
     std::set<std::string> reservedIds_; // Includes removed identities; no reuse in this store.
+    std::set<std::string> userReservedIds_;
     bool commonInitialized_ = false;
 };
 }

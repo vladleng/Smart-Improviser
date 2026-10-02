@@ -25,6 +25,7 @@ SmartImproviserARAProcessor::SmartImproviserARAProcessor()
 {
     SharedHarmonicContextBridge::instance().prepareWriter();
     refreshSharedManualTensions();
+    reloadUserLibrary();
 }
 
 void SmartImproviserARAProcessor::prepareToPlay(double, int) {}
@@ -155,6 +156,22 @@ bool SmartImproviserARAProcessor::setManualTension(const std::string& key, int l
     return true;
 }
 
+smartimproviser::harmony::LibraryStorageResult SmartImproviserARAProcessor::reloadUserLibrary()
+{
+    const juce::ScopedLock lock(stateLock);
+    lastLibraryLoad = sharedUserLibrary.loadInto(userLibrary);
+    return lastLibraryLoad; // Invalid/future files preserve the previous userLibrary value.
+}
+smartimproviser::harmony::LibraryUserSnapshot SmartImproviserARAProcessor::userLibrarySnapshot() const
+{
+    const juce::ScopedLock lock(stateLock);
+    return userLibrary.userSnapshot();
+}
+smartimproviser::harmony::LibraryStorageStatus SmartImproviserARAProcessor::userLibraryStorageStatus() const
+{
+    const juce::ScopedLock lock(stateLock);
+    return lastLibraryLoad.status;
+}
 bool SmartImproviserARAProcessor::fretDegreeLabelsEnabled() const
 {
     const juce::ScopedLock lock(stateLock);
