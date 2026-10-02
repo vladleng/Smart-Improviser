@@ -77,3 +77,4 @@ std::vector<LibraryRecord> makeCommonVocabulary()
     for(bool minor:{false,true})for(int kind=0;kind<3;++kind)result.push_back(example(minor,kind));
     return result;
 }
+}
