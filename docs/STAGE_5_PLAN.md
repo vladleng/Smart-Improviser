@@ -116,3 +116,11 @@ source ID/version и явным musical anchor/range. Реальное след�
 - Contract library → Stage 6/7 определён без преждевременной реализации этих этапов.
 - 0.5a–0.5g приняты, Windows/regression/live gates пройдены; отдельная stable 0.6
   собрана, Issue #6 закрыт только после этого.
+
+
+## Статус 2026-10-02
+
+0.5e проверена Владом, принята и PR #63 merged (`4fe80bf`).
+0.5f: MVP из шести собственных примеров, [состав и live checklist](COMMON_VOCABULARY.md).
+Начальные оценки отсутствуют; личная копия поддерживает ручную оценку. Windows/regression
+и музыкальная приёмка этого checkpoint выполняются отдельно; stable остаётся 0.5.

@@ -63,6 +63,9 @@ public:
         copy.setButtonText(tr("Личная копия")); variant.setButtonText(tr("Вариант"));
         discard.setButtonText(tr("Отменить правки")); reload.setButtonText(tr("Обновить"));
         addNote.setButtonText(tr("+ Нота")); removeNote.setButtonText(tr("− Последняя"));
+        tension.addItem(tr("Tension фразы: не оценена"),1);
+        tension.addItem("T1",2);tension.addItem("T2",3);tension.addItem("T3",4);
+        addAndMakeVisible(tension);tension.onChange=[this]{markDirty();};
         domain.addItem(tr("Личная библиотека"),1); domain.addItem(tr("Общая библиотека"),2);
         domain.setSelectedId(1,juce::dontSendNotification); addAndMakeVisible(domain);
         domain.onChange=[this] {
@@ -124,7 +127,8 @@ public:
         rhythm.setBounds(area.removeFromTop(30)); area.removeFromTop(8);
         harmony.setBounds(area.removeFromTop(30)); area.removeFromTop(8);
         explanation.setBounds(area.removeFromTop(30)); area.removeFromTop(8);
-        info.setBounds(area.removeFromTop(70));
+        tension.setBounds(area.removeFromTop(30));
+        info.setBounds(area.removeFromTop(40));
         auto buttons=area.removeFromTop(30); addNote.setBounds(buttons.removeFromLeft(120)); buttons.removeFromLeft(8);
         removeNote.setBounds(buttons.removeFromLeft(140));
         headings.setBounds(area.removeFromTop(28)); viewport.setBounds(area);
@@ -159,7 +163,7 @@ private:
         if(!records.empty()){draft=records.front();loading=true;list.selectRow(0);loading=false;}
         showDraft();
         if(records.empty())status.setText(currentDomain==Domain::common
-            ?tr("Общий набор появится в 0.5f. Сейчас можно сохранять свои идеи.")
+            ?tr("Общий набор недоступен: ошибка инициализации каталога.")
             :tr("Личная библиотека пуста. Нажмите «Новая идея»."),juce::dontSendNotification);
     }
     void addRow(smartimproviser::harmony::IdeaNote note) {
@@ -187,11 +191,22 @@ private:
         loading=true;dirty=false;baseline=draft; rows.clear();
         name.setText(utf(draft.name),false);explanation.setText(utf(draft.explanation),false);
         text.clear();rhythm.clear();harmony.clear();
+        const auto* tensionPhrase=std::get_if<smartimproviser::harmony::Phrase>(&draft.content);
+        tension.setSelectedId(tensionPhrase && tensionPhrase->tensionClassified
+            ?static_cast<int>(tensionPhrase->tensionLevel)+1:1,juce::dontSendNotification);
+        tension.setEnabled(tensionPhrase && draft.domain==Domain::user && !tensionPhrase->tensionProfile.defined);
+        tension.setVisible(tensionPhrase!=nullptr);
         if(const auto* idea=std::get_if<Idea>(&draft.content)){
             text.setText(utf(idea->text),false);rhythm.setText(utf(idea->rhythmNotes),false);harmony.setText(utf(idea->harmonyNotes),false);
             for(const auto& note:idea->notes)addRow(note);
         } else {
             const auto& phrase=std::get<smartimproviser::harmony::Phrase>(draft.content);
+            juce::String details=tr("Корни примера (MIDI): ");
+            for(const auto& root:phrase.registerReferences)details+=juce::String(root.chordIndex+1)+": "+juce::String(root.rootMidiNote)+"  ";
+            details+=tr("\nЦели (ноты от 1): ");
+            for(std::size_t i=0;i<phrase.notes.size();++i)if(phrase.notes[i].target)details+=juce::String(static_cast<int>(i)+1)+" ";
+            details+=tr("\nИсточник: ")+utf(draft.source.source)+tr("\nАвтор: ")+utf(draft.source.author)+" · "+utf(draft.source.license);
+            text.setText(details,false);
             for(const auto& note:phrase.notes) {
                 smartimproviser::harmony::IdeaNote view;
                 view.pitch=note.pitch;view.beatOffset=note.beatOffset;view.durationBeats=note.durationBeats;view.octaveOffset=note.octaveOffset;
@@ -234,6 +249,10 @@ private:
                 idea->notes.push_back(parsed.note);
             }
         }
+        if(auto* phrase=std::get_if<smartimproviser::harmony::Phrase>(&candidate.content);phrase && !phrase->tensionProfile.defined){
+            phrase->tensionClassified=tension.getSelectedId()>1;
+            if(phrase->tensionClassified)phrase->tensionLevel=static_cast<smartimproviser::harmony::TensionLevel>(tension.getSelectedId()-1);
+        }
         Record saved;const auto result=processor.editLibrary(Edit::save,candidate,saved);
         if(!result.succeeded()){report(result);return;}
         draft=saved;records=processor.libraryRecords(currentDomain);list.updateContent();selectDraftRow();showDraft();
@@ -252,7 +271,7 @@ private:
     Record draft,baseline;
     std::vector<Record> records;
     bool loading=false,dirty=false;
-    juce::ComboBox domain;
+    juce::ComboBox domain,tension;
     juce::ListBox list;
     juce::TextButton fresh,save,copy,variant,discard,reload,addNote,removeNote,importButton;
     std::unique_ptr<juce::FileChooser> chooser;

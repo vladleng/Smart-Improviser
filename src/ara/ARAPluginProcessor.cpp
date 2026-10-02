@@ -4,6 +4,7 @@
 #include "context/SharedHarmonicContext.h"
 
 #include "ara/PluginViewState.h"
+#include "core/analysis/CommonVocabulary.h"
 #include <cmath>
 #include <utility>
 
@@ -25,6 +26,8 @@ SmartImproviserARAProcessor::SmartImproviserARAProcessor()
 {
     SharedHarmonicContextBridge::instance().prepareWriter();
     refreshSharedManualTensions();
+    const auto catalog = userLibrary.initializeCommonCatalog(smartimproviser::harmony::makeCommonVocabulary());
+    jassert(catalog.succeeded());
     reloadUserLibrary();
 }
 
