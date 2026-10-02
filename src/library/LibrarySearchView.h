@@ -94,6 +94,7 @@ private:
                 +(note.target?tr(" · цель"):juce::String{})+"\n";
             for(std::size_t i=0;i<entry.assessment.contexts.size();++i){
                 const auto& context=entry.assessment.contexts[i];
+                if(!context.actualChord.valid)continue;
                 display+=tr("\nАккорд ")+juce::String(static_cast<int>(i)+1)+": "+utf(normalizedChordSymbol(context.actualChord));
                 if(context.actualNextChord.valid)display+=tr("\nФактический следующий: ")+utf(normalizedChordSymbol(context.actualNextChord));
                 if(context.destination.available)display+=context.destination.confirmed?tr("\nЦель разрешения подтверждена."):tr("\nЦель разрешения предполагается; фактический следующий аккорд остаётся отдельным.");

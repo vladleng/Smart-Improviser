@@ -50,7 +50,12 @@ public:
                     juce::MemoryBlock bytes;if(!file.loadFileAsData(bytes)){safe->status.setText(tr("Не удалось прочитать файл."),juce::dontSendNotification);return;}
                     if(safe->dirty){safe->blocked();return;}
                     const auto result=safe->processor.importLibrary({static_cast<const std::uint8_t*>(bytes.getData()),bytes.getSize()});
-                    if(!result.succeeded()){safe->report(result);return;}
+                    if(!result.succeeded()){
+                        if(result.status==smartimproviser::harmony::LibraryStorageStatus::conflict)
+                            safe->status.setText(tr("Импорт отклонён: такие IDs уже есть в библиотеке (включая удалённые). Данные не перезаписаны."),juce::dontSendNotification);
+                        else safe->report(result);
+                        return;
+                    }
                     safe->refresh();safe->status.setText(tr("Импорт завершён. Совпадающие IDs не перезаписываются."),juce::dontSendNotification);
                 });
         };
