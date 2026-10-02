@@ -151,7 +151,7 @@ juce_add_plugin(SmartImproviserARA
     NEEDS_MIDI_OUTPUT FALSE
     IS_MIDI_EFFECT FALSE
     IS_ARA_EFFECT TRUE
-    EDITOR_WANTS_KEYBOARD_FOCUS FALSE
+    EDITOR_WANTS_KEYBOARD_FOCUS TRUE
     COPY_PLUGIN_AFTER_BUILD FALSE
 )
 
@@ -187,7 +187,7 @@ target_compile_definitions(SmartImproviserARA
         JUCE_WEB_BROWSER=0
         JUCE_USE_CURL=0
         JUCE_VST3_CAN_REPLACE_VST2=0
-        SMART_IMPROVISER_BUILD_VERSION="0.5c"
+        SMART_IMPROVISER_BUILD_VERSION="0.5d"
 )
 
 target_link_libraries(SmartImproviserARA
@@ -456,3 +456,10 @@ if(MSVC)
     target_compile_options(SmartImproviserLibraryArchiveTests PRIVATE /utf-8)
 endif()
 add_test(NAME SmartImproviserLibraryArchiveTests COMMAND SmartImproviserLibraryArchiveTests)
+
+add_executable(SmartImproviserIdeaNoteInputTests tests/IdeaNoteInputTests.cpp)
+target_link_libraries(SmartImproviserIdeaNoteInputTests PRIVATE SmartImproviserCore)
+if(MSVC)
+    target_compile_options(SmartImproviserIdeaNoteInputTests PRIVATE /utf-8)
+endif()
+add_test(NAME SmartImproviserIdeaNoteInputTests COMMAND SmartImproviserIdeaNoteInputTests)

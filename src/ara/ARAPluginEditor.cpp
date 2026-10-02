@@ -1,3 +1,4 @@
+#include "library/LibraryEditor.h"
 #include "core/analysis/MajorIiVPalette.h"
 #include "core/analysis/HarmonicConcepts.h"
 #include "ara/ARAPluginEditor.h"
@@ -616,6 +617,12 @@ juce::String materialSelectionKey(const smartimproviser::harmony::ExplanationIte
 SmartImproviserARAEditor::SmartImproviserARAEditor(SmartImproviserARAProcessor& p)
     : juce::AudioProcessorEditor(p), processor(p)
 {
+    libraryButton.setButtonText(ru("Библиотека"));
+    libraryButton.onClick = [this] {
+        if (!libraryWindow) libraryWindow=std::make_unique<LibraryWindow>(processor);
+        else { libraryWindow->setVisible(true); libraryWindow->toFront(true); }
+    };
+    addAndMakeVisible(libraryButton);
     setResizable(true, true);
     setResizeLimits(940, 1000, 1900, 1800);
     const auto size = processor.editorSize();
@@ -725,6 +732,7 @@ SmartImproviserARAEditor::SmartImproviserARAEditor(SmartImproviserARAProcessor& 
 void SmartImproviserARAEditor::resized()
 {
     processor.setEditorSize({getWidth(), getHeight()});
+    libraryButton.setBounds(24, 748, 180, 34);
     const int margin = 24;
     const int gap = 8;
     const int buttonY = 82;
