@@ -32,6 +32,8 @@ add_library(SmartImproviserCore STATIC
     src/core/analysis/LibraryValidation.cpp
     src/core/analysis/PhraseLibrary.h
     src/core/analysis/PhraseLibrary.cpp
+    src/core/analysis/CommonVocabulary.h
+    src/core/analysis/CommonVocabulary.cpp
     src/core/analysis/LibrarySearch.h
     src/core/analysis/LibrarySearch.cpp
     src/core/analysis/LibraryArchive.h
@@ -191,7 +193,7 @@ target_compile_definitions(SmartImproviserARA
         JUCE_WEB_BROWSER=0
         JUCE_USE_CURL=0
         JUCE_VST3_CAN_REPLACE_VST2=0
-        SMART_IMPROVISER_BUILD_VERSION="0.5e"
+        SMART_IMPROVISER_BUILD_VERSION="0.5f"
 )
 
 target_link_libraries(SmartImproviserARA
@@ -474,3 +476,10 @@ if(MSVC)
     target_compile_options(SmartImproviserLibrarySearchTests PRIVATE /utf-8)
 endif()
 add_test(NAME SmartImproviserLibrarySearchTests COMMAND SmartImproviserLibrarySearchTests)
+
+add_executable(SmartImproviserCommonVocabularyTests tests/CommonVocabularyTests.cpp)
+target_link_libraries(SmartImproviserCommonVocabularyTests PRIVATE SmartImproviserContext)
+if(MSVC)
+    target_compile_options(SmartImproviserCommonVocabularyTests PRIVATE /utf-8)
+endif()
+add_test(NAME SmartImproviserCommonVocabularyTests COMMAND SmartImproviserCommonVocabularyTests)
