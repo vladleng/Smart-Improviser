@@ -247,3 +247,10 @@ smartimproviser::harmony::LibraryStorageResult SmartImproviserARAProcessor::edit
     }
     return written;
 }
+
+smartimproviser::harmony::LibraryStorageResult SmartImproviserARAProcessor::importLibrary(std::span<const std::uint8_t> bytes) {
+    const juce::ScopedLock lock(stateLock);
+    auto result=sharedUserLibrary.importData(bytes);
+    if(result.succeeded())lastLibraryLoad=sharedUserLibrary.loadInto(userLibrary);
+    return result.succeeded()?lastLibraryLoad:result;
+}

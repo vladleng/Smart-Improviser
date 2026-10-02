@@ -37,7 +37,28 @@ class LibraryEditor final : public juce::Component, private juce::ListBoxModel
 public:
     explicit LibraryEditor(SmartImproviserARAProcessor& p) : processor(p)
     {
-        for(auto* button : {&fresh,&save,&copy,&variant,&discard,&reload,&addNote,&removeNote}) addAndMakeVisible(*button);
+        for(auto* button : {&fresh,&save,&copy,&variant,&discard,&reload,&addNote,&removeNote,&importButton}) addAndMakeVisible(*button);
+        importButton.setButtonText(tr("Импорт библиотеки"));
+        importButton.onClick=[this]{
+            if(dirty){blocked();return;}
+            chooser=std::make_unique<juce::FileChooser>(tr("Импорт .silibrary"),juce::File{},"*.silibrary");
+            chooser->launchAsync(juce::FileBrowserComponent::openMode|juce::FileBrowserComponent::canSelectFiles,
+                [safe=juce::Component::SafePointer<LibraryEditor>(this)](const juce::FileChooser& picker){
+                    if(!safe)return; const auto file=picker.getResult();if(!file.existsAsFile())return;
+                    if(file.getSize()>static_cast<juce::int64>(smartimproviser::harmony::maxLibraryArchiveBytes)) {
+                        safe->status.setText(tr("Файл превышает 32 MiB."),juce::dontSendNotification);return;}
+                    juce::MemoryBlock bytes;if(!file.loadFileAsData(bytes)){safe->status.setText(tr("Не удалось прочитать файл."),juce::dontSendNotification);return;}
+                    if(safe->dirty){safe->blocked();return;}
+                    const auto result=safe->processor.importLibrary({static_cast<const std::uint8_t*>(bytes.getData()),bytes.getSize()});
+                    if(!result.succeeded()){
+                        if(result.status==smartimproviser::harmony::LibraryStorageStatus::conflict)
+                            safe->status.setText(tr("Импорт отклонён: такие IDs уже есть в библиотеке (включая удалённые). Данные не перезаписаны."),juce::dontSendNotification);
+                        else safe->report(result);
+                        return;
+                    }
+                    safe->refresh();safe->status.setText(tr("Импорт завершён. Совпадающие IDs не перезаписываются."),juce::dontSendNotification);
+                });
+        };
         fresh.setButtonText(tr("Новая идея")); save.setButtonText(tr("Сохранить"));
         copy.setButtonText(tr("Личная копия")); variant.setButtonText(tr("Вариант"));
         discard.setButtonText(tr("Отменить правки")); reload.setButtonText(tr("Обновить"));
@@ -95,7 +116,7 @@ public:
         auto actions=area.removeFromBottom(36);
         save.setBounds(actions.removeFromLeft(160)); actions.removeFromLeft(8);
         copy.setBounds(actions.removeFromLeft(160)); actions.removeFromLeft(8);
-        variant.setBounds(actions.removeFromLeft(160));
+        variant.setBounds(actions.removeFromLeft(160)); actions.removeFromLeft(8);importButton.setBounds(actions);
         area.removeFromBottom(10);
         list.setBounds(area.removeFromLeft(250)); area.removeFromLeft(16);
         name.setBounds(area.removeFromTop(30)); area.removeFromTop(8);
@@ -233,7 +254,8 @@ private:
     bool loading=false,dirty=false;
     juce::ComboBox domain;
     juce::ListBox list;
-    juce::TextButton fresh,save,copy,variant,discard,reload,addNote,removeNote;
+    juce::TextButton fresh,save,copy,variant,discard,reload,addNote,removeNote,importButton;
+    std::unique_ptr<juce::FileChooser> chooser;
     juce::TextEditor name,text,rhythm,harmony,explanation;
     juce::Label status,info,headings;
     juce::Component notes;

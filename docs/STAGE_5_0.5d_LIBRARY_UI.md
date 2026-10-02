@@ -36,6 +36,6 @@ targets, evidence, регистр, tension и provenance сохраняются 
 
 Windows Build #434 (code e929be8): success, 32/32 CTest и VST3 artifact Smart-Improviser-0.5d-Windows.
 https://github.com/vladleng/Smart-Improviser/actions/runs/36948337500
-Studio Pro acceptance ожидается. Stage 5 issue #6 остаётся открыта; следующий checkpoint 0.5e.
+Studio Pro ввод/сохранение проверены Владом 2026-10-02; 0.5d принята, PR #62 merged (`9a7f3f3`). Финальный Windows #435 — success, 32/32 CTest. Stage 5 issue #6 остаётся открыта; следующий checkpoint 0.5e.
 
 Редактор объявляет поддержку клавиатуры для текстового ввода в DAW; live gate включает ввод русского текста и работу транспортных клавиш после выхода из поля.

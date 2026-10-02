@@ -52,6 +52,7 @@ public:
     std::vector<smartimproviser::harmony::LibraryRecord> libraryRecords(smartimproviser::harmony::LibraryDomain) const;
     smartimproviser::harmony::LibraryStorageResult editLibrary(LibraryEdit,
         const smartimproviser::harmony::LibraryRecord&, smartimproviser::harmony::LibraryRecord& saved);
+    smartimproviser::harmony::LibraryStorageResult importLibrary(std::span<const std::uint8_t>);
     bool fretDegreeLabelsEnabled() const;
     void setFretDegreeLabelsEnabled(bool enabled);
     juce::Point<int> editorSize() const;
