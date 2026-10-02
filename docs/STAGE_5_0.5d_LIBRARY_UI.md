@@ -34,6 +34,8 @@ targets, evidence, регистр, tension и provenance сохраняются 
 - Два экземпляра: обновить оба, изменить библиотеку в первом; второй сообщает конфликт без потери формы.
 - Основные context/notation/fretboard/filter/manual tension сценарии остаются рабочими.
 
-CI/live acceptance ожидаются. Stage 5 issue #6 остаётся открыта; следующий checkpoint 0.5e.
+Windows Build #434 (code e929be8): success, 32/32 CTest и VST3 artifact Smart-Improviser-0.5d-Windows.
+https://github.com/vladleng/Smart-Improviser/actions/runs/36948337500
+Studio Pro acceptance ожидается. Stage 5 issue #6 остаётся открыта; следующий checkpoint 0.5e.
 
 Редактор объявляет поддержку клавиатуры для текстового ввода в DAW; live gate включает ввод русского текста и работу транспортных клавиш после выхода из поля.
