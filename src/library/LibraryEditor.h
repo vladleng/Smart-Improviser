@@ -11,6 +11,25 @@ class LibraryEditor final : public juce::Component, private juce::ListBoxModel
     using Edit=SmartImproviserARAProcessor::LibraryEdit;
     static juce::String tr(const char* s) { return juce::String::fromUTF8(s); }
     static juce::String utf(const std::string& s) { return juce::String::fromUTF8(s.c_str()); }
+    static void style(juce::TextEditor& field) {
+        field.setColour(juce::TextEditor::backgroundColourId,juce::Colour::fromRGB(45,49,56));
+        field.setColour(juce::TextEditor::textColourId,juce::Colour::fromRGB(225,230,238));
+        field.setColour(juce::TextEditor::outlineColourId,juce::Colour::fromRGB(85,94,105));
+    }
+    static juce::String number(double value) {
+        char buffer[64];
+        const auto converted=std::to_chars(buffer,buffer+sizeof(buffer),value,std::chars_format::general,17);
+        return converted.ec==std::errc{} ? juce::String::fromUTF8(buffer,static_cast<int>(converted.ptr-buffer)) : juce::String{};
+    }
+    void markDirty() {
+        if(loading)return;
+        dirty=true;status.setText(tr("Есть несохранённые изменения."),juce::dontSendNotification);
+    }
+    void selectDraftRow() {
+        loading=true;list.deselectAllRows();
+        for(int i=0;i<getNumRows();++i)if(records[static_cast<std::size_t>(i)].id==draft.id)list.selectRow(i);
+        loading=false;
+    }
     struct NoteRow {
         std::array<juce::TextEditor,5> fields;
         smartimproviser::harmony::IdeaNote original;
@@ -29,10 +48,11 @@ public:
             if(dirty) { domain.setSelectedId(currentDomain==Domain::user?1:2,juce::dontSendNotification); blocked(); return; }
             currentDomain=domain.getSelectedId()==1?Domain::user:Domain::common; refresh();
         };
+        list.setColour(juce::ListBox::backgroundColourId,juce::Colour::fromRGB(42,46,53));
         list.setModel(this); list.setRowHeight(34); addAndMakeVisible(list);
         for(auto* editor : {&name,&text,&rhythm,&harmony,&explanation}) {
-            addAndMakeVisible(*editor);
-            editor->onTextChange=[this]{ if(!loading) {dirty=true; status.setText(tr("Есть несохранённые изменения."),juce::dontSendNotification);} };
+            style(*editor);addAndMakeVisible(*editor);
+            editor->onTextChange=[this]{markDirty();};
         }
         name.setTextToShowWhenEmpty(tr("Название (необязательно)"),juce::Colours::grey);
         text.setMultiLine(true); text.setReturnKeyStartsNewLine(true);
@@ -54,8 +74,8 @@ public:
         save.onClick=[this]{ saveDraft(); };
         copy.onClick=[this]{ derive(Edit::copy); };
         variant.onClick=[this]{ derive(Edit::variant); };
-        addNote.onClick=[this]{ if(!editableIdea())return; addRow({}); dirty=true; layoutNotes(); };
-        removeNote.onClick=[this]{ if(!editableIdea() || rows.empty())return; rows.pop_back(); dirty=true; layoutNotes(); };
+        addNote.onClick=[this]{ if(!editableIdea())return; addRow({}); markDirty(); layoutNotes(); };
+        removeNote.onClick=[this]{ if(!editableIdea() || rows.empty())return; rows.pop_back(); markDirty(); layoutNotes(); };
         const auto result=processor.reloadUserLibrary();
         refresh();
         if(!result.succeeded()) report(result);
@@ -125,12 +145,12 @@ private:
         if(note.pitch){degree=juce::String::repeatedString(note.pitch->chromaticOffset<0?"b":"#",std::abs(note.pitch->chromaticOffset))
             +juce::String(note.pitch->degree);}
         std::array<juce::String,5> values{degree,note.octaveOffset?juce::String(*note.octaveOffset):juce::String{},
-            note.beatOffset?juce::String(*note.beatOffset,8):juce::String{},
-            note.durationBeats?juce::String(*note.durationBeats,8):juce::String{},
+            note.beatOffset?number(*note.beatOffset):juce::String{},
+            note.durationBeats?number(*note.durationBeats):juce::String{},
             note.pitch && note.pitch->chordIndex>=0?juce::String(note.pitch->chordIndex):juce::String{}};
         for(std::size_t i=0;i<5;++i) {
-            auto& field=row->fields[i];field.setText(values[i],false);field.setReadOnly(!editableIdea());
-            field.onTextChange=[this]{if(!loading)dirty=true;};notes.addAndMakeVisible(field);
+            auto& field=row->fields[i];style(field);field.setText(values[i],false);field.setReadOnly(!editableIdea());
+            field.onTextChange=[this]{markDirty();};notes.addAndMakeVisible(field);
         }
         rows.push_back(std::move(row));
     }
@@ -193,7 +213,7 @@ private:
         }
         Record saved;const auto result=processor.editLibrary(Edit::save,candidate,saved);
         if(!result.succeeded()){report(result);return;}
-        draft=saved;records=processor.libraryRecords(currentDomain);list.updateContent();showDraft();
+        draft=saved;records=processor.libraryRecords(currentDomain);list.updateContent();selectDraftRow();showDraft();
         status.setText(tr("Сохранено · rev ")+juce::String(static_cast<juce::int64>(saved.revision)),juce::dontSendNotification);
     }
     void derive(Edit edit) {
@@ -201,7 +221,7 @@ private:
         Record saved;const auto result=processor.editLibrary(edit,draft,saved);
         if(!result.succeeded()){report(result);return;}
         currentDomain=Domain::user;domain.setSelectedId(1,juce::dontSendNotification);
-        records=processor.libraryRecords(currentDomain);list.updateContent();draft=saved;showDraft();
+        records=processor.libraryRecords(currentDomain);list.updateContent();draft=saved;selectDraftRow();showDraft();
         status.setText(tr("Создана самостоятельная запись. Оригинал не изменён."),juce::dontSendNotification);
     }
     SmartImproviserARAProcessor& processor;

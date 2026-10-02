@@ -1,6 +1,6 @@
 # Smart Improviser — Current State
 
-> Обновлено 2026-10-01: Stage 4 завершён и принят Владом, stable 0.5 выпущена. Итоговая Studio Pro проверка 0.4g пройдена; PR #57 merged (`c92f181`). Stable код `87f84b9`; Windows run `36867908179` — success, 27/27 CTest и VST3 artifact. Принятая музыкальная логика сохранена. Итог и границы: [STAGE_4_COMPLETE_0.5.md](STAGE_4_COMPLETE_0.5.md). Stage 5 начат как план/организация работ; [декомпозиция 0.5a–0.5g](STAGE_5_PLAN.md) готова, 0.5a принята Владом и merged в main (`37d0b85`), Windows #425 — 28/28 CTest. 0.5b принята Владом и merged (`2c3591c`), Windows #427 — 29/29 CTest. Текущий checkpoint 0.5c — [сохранение личной библиотеки](STAGE_5_0.5c_PERSISTENCE.md), CI/приёмка ожидаются.
+> Обновлено 2026-10-02: Stage 4 завершён и принят Владом, stable 0.5 выпущена. Итоговая Studio Pro проверка 0.4g пройдена; PR #57 merged (`c92f181`). Stable код `87f84b9`; Windows run `36867908179` — success, 27/27 CTest и VST3 artifact. Принятая музыкальная логика сохранена. Итог и границы: [STAGE_4_COMPLETE_0.5.md](STAGE_4_COMPLETE_0.5.md). Stage 5 начат как план/организация работ; [декомпозиция 0.5a–0.5g](STAGE_5_PLAN.md) готова, 0.5a принята Владом и merged в main (`37d0b85`), Windows #425 — 28/28 CTest. 0.5b принята Владом и merged (`2c3591c`), Windows #427 — 29/29 CTest. 0.5c принята Владом, PR #61 merged (`cf86772`), Windows #430 — 31/31 CTest. Текущий checkpoint 0.5d — [интерфейс библиотеки](STAGE_5_0.5d_LIBRARY_UI.md), PR #62; ввод текста и музыкальных полей согласован, CI/live gate ожидаются.
 
 > Короткая точка входа для нового чата или рабочей сессии. Подробная архитектура — в `PROJECT_CONTEXT.md`, этапы — в `ROADMAP.md`, правила версий — в `VERSIONING.md`, фактический прогресс — в GitHub Issues.
 
@@ -10,7 +10,7 @@
 - **Текущая стабильная версия:** `0.5`
 - **Последний принятый Stage:** Stage 4 — Visual Material Viewer / пользовательские Tensions
 - **Принятые checkpoints Stage 4:** `0.4a` с `upd4`, `0.4b`, `0.4c` с `fix1–fix5` (PR #53), `0.4d` (PR #54), `0.4e` (PR #55), `0.4f` (PR #56), `0.4g` (PR #57)
-- **Последний принятый checkpoint:** `0.4g` — [итоговая интеграция](STAGE_4_0.4g_INTEGRATION.md), 27/27 CTest и Studio Pro приёмка пройдены. Stable `0.5` выпущена, Windows 27/27 CTest.
+- **Последний принятый checkpoint:** `0.5c` — сохранение личной библиотеки, PR #61 merged; Windows #430 — 31/31 CTest и Studio Pro regression пройдены. Stable остаётся `0.5`.
 - **Рабочая линия:** `0.3a → 0.3h fix3` [ACCEPTED]
 - **Итог Stage 3:** `0.4`
 - **Итог Stage 4:** `0.5` (PR #58), 0.4a–0.4g приняты
@@ -25,7 +25,7 @@
 - **PR #36:** accepted 0.3g fix1, merged в рабочую ветку PR #35
 - **PR #35:** accepted 0.3g, merged в main (`85337ff`)
 - **Windows Build #331:** success; 14/14 test targets green
-- **Текущий Stage:** Stage 5 — Phrase / Idea Library (Issue #6), [план 0.5a–0.5g](STAGE_5_PLAN.md); 0.5a–0.5b приняты; 0.5c — личная библиотека на диске / export-import, CI/приёмка ожидаются. Stage 4 завершён, Issue #5 closed as completed; stable остаётся `0.5`.
+- **Текущий Stage:** Stage 5 — Phrase / Idea Library (Issue #6), [план 0.5a–0.5g](STAGE_5_PLAN.md); 0.5a–0.5c приняты; 0.5d — UI личных идей и библиотеки, PR #62, CI/приёмка ожидаются. Stage 4 завершён, Issue #5 closed as completed; stable остаётся `0.5`.
 
 Согласована лестница V7 → мажорной цели: исходный Mixolydian, затем T1 Dm6, T2 Fm6 и T3 Abm6. Принятая `0.4c` предлагает T1 m6 также при распознанном `iim7–V7` без сыгранной I, сохраняя реальный next и provisional evidence. Полная melodic minor остаётся отдельным материалом. Ручные цветные метки в списке материалов и масштабируемое окно не превращают T2/T3 в автоматические правила; Влад задаёт начальные назначения, пользователи могут менять их; автоматическое назначение T2/T3 больше не является обязательным продолжением. Назначения сохраняются сразу в общем профиле пользователя для всех проектов. Будущие фразы сначала должны соответствовать гармонической модели, затем отбираться по tension. Подробности — в [STAGE_4_0.4c_LEVEL1.md](STAGE_4_0.4c_LEVEL1.md) и [IMPROVISATION_METHOD.md](IMPROVISATION_METHOD.md).
 
