@@ -122,5 +122,5 @@ source ID/version и явным musical anchor/range. Реальное след�
 
 0.5e проверена Владом, принята и PR #63 merged (`4fe80bf`).
 0.5f: MVP из шести собственных примеров, [состав и live checklist](COMMON_VOCABULARY.md).
-Начальные оценки отсутствуют; личная копия поддерживает ручную оценку. Windows/regression
-и музыкальная приёмка этого checkpoint выполняются отдельно; stable остаётся 0.5.
+Начальные оценки отсутствуют; личная копия поддерживает ручную оценку. Windows #445 — success, 34/34 CTest и VST3 artifact; музыкальная приёмка
+этого checkpoint ожидается; stable остаётся 0.5.

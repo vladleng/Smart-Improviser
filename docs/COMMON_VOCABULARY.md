@@ -62,3 +62,11 @@ Common original неизменяемый; копия/вариант получа
 
 Это библиотечный просмотр и подбор. Транспозиция — Stage 6, полный viewer размещённой
 фразы и Song workspace — Stage 7, нотный/TAB редактор — Stage 8.
+
+## Автоматическая проверка
+
+[Windows #445](https://github.com/vladleng/Smart-Improviser/actions/runs/36961185250) — success, 34/34 CTest; artifact `Smart-Improviser-0.5f-Windows`.
+Проверен код `31e1b5e58df18e42039e8acd08b7200893f551fe`: шесть MIDI-контуров,
+major/minor и другая тональность через настоящий mapper, отсутствие границы тоники,
+неоценённая tension, независимые копии и archive roundtrip. Studio Pro музыкальная
+приёмка ожидается; PR #64 открыт, stable остаётся 0.5.
