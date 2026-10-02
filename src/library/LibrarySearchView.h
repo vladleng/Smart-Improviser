@@ -26,10 +26,10 @@ class LibrarySearchView final : public juce::Component,private juce::ListBoxMode
 public:
     LibrarySearchView(SmartImproviserARAProcessor& p,std::function<Query()> provider)
         :processor(p),contextProvider(std::move(provider)) {
-        for(auto* field:{&text,&tag,&concept,&position,&curve})addAndMakeVisible(*field);
+        for(auto* field:{&text,&tag,&conceptRuleId,&position,&curve})addAndMakeVisible(*field);
         text.setTextToShowWhenEmpty(tr("Текст (с учётом регистра)"),juce::Colours::grey);
         tag.setTextToShowWhenEmpty(tr("Точный тег"),juce::Colours::grey);
-        concept.setTextToShowWhenEmpty(tr("Concept ID"),juce::Colours::grey);
+        conceptRuleId.setTextToShowWhenEmpty(tr("Concept ID"),juce::Colours::grey);
         position.setTextToShowWhenEmpty(tr("Позиция в обороте (от 1)"),juce::Colours::grey);
         curve.setTextToShowWhenEmpty(tr("Кривая: начало,конец,T; … (абсолютные beats песни, T=1/2/3)"),juce::Colours::grey);
         for(auto* box:{&tension,&role,&pattern,&function})addAndMakeVisible(*box);
@@ -60,7 +60,7 @@ public:
     void resized()override {
         auto a=getLocalBounds().reduced(16);auto first=a.removeFromTop(32);
         text.setBounds(first.removeFromLeft(220));first.removeFromLeft(8);tag.setBounds(first.removeFromLeft(150));
-        first.removeFromLeft(8);concept.setBounds(first.removeFromLeft(230));first.removeFromLeft(8);tension.setBounds(first);
+        first.removeFromLeft(8);conceptRuleId.setBounds(first.removeFromLeft(230));first.removeFromLeft(8);tension.setBounds(first);
         a.removeFromTop(8);auto second=a.removeFromTop(32);
         role.setBounds(second.removeFromLeft(180));second.removeFromLeft(8);pattern.setBounds(second.removeFromLeft(200));
         second.removeFromLeft(8);position.setBounds(second.removeFromLeft(230));second.removeFromLeft(8);function.setBounds(second);
@@ -108,7 +108,7 @@ private:
         const auto reject=[this](const juce::String& message){result={};list.updateContent();details.clear();summary.setText(message,juce::dontSendNotification);};
         processor.reloadUserLibrary(); // Explicit search refresh, never timer/audio polling.
         auto q=contextProvider();q.match.requestedTension=requestedPhraseTension(tension.getSelectedId()-1);
-        q.text=text.getText().toStdString();q.tag=tag.getText().trim().toStdString();q.concept=concept.getText().trim().toStdString();
+        q.text=text.getText().toStdString();q.tag=tag.getText().trim().toStdString();q.conceptRuleId=conceptRuleId.getText().trim().toStdString();
         if(role.getSelectedId()>1)q.role=static_cast<PhraseRole>(role.getSelectedId()-1);
         if(pattern.getSelectedId()>1)q.pattern=static_cast<HarmonicPatternType>(pattern.getSelectedId());
         if(function.getSelectedId()>1)q.function=static_cast<HarmonicFunction>(function.getSelectedId()-1);
@@ -146,7 +146,7 @@ private:
     SmartImproviserARAProcessor& processor;
     std::function<Query()> contextProvider;
     smartimproviser::harmony::LibrarySearchResult result;
-    juce::TextEditor text,tag,concept,position,curve,details;
+    juce::TextEditor text,tag,conceptRuleId,position,curve,details;
     juce::ComboBox tension,role,pattern,function;
     juce::TextButton run;
     juce::Label summary;

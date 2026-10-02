@@ -45,7 +45,7 @@ LibrarySearchState contextFilter(const LibrarySearchQuery& q,std::vector<std::st
     if(q.patternPosition) {
         if(!q.pattern || *q.patternPosition<0) {why.push_back("Для позиции выберите конкретный оборот.");return LibrarySearchState::insufficientMetadata;}
         bool known=false,matched=false;
-        const auto examine=[&](const HarmonicPattern& p) {if(p.type==*q.pattern && p.recognized()){
+        const auto examine=[&](const HarmonicPattern& p) {if(p.type==*q.pattern && p.recognized() && p.positionIndex>=0){
             known=true;matched=matched || p.positionIndex==*q.patternPosition;}};
         examine(s.pattern);examine(s.localPattern);examine(s.patternContext.topLevel);
         for(std::size_t i=0;i<s.patternContext.nestedPatternCount && i<s.patternContext.nestedPatterns.size();++i)examine(s.patternContext.nestedPatterns[i]);
@@ -75,7 +75,7 @@ LibrarySearchResult searchLibrary(const std::vector<LibraryRecord>& records,cons
                 fail(record.tags.empty()?LibrarySearchState::insufficientMetadata:LibrarySearchState::metadataMismatch,"Тег отсутствует в записи.");metadata=false;
             }
             const auto& concepts=phrase?phrase->conceptRuleIds:idea->conceptRuleIds;
-            if(metadata && !q.concept.empty() && std::find(concepts.begin(),concepts.end(),q.concept)==concepts.end()){
+            if(metadata && !q.conceptRuleId.empty() && std::find(concepts.begin(),concepts.end(),q.conceptRuleId)==concepts.end()){
                 fail(concepts.empty()?LibrarySearchState::insufficientMetadata:LibrarySearchState::metadataMismatch,"Concept не указан или отличается.");metadata=false;
             }
             if(metadata && q.role && (!phrase || phrase->role!=*q.role)){
@@ -91,7 +91,11 @@ LibrarySearchResult searchLibrary(const std::vector<LibraryRecord>& records,cons
                     if(!phrase || !item.validation.readyForSearch) {
                         fail(LibrarySearchState::draft,"Набросок сохранён, но готовность для гармонического поиска не подтверждена.");
                         for(const auto& d:item.validation.diagnostics)if(d.scope==LibraryValidationScope::searchReadiness)
-                            item.explanations.push_back(d.field+": "+d.explanation);
+                            item.explanations.push_back(d.field=="phrase.register"?"Не задан явный регистр всех нот."
+                                :d.field=="phrase.source"?"Не указаны точный источник и его версия."
+                                :d.field=="phrase.approach"?"Не указан полный подход/enclosure."
+                                :d.field=="phrase.outside"?"Outside-правило ещё не поддерживается."
+                                :"Музыкальные данные для поиска заполнены не полностью.");
                     } else {
                         if(q.curve) {
                             item.curveAssessment=assessPhraseAgainstCurve(*phrase,q.match.slots,*q.curve,q.placementStartBeat);

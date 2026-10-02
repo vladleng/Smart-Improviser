@@ -9,7 +9,7 @@ struct LibrarySearchQuery {
     PhraseMatchRequest match;
     std::optional<TensionCurve> curve; // If present, replaces the scalar request.
     double placementStartBeat=0;
-    std::string text, tag, concept;
+    std::string text, tag, conceptRuleId;
     std::optional<PhraseRole> role;
     std::optional<HarmonicPatternType> pattern;
     std::optional<int> patternPosition; // Zero based, relative to the requested pattern.

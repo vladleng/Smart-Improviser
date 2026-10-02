@@ -3,6 +3,7 @@
 #include "context/LibrarySearchContext.h"
 #include "core/analysis/HarmonicEngine.h"
 #include "core/analysis/ImprovisationEngine.h"
+#include <algorithm>
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
@@ -65,9 +66,9 @@ int main(int argc,char** argv) {
     q.curve.reset();q.match.requestedTension.reset();q.text="текстовый";result=searchLibrary(records,q);
     check(result.eligibleCount==0 && find(draft.id).state==LibrarySearchState::draft,"text filter can find drafts without eligibility");
     q.text.clear();q.tag="absent";result=searchLibrary(records,q);check(result.eligibleCount==0,"tag filter");
-    q.tag.clear();q.concept="test.chord-anchors";q.role=PhraseRole::statement;
-    result=searchLibrary(records,q);check(result.eligibleCount==3,"concept/role metadata");
-    q.concept.clear();q.role.reset();q.function=HarmonicFunction::dominant;
+    q.tag.clear();q.conceptRuleId="test.chord-anchors";q.role=PhraseRole::statement;
+    result=searchLibrary(records,q);check(result.eligibleCount==3,"conceptRuleId/role metadata");
+    q.conceptRuleId.clear();q.role.reset();q.function=HarmonicFunction::dominant;
     result=searchLibrary(records,q);check(result.eligibleCount==3,"context function");
     
     q.function.reset();
