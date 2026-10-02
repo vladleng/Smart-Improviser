@@ -6,7 +6,7 @@
 0.5b принята Владом 2026-10-01, PR #60 merged в main (`2c3591c`), Windows #427 — 29/29 CTest.
 0.5c принята Владом 2026-10-02, PR #61 merged (`cf86772`), Windows #430 — 31/31 CTest.
 0.5d принята Владом 2026-10-02: ввод, копии и сохранение проверены; PR #62 merged (`9a7f3f3`), Windows #435 — success, 32/32 CTest.
-0.5e — [поиск по контексту](STAGE_5_0.5e_SEARCH.md): реализована в PR #63, Windows #441 — success, 33/33 CTest и VST3 с проверочным архивом; Studio Pro приёмка ожидается.
+0.5e — [поиск по контексту](STAGE_5_0.5e_SEARCH.md): принята Владом, PR #63 merged; Windows — success, 33/33 CTest, Studio Pro проверка пройдена.
 
 Рабочая линия: **0.5a → 0.5g**. Итог Stage 5: **stable 0.6**.
 Каждая буква — отдельная сборка, regression и доступный Studio Pro live gate;
@@ -122,5 +122,6 @@ source ID/version и явным musical anchor/range. Реальное след�
 
 0.5e проверена Владом, принята и PR #63 merged (`4fe80bf`).
 0.5f: MVP из шести собственных примеров, [состав и live checklist](COMMON_VOCABULARY.md).
-Начальные оценки отсутствуют; личная копия поддерживает ручную оценку. Windows #445 — success, 34/34 CTest и VST3 artifact; музыкальная приёмка
-этого checkpoint ожидается; stable остаётся 0.5.
+Начальные оценки отсутствуют; личная копия поддерживает ручную оценку. Windows #445/#446 — success, 34/34 CTest и VST3 artifact. Studio Pro проверка пройдена;
+0.5f принята Владом 2026-10-02, PR #64 merged (`6d387f2`). Следующий checkpoint — 0.5g;
+stable остаётся 0.5, Issue #6 открыт до итоговой приёмки Stage 5.
