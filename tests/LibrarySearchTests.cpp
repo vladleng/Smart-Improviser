@@ -3,6 +3,7 @@
 #include "context/LibrarySearchContext.h"
 #include "core/analysis/HarmonicEngine.h"
 #include "core/analysis/ImprovisationEngine.h"
+#include "core/analysis/TensionEngine.h"
 #include <algorithm>
 #include <cstdlib>
 #include <fstream>
@@ -106,12 +107,18 @@ int main(int argc,char** argv) {
     SharedHarmonicContextSnapshot shared;shared.connected=shared.transportAvailable=shared.sheetChordsAvailable=true;
     shared.transportPpq=1;shared.sheetChordStoredCount=3;
     for(int i=0;i<3;++i){shared.sheetChords[i].position=i*4;shared.sheetChords[i].root=shared.sheetChords[i].bass=i?0:1;
-        for(int n:{0,4,7,10})shared.sheetChords[i].intervals[n]=0xff;}
+        for(int n:{0,4,7})shared.sheetChords[i].intervals[n]=0xff;
+        shared.sheetChords[i].intervals[i?11:10]=0xff;}
     shared.keySignaturesAvailable=true;shared.keySignatureStoredCount=1;
     for(int n:{0,2,4,5,7,9,11})shared.keySignatures[0].intervals[n]=0xff;
     auto mapped=makeLibrarySearchQuery(shared,2);
     check(mapped.match.slots.size()==2 && mapped.match.slots[0].startBeat==0 && mapped.match.slots[0].endBeat==3
         && mapped.match.slots[1].startBeat==3 && mapped.placementStartBeat==1,"bounded cursor-relative known chord ranges");
+    const auto stable=analyzeStableTension(mapped.match.slots[0].material);
+    if(const auto* band=stable.band(TensionLevel::stable))for(const auto& candidate:band->alternatives){
+        bool found=false;for(const auto& strategy:mapped.match.slots[0].material.strategies)found=found||strategy.ruleId==candidate.strategy.ruleId;
+        check(found,"search context retains accepted stable source catalog");
+    }
     shared.transportPpq=8;check(makeLibrarySearchQuery(shared,0).match.slots.empty(),"unknown last boundary not fabricated");
     shared.transportAvailable=false;check(makeLibrarySearchQuery(shared,0).match.slots.empty(),"unavailable cursor");
     if(argc==2){
