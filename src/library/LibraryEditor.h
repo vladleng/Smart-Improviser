@@ -63,11 +63,12 @@ public:
         status.setColour(juce::Label::textColourId,juce::Colours::orange);
         status.setJustificationType(juce::Justification::topLeft); addAndMakeVisible(status);
         info.setJustificationType(juce::Justification::topLeft); addAndMakeVisible(info);
-        headings.setText(tr("Ступень (b9/#11)     Октава ±     Начало, beats     Длина, beats     Slot (от 0)"),juce::dontSendNotification);
+        headings.setText(tr("Ступень (b9/#11)     Октава ±     Начало, beats     Длина, beats     Аккорд (от 1)"),juce::dontSendNotification);
         addAndMakeVisible(headings);
         viewport.setViewedComponent(&notes,false); addAndMakeVisible(viewport);
         fresh.onClick=[this]{ if(dirty){blocked();return;} currentDomain=Domain::user; domain.setSelectedId(1,juce::dontSendNotification);
-            draft=Record{}; list.deselectAllRows(); showDraft(); };
+            records=processor.libraryRecords(currentDomain); loading=true; list.updateContent(); list.deselectAllRows(); loading=false;
+            draft=Record{}; showDraft(); };
         discard.onClick=[this]{ draft=baseline; showDraft(); };
         reload.onClick=[this]{ if(dirty){blocked();return;} auto result=processor.reloadUserLibrary();
             if(result.succeeded()) refresh(); else report(result); };
@@ -120,6 +121,7 @@ private:
         const auto& record=records[static_cast<std::size_t>(row)];
         auto label=record.name.empty()?tr("(Без названия)"):utf(record.name);
         label+=std::holds_alternative<Idea>(record.content)?tr(" · идея"):tr(" · фраза");
+        if(record.lineage)label+=record.lineage->kind==smartimproviser::harmony::LibraryDerivation::variant?tr(" · вариант"):tr(" · копия");
         g.drawText(label,8,0,width-16,height,juce::Justification::centredLeft,true);
     }
     void selectedRowsChanged(int row) override {
@@ -147,7 +149,7 @@ private:
         std::array<juce::String,5> values{degree,note.octaveOffset?juce::String(*note.octaveOffset):juce::String{},
             note.beatOffset?number(*note.beatOffset):juce::String{},
             note.durationBeats?number(*note.durationBeats):juce::String{},
-            note.pitch && note.pitch->chordIndex>=0?juce::String(note.pitch->chordIndex):juce::String{}};
+            note.pitch && note.pitch->chordIndex>=0?juce::String(static_cast<juce::int64>(note.pitch->chordIndex)+1):juce::String{}};
         for(std::size_t i=0;i<5;++i) {
             auto& field=row->fields[i];style(field);field.setText(values[i],false);field.setReadOnly(!editableIdea());
             field.onTextChange=[this]{markDirty();};notes.addAndMakeVisible(field);
@@ -186,7 +188,7 @@ private:
         if(!editableIdea())description+=tr("\nНоты Phrase доступны для просмотра; полный редактор — Stage 8.");
         if(draft.lineage)description+=tr("\nИсточник: ")+utf(draft.lineage->parent.id)+" · rev "+juce::String(static_cast<juce::int64>(draft.lineage->parent.revision));
         info.setText(description,juce::dontSendNotification);
-        status.setText(tr("Пустые поля остаются неизвестными. Октава — смещение от корня slot; MIDI-регистр не угадывается."),juce::dontSendNotification);
+        status.setText(tr("Пустые поля остаются неизвестными. Октава — смещение от корня аккорда. Пустой аккорд означает неизвестный контекст."),juce::dontSendNotification);
         loading=false;layoutNotes();
     }
     void report(const smartimproviser::harmony::LibraryStorageResult& result) {

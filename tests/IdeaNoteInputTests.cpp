@@ -12,14 +12,16 @@ int main()
         && partial.note.pitch->chordIndex==-1 && !partial.note.beatOffset);
     IdeaNote original; original.target=true; original.harmonicRole=PhraseNoteRole::resolutionTarget;
     original.fingering=PhraseFingering{2,7};
-    auto edited=parseIdeaNoteInput({"#11","-1","2.5","1","0"},original);
+    auto edited=parseIdeaNoteInput({"#11","-1","2.5","1","1"},original);
     check(edited.error.empty() && edited.note.target==true && edited.note.fingering->fret==7
-        && edited.note.harmonicRole==PhraseNoteRole::resolutionTarget && edited.note.octaveOffset==-1);
+        && edited.note.harmonicRole==PhraseNoteRole::resolutionTarget && edited.note.octaveOffset==-1 && edited.note.pitch->chordIndex==0);
     for(const auto& input : {IdeaNoteInput{"14","","","",""}, IdeaNoteInput{"b","","","",""},
         IdeaNoteInput{"3","1x","","",""},IdeaNoteInput{"3","","nan","",""},
         IdeaNoteInput{"3","","","0",""},IdeaNoteInput{"","","","","0"},
-        IdeaNoteInput{"3","","0.5x","",""},IdeaNoteInput{"3","","","","-1"}})
+        IdeaNoteInput{"3","","0.5x","",""},IdeaNoteInput{"3","","","","-1"},IdeaNoteInput{"3","","","","0"}})
         check(!parseIdeaNoteInput(input).error.empty());
     check(parseIdeaNoteInput({"3","","0","0.25","1"}).error.empty());
+    check(parseIdeaNoteInput({"3","","0","1e-20","1"}).note.durationBeats==1e-20);
+    check(parseIdeaNoteInput({"3","","","","2147483648"}).note.pitch->chordIndex==2147483647);
     std::cout << failures << " failures\n"; return failures ? 1 : 0;
 }
