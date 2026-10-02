@@ -105,6 +105,8 @@ private:
     }
     void search(){
         using namespace smartimproviser::harmony;
+        const auto reject=[this](const juce::String& message){result={};list.updateContent();details.clear();summary.setText(message,juce::dontSendNotification);};
+        processor.reloadUserLibrary(); // Explicit search refresh, never timer/audio polling.
         auto q=contextProvider();q.match.requestedTension=requestedPhraseTension(tension.getSelectedId()-1);
         q.text=text.getText().toStdString();q.tag=tag.getText().trim().toStdString();q.concept=concept.getText().trim().toStdString();
         if(role.getSelectedId()>1)q.role=static_cast<PhraseRole>(role.getSelectedId()-1);
@@ -112,24 +114,24 @@ private:
         if(function.getSelectedId()>1)q.function=static_cast<HarmonicFunction>(function.getSelectedId()-1);
         if(position.getText().trim().isNotEmpty()){
             auto value=position.getText().trim().toStdString();int n=0;auto parsed=std::from_chars(value.data(),value.data()+value.size(),n);
-            if(parsed.ec!=std::errc{} || parsed.ptr!=value.data()+value.size() || n<1){summary.setText(tr("Позиция: целое число от 1."),juce::dontSendNotification);return;}
+            if(parsed.ec!=std::errc{} || parsed.ptr!=value.data()+value.size() || n<1){reject(tr("Позиция: целое число от 1."));return;}
             q.patternPosition=n-1;
         }
         if(curve.getText().trim().isNotEmpty()){
             TensionCurve desired;
             for(auto row:juce::StringArray::fromTokens(curve.getText(),";","")){
                 auto values=juce::StringArray::fromTokens(row,",","");
-                if(values.size()!=3){summary.setText(tr("Кривая: начало,конец,T; …"),juce::dontSendNotification);return;}
+                if(values.size()!=3){reject(tr("Кривая: начало,конец,T; …"));return;}
                 std::array<double,3> numbers{};
                 for(int i=0;i<3;++i){
                     auto value=values[i].trim().toStdString();auto parsed=std::from_chars(value.data(),value.data()+value.size(),numbers[static_cast<std::size_t>(i)]);
                     if(parsed.ec!=std::errc{} || parsed.ptr!=value.data()+value.size() || !std::isfinite(numbers[static_cast<std::size_t>(i)])){
-                        summary.setText(tr("Кривая содержит неверное число."),juce::dontSendNotification);return;}
+                        reject(tr("Кривая содержит неверное число."));return;}
                 }
-                if(numbers[2]<1 || numbers[2]>3 || std::floor(numbers[2])!=numbers[2]){summary.setText(tr("Уровень кривой: 1, 2 или 3."),juce::dontSendNotification);return;}
+                if(numbers[2]<1 || numbers[2]>3 || std::floor(numbers[2])!=numbers[2]){reject(tr("Уровень кривой: 1, 2 или 3."));return;}
                 desired.spans.push_back({numbers[0],numbers[1],static_cast<TensionLevel>(static_cast<int>(numbers[2]))});
             }
-            if(!validateTensionCurve(desired).valid){summary.setText(tr("Кривая содержит неверные границы или пересечения."),juce::dontSendNotification);return;}
+            if(!validateTensionCurve(desired).valid){reject(tr("Кривая содержит неверные границы или пересечения."));return;}
             q.curve=desired;
         }
         auto records=processor.libraryRecords(LibraryDomain::common);auto personal=processor.libraryRecords(LibraryDomain::user);

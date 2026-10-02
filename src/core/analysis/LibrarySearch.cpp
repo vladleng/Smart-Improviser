@@ -34,7 +34,7 @@ LibrarySearchState contextFilter(const LibrarySearchQuery& q,std::vector<std::st
     const auto& s=q.match.slots.front().material.context;
     if(q.function) {
         bool known=false,matched=false;
-        const auto examine=[&](const HarmonicAnalysis& h) {if(h.valid){known=true;matched=matched || h.effectiveFunction==*q.function;}};
+        const auto examine=[&](const HarmonicAnalysis& h) {if(h.valid && h.effectiveFunction!=HarmonicFunction::undefined){known=true;matched=matched || h.effectiveFunction==*q.function;}};
         examine(s.harmonic);examine(s.localHarmonic);
         for(std::size_t i=0;i<s.interpretationCount && i<s.interpretations.size();++i)
             if(s.interpretations[i].valid)examine(s.interpretations[i].harmonic);

@@ -69,13 +69,30 @@ int main(int argc,char** argv) {
     result=searchLibrary(records,q);check(result.eligibleCount==3,"concept/role metadata");
     q.concept.clear();q.role.reset();q.function=HarmonicFunction::dominant;
     result=searchLibrary(records,q);check(result.eligibleCount==3,"context function");
-    q.function.reset();q.match.slots.clear();result=searchLibrary(records,q);
+    
+    q.function.reset();
+    auto patterned=a;std::get<Phrase>(patterned.content).harmonicPattern=HarmonicPatternType::majorIiVI;
+    q.pattern=HarmonicPatternType::majorIiVI;q.patternPosition=1;
+    result=searchLibrary({patterned},q);check(result.eligibleCount==1,"recognized pattern and dominant position");
+    q.patternPosition=0;check(searchLibrary({patterned},q).eligibleCount==0,"wrong pattern position");
+    q.pattern.reset();q.patternPosition.reset();
+    auto ambiguous=q;
+    ambiguous.match.slots[0].material.context.harmonic.effectiveFunction=HarmonicFunction::tonic;
+    ambiguous.match.slots[0].material.context.localHarmonic.valid=false;
+    auto& alternative=ambiguous.match.slots[0].material.context.interpretations[0];
+    alternative.valid=alternative.harmonic.valid=true;alternative.harmonic.effectiveFunction=HarmonicFunction::dominant;
+    ambiguous.match.slots[0].material.context.interpretationCount=1;ambiguous.function=HarmonicFunction::dominant;
+    check(searchLibrary({a},ambiguous).eligibleCount==1
+        && ambiguous.match.slots[0].material.context.harmonic.effectiveFunction==HarmonicFunction::tonic,"alternative function retained without hidden winner");
+    q.curve=TensionCurve{{{0,1,TensionLevel::stable},{0.5,1.5,TensionLevel::color}}};
+    check(searchLibrary({b},q).entries[0].state==LibrarySearchState::invalidTension,"overlapping curve rejected");
+    q.curve.reset();q.match.slots.clear();result=searchLibrary(records,q);
     check(result.eligibleCount==0 && find(a.id).state==LibrarySearchState::insufficientContext,"no context yields no winner");
     q.match.slots={{material(),0,4}};
     auto stale=a;auto& p=std::get<Phrase>(stale.content);p.notes[0].harmonicRole=PhraseNoteRole::sourceTone;
     const auto& source=q.match.slots[0].material.strategies.front();
     p.harmonicRequirements[0].sourceRuleId=source.ruleId;p.harmonicRequirements[0].sourceRuleVersion=999;
-    result=searchLibrary({stale},q);check(!result.entries[0].eligible(),"obsolete source version not ranked");
+    result=searchLibrary({stale},q);check(result.entries[0].state==LibrarySearchState::insufficientContext,"obsolete source version requires revalidation");
     auto invalid=a;std::get<Phrase>(invalid.content).notes[0].durationBeats=0;
     check(searchLibrary({invalid},q).entries[0].state==LibrarySearchState::invalidRecord,"invalid data refused");
     auto reordered=records;std::reverse(reordered.begin(),reordered.end());
