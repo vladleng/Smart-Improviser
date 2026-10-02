@@ -53,4 +53,6 @@ chord-anchor fixtures для проверки ПО, а не первый common 
 
 Regression: harmonic-first, All/unclassified, scalar/curve, metadata, missing context, obsolete version,
 determinism, byte-identical archive before/after search и bounded timeline mapping.
-Windows CI и Studio Pro acceptance ожидаются.
+Windows Build #441 на code 801f2a4 — success: VST3, 33/33 CTest и создание Search-check.silibrary.
+https://github.com/vladleng/Smart-Improviser/actions/runs/36952524226
+Artifact: Smart-Improviser-0.5e-Windows. Studio Pro acceptance ожидается.
