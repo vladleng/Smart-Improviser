@@ -215,3 +215,35 @@ const ARA::ARAFactory* JUCE_CALLTYPE createARAFactory()
     return juce::ARADocumentControllerSpecialisation::createARAFactory<SmartImproviserARADocumentController>();
 }
 #endif
+
+std::vector<smartimproviser::harmony::LibraryRecord> SmartImproviserARAProcessor::libraryRecords(
+    smartimproviser::harmony::LibraryDomain domain) const
+{
+    const juce::ScopedLock lock(stateLock);
+    return userLibrary.list(domain);
+}
+smartimproviser::harmony::LibraryStorageResult SmartImproviserARAProcessor::editLibrary(
+    LibraryEdit edit, const smartimproviser::harmony::LibraryRecord& draft,
+    smartimproviser::harmony::LibraryRecord& saved)
+{
+    using namespace smartimproviser::harmony;
+    const juce::ScopedLock lock(stateLock);
+    if (!lastLibraryLoad.succeeded()) return lastLibraryLoad;
+    auto candidate=userLibrary; // Commit detached state only after durable write.
+    LibraryOperation operation;
+    if (edit==LibraryEdit::save)
+        operation=draft.id.empty() ? candidate.addUser(draft) : candidate.updateUser(draft,draft.revision);
+    else {
+        LibraryItemReference source{draft.domain,draft.id,draft.revision};
+        operation=edit==LibraryEdit::copy ? candidate.copyToUser(source) : candidate.createVariant(source);
+    }
+    if (!operation.succeeded()) {
+        LibraryStorageResult failure; failure.status=LibraryStorageStatus::invalidData;
+        failure.explanation=operation.explanation; return failure;
+    }
+    auto written=sharedUserLibrary.commitFrom(candidate,lastLibraryLoad.stamp);
+    if (written.succeeded()) {
+        userLibrary=std::move(candidate); lastLibraryLoad=written; saved=*operation.record;
+    }
+    return written;
+}

@@ -90,6 +90,8 @@ private:
     juce::String harmonicText;
     juce::String araText;
 
+    juce::TextButton libraryButton;
+    std::unique_ptr<juce::DocumentWindow> libraryWindow;
     juce::TextButton contextButton;
     juce::TextButton materialButton;
     juce::TextButton sourcesButton;

@@ -48,6 +48,10 @@ public:
     smartimproviser::harmony::LibraryStorageResult reloadUserLibrary();
     smartimproviser::harmony::LibraryUserSnapshot userLibrarySnapshot() const;
     smartimproviser::harmony::LibraryStorageStatus userLibraryStorageStatus() const;
+    enum class LibraryEdit { save, copy, variant };
+    std::vector<smartimproviser::harmony::LibraryRecord> libraryRecords(smartimproviser::harmony::LibraryDomain) const;
+    smartimproviser::harmony::LibraryStorageResult editLibrary(LibraryEdit,
+        const smartimproviser::harmony::LibraryRecord&, smartimproviser::harmony::LibraryRecord& saved);
     bool fretDegreeLabelsEnabled() const;
     void setFretDegreeLabelsEnabled(bool enabled);
     juce::Point<int> editorSize() const;
